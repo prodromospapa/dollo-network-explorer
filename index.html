@@ -1158,7 +1158,7 @@ function clusterHue(idx, total) {
     return (idx * 360 / total + 15) % 360;
 }
 
-function showAllClusters() {
+function showAllClusters(isFilterUpdate) {
     if (!HAS_CLUSTERS) {
         showToast('No cluster data available. Run leiden_cluster.py first.', 3000);
         return;
@@ -1177,6 +1177,68 @@ function showAllClusters() {
     // Sort clusters by size descending
     const clusterIds = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
     const nClusters = clusterIds.length;
+
+    // In-place edge adjustment if already rendered
+    if (isFilterUpdate && cy && cy.nodes().length > 0) {
+        // Remove edges below new threshold
+        cy.edges().forEach(edge => {
+            const d = edge.data();
+            if (d.jaccard < thresh) {
+                graphEdges.delete(d.id);
+                cy.remove(edge);
+            }
+        });
+
+        // Add qualifying edges up to limit
+        clusterIds.forEach(cid => {
+            const members = CLUSTERS[cid];
+            const color = clusterColors[cid] || '#38bdf8';
+            const sortedMembers = members
+                .filter(n => G[n])
+                .map(n => ({ n, l: G[n].l }))
+                .sort((a, b) => b.l - a.l);
+
+            const visibleMembers = sortedMembers.slice(0, MAX_NODES_PER_CLUSTER);
+            const visibleSet = new Set(visibleMembers.map(m => m.n));
+
+            let edgeCount = cy.edges().filter(e => {
+                const d = e.data();
+                return visibleSet.has(d.source) && visibleSet.has(d.target);
+            }).length;
+
+            for (const m of visibleMembers) {
+                if (edgeCount >= MAX_EDGES_PER_CLUSTER) break;
+                const gi = G[m.n];
+                if (!gi) continue;
+                for (const p of gi.p) {
+                    if (edgeCount >= MAX_EDGES_PER_CLUSTER) break;
+                    if (p.j >= thresh && visibleSet.has(p.n)) {
+                        const eid = m.n < p.n ? `${m.n}||${p.n}` : `${p.n}||${m.n}`;
+                        if (!graphEdges.has(eid)) {
+                            graphEdges.add(eid);
+                            cy.add({
+                                group: 'edges',
+                                data: {
+                                    id: eid,
+                                    source: m.n < p.n ? m.n : p.n,
+                                    target: m.n < p.n ? p.n : m.n,
+                                    jaccard: p.j,
+                                    source_name: m.n < p.n ? m.n : p.n,
+                                    target_name: m.n < p.n ? p.n : m.n,
+                                    width: 0.3 + p.j * 1.5,
+                                    color: color,
+                                }
+                            });
+                            edgeCount++;
+                        }
+                    }
+                }
+            }
+        });
+
+        updateStatus();
+        return;
+    }
 
     // 1. Build sidebar
     document.getElementById('gene-info').innerHTML = `
@@ -1354,6 +1416,7 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {
     clusterViewActive = false;
 
     const thresh = parseFloat(document.getElementById('thresh').value);
+    const topn = getTopN();
     const members = CLUSTERS[cid].filter(n => G[n]);
     const color = clusterColors[cid] || 'hsl(200, 65%, 55%)';
     const cname = CLUSTER_NAMES[cid] || `Cluster ${cid}`;
@@ -1361,13 +1424,23 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {
     // Sort by loss count
     const sorted = members.map(n => ({ n, l: G[n].l })).sort((a, b) => b.l - a.l);
 
+    // Filter to top N members based on "Show Top"
+    let shownMembers = sorted.slice(0, topn);
+    // Always include the focus/highlight gene if specified
+    if (highlightGene && !shownMembers.some(m => m.n === highlightGene)) {
+        const hlObj = sorted.find(m => m.n === highlightGene);
+        if (hlObj) shownMembers.push(hlObj);
+    }
+    const shownSet = new Set(shownMembers.map(m => m.n));
+
     // Sidebar
     const hlEscaped = highlightGene ? highlightGene.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
     document.getElementById('gene-info').innerHTML = `
         <h2 style="color:${color}; font-size:16px;">C${cid}: ${cname}</h2>
         <div class="meta">
-            <strong>${members.length}</strong> member genes &nbsp;|&nbsp;
+            <strong>${shownMembers.length}</strong> of ${members.length} members shown &nbsp;|&nbsp;
             <a href="#" onclick="showAllClusters(); return false;" style="color:#7eb8ff;text-decoration:underline;">← Back to all clusters</a>
+            ${shownMembers.length < members.length ? ' (increase "Show Top" to see more)' : ''}
             ${highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${hlEscaped}</strong></span>` : ''}
         </div>
     `;
@@ -1375,39 +1448,86 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {
     let html = '';
     sorted.forEach((m, i) => {
         const isHl = m.n === highlightGene;
+        const inGraph = shownSet.has(m.n);
         const dispName = m.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const escaped = m.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         html += `
-        <div class="partner" data-gene="${escaped}" style="${isHl ? 'background:#1a2a4a; border-left:3px solid #38bdf8;' : ''}">
+        <div class="partner" data-gene="${escaped}" style="${isHl ? 'background:#1a2a4a; border-left:3px solid #38bdf8;' : (!inGraph ? 'opacity:0.45;' : '')}">
             <span class="rank">#${i + 1}</span>
-            <span class="pname in-graph" style="${isHl ? 'color:#38bdf8; font-weight:700;' : ''}">${dispName}</span>
+            <span class="pname ${inGraph ? 'in-graph' : ''}" style="${isHl ? 'color:#38bdf8; font-weight:700;' : ''}">${dispName}</span>
             <span class="ploss" style="width:auto;">${m.l}L</span>
             <a href="${getUniProtUrl(m.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${dispName} on UniProt" onclick="event.stopPropagation();">↗</a>
         </div>`;
     });
     document.getElementById('partner-list').innerHTML = html;
 
-    // Build graph with ALL members of this cluster
+    // In-place graph adjustment if isFilterUpdate and graph already exists
+    if (isFilterUpdate && cy && cy.nodes().length > 0) {
+        // Remove nodes that are no longer in shownMembers
+        cy.nodes().forEach(node => {
+            const id = node.data('id');
+            if (!shownSet.has(id)) {
+                graphGenes.delete(id);
+                cy.remove(node);
+            }
+        });
+
+        // Add any newly included nodes in shownMembers (positioned near existing nodes)
+        const refNode = highlightGene ? cy.getElementById(highlightGene) : cy.nodes()[0];
+        const refPos = refNode && refNode.length ? refNode.position() : { x: 0, y: 0 };
+
+        shownMembers.forEach(m => {
+            if (!graphGenes.has(m.n)) {
+                addGeneNode(m.n, m.n === highlightGene);
+                const node = cy.getElementById(m.n);
+                if (node.length && m.n !== highlightGene) node.data('color', color);
+                const angle = Math.random() * 2 * Math.PI;
+                const dist = 60 + Math.random() * 120;
+                node.position({ x: refPos.x + Math.cos(angle) * dist, y: refPos.y + Math.sin(angle) * dist });
+            }
+        });
+
+        // Remove edges that fall below threshold or connect removed nodes
+        cy.edges().forEach(edge => {
+            const d = edge.data();
+            if (d.jaccard < thresh || !shownSet.has(d.source) || !shownSet.has(d.target)) {
+                graphEdges.delete(d.id);
+                cy.remove(edge);
+            }
+        });
+
+        // Add qualifying edges that are not yet drawn
+        shownMembers.forEach(m => {
+            const gi = G[m.n];
+            if (!gi) return;
+            for (const p of gi.p) {
+                if (p.j >= thresh && shownSet.has(p.n)) {
+                    addEdge(m.n, p.n, p.j);
+                }
+            }
+        });
+
+        updateStatus();
+        return;
+    }
+
+    // Initial full render
     cy.elements().remove();
     graphGenes.clear();
     graphEdges.clear();
     document.getElementById('empty-msg').style.display = 'none';
 
-    const memberSet = new Set(members);
-
-    for (const m of sorted) {
+    for (const m of shownMembers) {
         addGeneNode(m.n, m.n === highlightGene);
-        // Override color to cluster color if not focused
         const node = cy.getElementById(m.n);
         if (node.length && m.n !== highlightGene) node.data('color', color);
     }
 
-    // Add intra-cluster edges
-    for (const m of sorted) {
+    for (const m of shownMembers) {
         const gi = G[m.n];
         if (!gi) continue;
         for (const p of gi.p) {
-            if (p.j >= thresh && memberSet.has(p.n)) {
+            if (p.j >= thresh && shownSet.has(p.n)) {
                 addEdge(m.n, p.n, p.j);
             }
         }
@@ -1434,7 +1554,7 @@ function onFilterChange() {
         if (currentView === 'single_cluster' && currentClusterId !== null) {
             showSingleCluster(currentClusterId, currentClusterHighlightGene, true);
         } else if (currentView === 'all_clusters') {
-            showAllClusters();
+            showAllClusters(true);
         } else if (selectedGene) {
             renderNetwork(selectedGene);
         }
