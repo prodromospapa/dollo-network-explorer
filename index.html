@@ -521,23 +521,26 @@ function getGeneClusterHtml(geneName) {
     const cname = CLUSTER_NAMES[cid] || `Cluster ${cid}`;
     const csize = CLUSTERS[cid] ? CLUSTERS[cid].length : 0;
     const color = clusterColors[cid] || '#38bdf8';
-    const escaped = geneName.replace(/"/g, '&quot;');
+    const escaped = geneName.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     return `
     <div style="margin-top:9px; padding:7px 10px; background:rgba(26,32,64,0.85); border:1px solid #2a3558; border-radius:6px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; color:#cbd5e1;" title="Cluster ${cid}: ${cname} (${csize} genes)">
             <span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:${color}; margin-right:5px; vertical-align:middle;"></span>
             <strong style="color:#7eb8ff;">C${cid}:</strong> ${cname} <span style="color:#8892b0;">(${csize} genes)</span>
         </div>
-        <button class="btn btn-accent" style="padding:3px 9px; font-size:11px; white-space:nowrap; flex-shrink:0; font-weight:600;" onclick="showSingleCluster(${cid}, '${escaped}')">View Cluster →</button>
+        <button class="btn btn-accent" style="padding:3px 9px; font-size:11px; white-space:nowrap; flex-shrink:0; font-weight:600;" data-cid="${cid}" data-gene="${escaped}" onclick="showSingleCluster(parseInt(this.dataset.cid), this.dataset.gene)">View Cluster →</button>
     </div>`;
 }
 
-// ---- State ----
+// ---- State & DOM references ----
 let cy = null;
 let selectedGene = null;
 const graphGenes = new Set();
 const graphEdges = new Set();
 const expandedGenes = [];  // ordered list of genes user explicitly expanded
+let clusterViewActive = false;
+const searchInput = document.getElementById('search');
+const sugBox = document.getElementById('suggestions');
 
 // ---- Colour helpers ----
 function jaccardColor(j) {
@@ -652,6 +655,23 @@ function initCy() {
                     'opacity': 0.9,
                     'z-index': 15,
                 }
+            },
+            {
+                selector: 'node.cluster-label',
+                style: {
+                    'background-opacity': 0,
+                    'border-width': 0,
+                    'font-size': 11,
+                    'color': '#aab',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'text-wrap': 'wrap',
+                    'text-max-width': '150px',
+                    'text-opacity': 0.9,
+                    'width': 1,
+                    'height': 1,
+                    'min-zoomed-font-size': 4,
+                }
             }
         ],
         layout: { name: 'preset' },
@@ -679,7 +699,6 @@ function initCy() {
             tooltip.style.display = 'block';
             return;
         }
-        const clInfo = d.id && GENE_CL[d.id] !== undefined ? `<br>Cluster: ${GENE_CL[d.id]}` : '';
         const cid = d.id ? GENE_CL[d.id] : undefined;
         const clName = (cid !== undefined && CLUSTER_NAMES[cid]) ? `: ${CLUSTER_NAMES[cid]}` : '';
         const clInfo = (cid !== undefined) ? `<br><span style="color:#7eb8ff;">Cluster ${cid}</span>${clName}` : '';
@@ -1060,9 +1079,6 @@ function exportCytoscape() {
 }
 
 // ---- All Clusters View ----
-let clusterViewActive = false;
-let clusterColors = {};  // cid -> hsl color string
-
 function clusterHue(idx, total) {
     // Evenly spaced hues with a pleasant saturation
     return (idx * 360 / total + 15) % 360;
@@ -1085,13 +1101,6 @@ function showAllClusters() {
     const clusterIds = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
     const nClusters = clusterIds.length;
 
-    // Assign colors
-    clusterColors = {};
-    clusterIds.forEach((cid, i) => {
-        const h = clusterHue(i, nClusters);
-        clusterColors[cid] = `hsl(${h}, 65%, 55%)`;
-    });
-
     // 1. Build sidebar
     document.getElementById('gene-info').innerHTML = `
         <h2>🔬 All Clusters <span style="font-size:11px;color:#8892b0;font-weight:400;">(Leiden)</span></h2>
@@ -1104,13 +1113,11 @@ function showAllClusters() {
     let sideHtml = '';
     clusterIds.forEach((cid, i) => {
         const size = CLUSTERS[cid].length;
-        const color = clusterColors[cid];
+        const color = clusterColors[cid] || '#38bdf8';
         const cname = CLUSTER_NAMES[cid] || `Cluster ${cid}`;
         sideHtml += `
-        <div class="cluster-entry" data-cluster-id="${cid}" ondblclick="showSingleCluster(${cid})">
         <div class="cluster-entry" data-cluster-id="${cid}" ondblclick="showSingleCluster(${cid})" title="C${cid}: ${cname}">
             <span class="swatch" style="background:${color};"></span>
-            <span class="cname">Cluster ${cid}</span>
             <div style="flex:1; min-width:0; overflow:hidden;">
                 <div class="cname" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     <strong style="color:#7eb8ff;">C${cid}</strong>: ${cname}
@@ -1205,7 +1212,7 @@ function showAllClusters() {
                 isLabel: true,
             },
             position: { x: cx, y: cy_pos },
-            classes: '',
+            classes: 'cluster-label',
         });
 
         // Add top intra-cluster edges
@@ -1238,24 +1245,6 @@ function showAllClusters() {
                 }
             }
         }
-    });
-
-    // Style the label nodes specially
-    cy.nodes('[?isLabel]').style({
-        'background-opacity': 0,
-        'border-width': 0,
-        'font-size': 11,
-        'color': '#aab',
-        'text-valign': 'center',
-        'text-halign': 'center',
-        'text-wrap': 'wrap',
-        'text-max-width': '140px',
-        'text-opacity': 0.85,
-        'text-max-width': '150px',
-        'text-opacity': 0.9,
-        'width': 1,
-        'height': 1,
-        'min-zoomed-font-size': 4,
     });
 
     cy.fit(undefined, 40);
@@ -1417,8 +1406,6 @@ function updateStatus() {
 }
 
 // ---- Search with autocomplete ----
-const searchInput = document.getElementById('search');
-const sugBox = document.getElementById('suggestions');
 let sugItems = [];
 let sugIdx = -1;
 
