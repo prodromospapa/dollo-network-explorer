@@ -458,15 +458,6 @@ body {
         <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;margin-left:4px;">
             <input type="checkbox" id="toggle-labels" checked> Labels
         </label>
-        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;margin-left:4px;" title="Show the whole connected module (multi-hop), not just direct partners">
-            <input type="checkbox" id="toggle-module"> Module view
-        </label>
-        <span id="module-hops-wrap" style="display:none;align-items:center;gap:6px;">
-            <label>Hops: <span id="hops-val">2</span></label>
-            <input type="range" id="module-hops" min="1" max="5" step="1" value="2">
-            <label>Max nodes: <span id="maxnodes-val">150</span></label>
-            <input type="range" id="module-maxnodes" min="20" max="400" step="10" value="150">
-        </span>
         <button class="btn btn-accent" onclick="fitGraph()">Fit view</button>
         <button class="btn" onclick="exportCytoscape()">Export JSON</button>
         <button class="btn btn-danger" onclick="clearGraph()">Clear graph</button>
@@ -824,7 +815,7 @@ function addEdge(a, b, j) {
     });
 }
 
-// ---- Render Network: dispatch to ego view or whole-module (multi-hop) view ----
+// ---- Render Network ----
 function renderNetwork(geneName) {
     if (!geneName || !G[geneName]) return;
     currentView = 'gene';
@@ -834,12 +825,7 @@ function renderNetwork(geneName) {
     selectedGene = geneName;
     searchInput.value = geneName;
 
-    const moduleMode = document.getElementById('toggle-module').checked;
-    if (moduleMode) {
-        renderModule(geneName);
-    } else {
-        renderEgoNetwork(geneName);
-    }
+    renderEgoNetwork(geneName);
 }
 
 // ---- Show Top: returns Infinity when "Max" is checked, else the slider value ----
@@ -848,123 +834,6 @@ function getTopN() {
     return parseInt(document.getElementById('topn').value);
 }
 
-// ---- Whole-module view: BFS out from the focus gene across multiple hops ----
-// Shows the entire connected system (all proteins reachable via co-loss edges
-// above threshold), not just the focus gene's direct partners.
-function renderModule(geneName) {
-    const thresh = parseFloat(document.getElementById('thresh').value);
-    const topn = getTopN();
-    const maxHops = parseInt(document.getElementById('module-hops').value);
-    const maxNodes = parseInt(document.getElementById('module-maxnodes').value);
-    const info = G[geneName];
-
-    // BFS: at each hop, expand every gene currently in the module using its
-    // own top-N partner list (same threshold/topN as the single-gene view),
-    // so the module is built from consistent per-gene rules.
-    const moduleGenes = new Set([geneName]);
-    const moduleEdges = new Map(); // eid -> {a,b,j}
-    const frontier = [geneName];
-    let hop = 0;
-    let truncated = false;
-
-    function edgeKey(a, b) { return a < b ? `${a}||${b}` : `${b}||${a}`; }
-
-    while (hop < maxHops && frontier.length > 0) {
-        const nextFrontier = [];
-        for (const g of frontier) {
-            const gi = G[g];
-            if (!gi) continue;
-            const partners = gi.p.filter(p => p.j >= thresh).slice(0, topn);
-            for (const p of partners) {
-                if (!moduleGenes.has(p.n)) {
-                    if (moduleGenes.size >= maxNodes) { truncated = true; continue; }
-                    moduleGenes.add(p.n);
-                    nextFrontier.push(p.n);
-                }
-                const eid = edgeKey(g, p.n);
-                if (!moduleEdges.has(eid)) moduleEdges.set(eid, { a: g, b: p.n, j: p.j });
-            }
-            if (moduleGenes.size >= maxNodes) { truncated = true; break; }
-        }
-        frontier.length = 0;
-        frontier.push(...nextFrontier);
-        hop++;
-    }
-
-    // Also cross-link any two module genes that are partners of each other
-    // (fills in edges within the module that BFS expansion order skipped).
-    for (const g of moduleGenes) {
-        const gi = G[g];
-        if (!gi) continue;
-        for (const p of gi.p) {
-            if (p.j >= thresh && moduleGenes.has(p.n)) {
-                const eid = edgeKey(g, p.n);
-                if (!moduleEdges.has(eid)) moduleEdges.set(eid, { a: g, b: p.n, j: p.j });
-            }
-        }
-    }
-
-    // 1. Sidebar summary
-    const dispGene = geneName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    document.getElementById('gene-info').innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <h2 style="margin-bottom:0;">${dispGene} <span style="font-size:11px;color:#8892b0;font-weight:400;">(module)</span></h2>
-            <a href="${getUniProtUrl(geneName)}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${dispGene} on UniProt">UniProt ↗</a>
-        </div>
-        <div class="meta" style="margin-top:4px;">
-            Independent losses: <strong>${info.l}</strong><br>
-            Module size: <strong>${moduleGenes.size}</strong> genes, <strong>${moduleEdges.size}</strong> edges
-            over ${hop} hop${hop === 1 ? '' : 's'}
-            ${truncated ? '<br><span style="color:#ffd866;">Truncated at max node cap — raise it to see more.</span>' : ''}
-        </div>
-        ${getGeneClusterHtml(geneName)}
-    `;
-
-    // List all module members (excluding focus gene), sorted by loss count desc
-    const members = [...moduleGenes].filter(n => n !== geneName)
-        .map(n => ({ n, l: G[n] ? G[n].l : 0 }))
-        .sort((a, b) => b.l - a.l);
-
-    let html = '';
-    members.forEach((m, i) => {
-        const dispName = m.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const escaped = m.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        html += `
-        <div class="partner" data-gene="${escaped}">
-            <span class="rank">#${i + 1}</span>
-            <span class="pname in-graph">${dispName}</span>
-            <span class="ploss" style="width:auto;">${m.l}L</span>
-            <a href="${getUniProtUrl(m.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${dispName} on UniProt" onclick="event.stopPropagation();">↗</a>
-        </div>`;
-    });
-    document.getElementById('partner-list').innerHTML = html;
-
-    // 2. Render graph
-    cy.elements().remove();
-    graphGenes.clear();
-    graphEdges.clear();
-    document.getElementById('empty-msg').style.display = 'none';
-
-    for (const g of moduleGenes) {
-        addGeneNode(g, g === geneName);
-    }
-    for (const e of moduleEdges.values()) {
-        addEdge(e.a, e.b, e.j);
-    }
-
-    const centerNode = cy.getElementById(geneName);
-    if (centerNode.length) {
-        centerNode.select();
-        centerNode.connectedEdges().select();
-    }
-
-    if (moduleGenes.size === 1) {
-        showToast(`${geneName} has no co-loss partners above Jaccard ≥ ${thresh.toFixed(2)}. Try lowering the threshold.`, 4000);
-    }
-
-    runLayout();
-    updateStatus();
-}
 
 // ---- Ego view: strictly the Focus Gene + Current Sidebar Partners ----
 function renderEgoNetwork(geneName) {
@@ -1591,21 +1460,6 @@ document.getElementById('toggle-topn-max').addEventListener('change', function()
     onFilterChange();
 });
 
-document.getElementById('module-hops').addEventListener('input', function() {
-    document.getElementById('hops-val').textContent = this.value;
-    onFilterChange();
-});
-
-document.getElementById('module-maxnodes').addEventListener('input', function() {
-    document.getElementById('maxnodes-val').textContent = this.value;
-    onFilterChange();
-});
-
-document.getElementById('toggle-module').addEventListener('change', function() {
-    const wrap = document.getElementById('module-hops-wrap');
-    wrap.style.display = this.checked ? 'inline-flex' : 'none';
-    if (selectedGene) renderNetwork(selectedGene);
-});
 
 document.getElementById('layout-select').addEventListener('change', function() {
     runLayout();
@@ -1620,112 +1474,22 @@ document.getElementById('toggle-labels').addEventListener('change', function() {
     });
 });
 
-// ---- Status ----
-function updateStatus() {
-    document.getElementById('status-nodes').textContent = `Nodes: ${cy.nodes().length}`;
-    document.getElementById('status-edges').textContent = `Edges: ${cy.edges().length}`;
+// Export button
+function exportCytoscape() {
+    if (!cy) return;
+    const jsonStr = JSON.stringify(cy.json());
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'network.json';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
-// ---- Search with autocomplete ----
-let sugItems = [];
-let sugIdx = -1;
+// Initialize
+initCy();
 
-searchInput.addEventListener('input', function() {
-    const q = this.value.trim().toUpperCase();
-    sugIdx = -1;
-    if (q.length === 0) {
-        sugBox.style.display = 'none';
-        return;
-    }
-    // Exact prefix matches first, then contains
-    const prefix = NAMES.filter(n => n.toUpperCase().startsWith(q));
-    const contains = NAMES.filter(n => !n.toUpperCase().startsWith(q) && n.toUpperCase().includes(q));
-    sugItems = [...prefix, ...contains].slice(0, 20);
-    if (sugItems.length === 0) {
-        sugBox.style.display = 'none';
-        return;
-    }
-    sugBox.innerHTML = sugItems.map((n, i) => {
-        const escaped = n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const dispName = n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        return `<div data-gene="${escaped}" ${i === sugIdx ? 'class="active"' : ''}>${dispName} <span style="color:#556;font-size:11px;">${G[n] ? G[n].l + 'L' : ''}</span></div>`;
-    }).join('');
-    sugBox.style.display = 'block';
-});
-
-searchInput.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        sugIdx = Math.min(sugIdx + 1, sugItems.length - 1);
-        highlightSug();
-    } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        sugIdx = Math.max(sugIdx - 1, 0);
-        highlightSug();
-    } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const pick = sugIdx >= 0 ? sugItems[sugIdx] : sugItems[0];
-        if (pick) pickSuggestion(pick);
-    } else if (e.key === 'Escape') {
-        sugBox.style.display = 'none';
-    }
-});
-
-function highlightSug() {
-    const divs = sugBox.querySelectorAll('div');
-    divs.forEach((d, i) => d.classList.toggle('active', i === sugIdx));
-}
-
-function pickSuggestion(name) {
-    sugBox.style.display = 'none';
-    searchInput.value = name;
-    renderNetwork(name);
-}
-
-searchInput.addEventListener('blur', () => {
-    setTimeout(() => sugBox.style.display = 'none', 200);
-});
-
-// ---- Event delegation for data-gene clicks ----
-document.getElementById('partner-list').addEventListener('click', function(e) {
-    const row = e.target.closest('.partner[data-gene]');
-    if (row && row.dataset.gene) renderNetwork(row.dataset.gene);
-});
-
-document.getElementById('suggestions').addEventListener('mousedown', function(e) {
-    // mousedown instead of click so it fires before the blur hides the dropdown
-    const item = e.target.closest('[data-gene]');
-    if (item) {
-        e.preventDefault();
-        pickSuggestion(item.dataset.gene);
-    }
-});
-
-// ---- Legend Toggle ----
-document.getElementById('legend-toggle').addEventListener('click', function(e) {
-    e.stopPropagation();
-    const body = document.getElementById('legend-body');
-    const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? 'block' : 'none';
-    this.textContent = isHidden ? '−' : '+';
-});
-
-// ---- Init ----
-function startExplorer() {
-    initCy();
-    if (!HAS_CLUSTERS) {
-        const btn = document.getElementById('btn-all-clusters');
-        if (btn) btn.style.display = 'none';
-        const headBtn = document.getElementById('btn-all-clusters-head');
-        if (headBtn) headBtn.style.display = 'none';
-    }
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startExplorer);
-} else {
-    startExplorer();
-}
 </script>
 </body>
 </html>
