@@ -182,6 +182,27 @@ Where:
 - $\gamma$: **Resolution parameter** (we tuned $\gamma = 2.0$ to isolate distinct protein complexes).
 - $\delta(c_i, c_j) = 1$ if Gene $i$ and Gene $j$ are placed in the same cluster, and $0$ otherwise.
 
+### The 3-Phase Iterative Cycle
+
+Unlike the older Louvain algorithm (which often traps internally disconnected sub-graphs inside the same community), Leiden guarantees that every discovered module is **provably well-connected** through an iterative 3-phase cycle:
+
+```mermaid
+flowchart TD
+    A["1. Local Node Movement<br>Greedy optimization: nodes switch to neighbor communities if modularity Q increases"] --> B["2. Cluster Refinement<br>Leiden's key innovation: ensures clusters are internally well-connected, splitting weak bridges"]
+    B --> C["3. Graph Aggregation<br>Contracts refined sub-clusters into super-nodes and constructs macro-graph"]
+    C -->|Repeat until convergence| A
+```
+
+1. **Phase 1: Local Node Movement (Greedy Optimization)**:
+   - Each gene starts in its own singleton community $\{G_i\}$.
+   - Nodes are visited in random order and greedily merged with neighboring communities that yield the largest positive increase $\Delta Q$.
+2. **Phase 2: Cluster Refinement (The Key Innovation of Leiden)**:
+   - Within each community formed in Phase 1, nodes are unmerged back to singletons and selectively re-merged *only if* they are provably well-connected internally.
+   - If two dense halves are connected by an accidental single weak bridge, Leiden splits them rather than gluing them together.
+3. **Phase 3: Graph Aggregation**:
+   - The refined sub-communities are condensed into single "super-nodes", and macro-edges are drawn between them.
+   - The cycle repeats on this macro-network until no further improvement in $Q$ is possible.
+
 ---
 
 ### Toy Example 3: Leiden Modularity Optimization

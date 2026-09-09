@@ -291,6 +291,24 @@ body {
     white-space: nowrap;
     flex-shrink: 0;
 }
+
+.cilia-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.14);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    line-height: 1.4;
+}
+
 .gene-ext-link:hover {
     background: rgba(56, 189, 248, 0.2);
     border-color: #38bdf8;
@@ -548,6 +566,8 @@ const GENE_CL = {"DYNC2H1":5,"DNAH14":5,"DNAH8":5,"DNAH11":5,"DNAH12":5,"DNAH2":
 const CLUSTER_NAMES = {"5":"GTPase activator activity / Regulation of small GTPase mediated \u2026","9":"Monooxygenase activity / Oxidoreductase activity, acting on p\u2026","2":"Mitochondrion / Mitochondrial matrix","18":"RNA polymerase II cis-regulatory reg\u2026 / DNA-binding transcription factor act\u2026","6":"Cilium / Axoneme","1":"RNA binding / Nucleolus","23":"Signaling adaptor activity / SH3 domain binding","32":"Tubulin-glutamic acid ligase activity / Protein-glutamic acid ligase activit\u2026","31":"Ubiquitin protein ligase activity / Protein ubiquitination","0":"Serine-type endopeptidase activity / Extracellular region","19":"Cyclic nucleotide biosynthetic process / Phosphorus-oxygen lyase activity","34":"D-glucose transmembrane transporter \u2026 / D-glucose transmembrane transport","4":"Calcium-dependent cysteine-type endo\u2026 / Haptoglobin-hemoglobin complex","33":"Regulation of G0 to G1 transition / Regulation of nucleotide-excision re\u2026","20":"Stress fiber / Metallocarboxypeptidase activity","35":"Nucleic acid binding / RNA binding","45":"Fatty acid elongase activity / Fatty acid elongation, monounsaturat\u2026","3":"Ligand-gated monoatomic ion channel \u2026 / Extracellular region","39":"Molybdenum ion binding / Detoxification of nitrogen compound","13":"DNA-binding transcription factor act\u2026 / Regulation of DNA-templated transcri\u2026","11":"Wnt-protein binding / Cell fate specification","43":"RNA endonuclease activity / Regulatory ncRNA-mediated gene silen\u2026","36":"Cell fate commitment / Transcription coactivator binding","15":"Cell-cell adhesion mediated by cadhe\u2026 / Homophilic cell-cell adhesion","50":"Phosphatidylinositol phosphate biosy\u2026 / Phosphate-containing compound metabo\u2026","47":"Regulation of RNA splicing / MRNA processing","17":"Sequence-specific DNA binding / Chromatin","42":"UDP phosphatase activity / GDP phosphatase activity","28":"Free ubiquitin chain polymerization / Intronic transcription regulatory re\u2026","57":"Eukaryotic translation initiation fa\u2026 / Positive regulation of translational\u2026","22":"Septin complex / Septin ring","53":"Malate dehydrogenase (decarboxylatin\u2026 / Malic enzyme activity","58":"6-phosphofructokinase activity / 6-phosphofructokinase complex","54":"MRNA binding / Regulation of mRNA splicing, via spl\u2026","56":"Protein phosphatase regulator activity / Protein phosphatase binding","40":"Transmembrane transporter activity / Sucrose:proton symporter activity","62":"Lipid homeostasis","46":"Phosphatidylinositol transfer activity / Phosphatidylcholine intramembrane ca\u2026","8":"Basement membrane / Extracellular matrix structural cons\u2026","44":"Calcium ion binding / Calpain complex","63":"ESCRT I complex / Endosome to lysosome transport","64":"Nuclear import signal receptor activ\u2026 / Protein import into nucleus","24":"Protein dimerization activity / E-box binding","69":"Regulation of translational terminat\u2026 / Translation release factor activity,\u2026","65":"Phosphoglucomutase activity / Intramolecular phosphotransferase ac\u2026","7":"Extracellular matrix structural cons\u2026 / Cytokine-mediated signaling pathway","70":"Positive regulation of DNA binding / TFIID-class transcription factor com\u2026","71":"MRNA cap binding complex binding / Neuronal stem cell population mainte\u2026","14":"Innate immune response / Toll-like receptor signaling pathway","52":"Aspartic-type endopeptidase activity / Regulation of DNA stability","72":"Methylglyoxal metabolic process / Negative regulation of hydrogen pero\u2026","10":"Transmembrane receptor protein serin\u2026 / RNA polymerase II transcription regu\u2026","49":"FAR/SIP/STRIPAK complex / Regulation of hippo signaling","73":"RNA-DNA hybrid ribonuclease activity / Mitochondrial DNA replication","51":"Proteasome activator complex / Endopeptidase activator activity","16":"Morphogenesis of an epithelium / Intermediate filament organization","55":"Regulation of response to reactive o\u2026 / L-leucine binding","74":"DSIF complex / Negative regulation of DNA-templated\u2026","75":"Ribosomal large subunit biogenesis / Nucleolus","37":"Articular cartilage development / Bone development","48":"Poly(A)+ mRNA export from nucleus / Nuclear RNA export factor complex","29":"Fucose binding / Asialoglycoprotein receptor activity","12":"Olfactory receptor activity / Detection of chemical stimulus invol\u2026","21":"Cysteine-type endopeptidase inhibito\u2026 / Detection of chemical stimulus invol\u2026","30":"Calcium-independent cell-cell adhesion / Bicellular tight junction","26":"RNA polymerase II cis-regulatory reg\u2026 / DNA-binding transcription factor act\u2026","38":"Regulation of transcription by RNA p\u2026 / Cytosolic ribosome assembly","27":"B cell activation involved in immune\u2026 / Type I interferon receptor binding","25":"Cell adhesion molecule binding / Homophilic cell-cell adhesion","79":"Neurotransmitter receptor transport,\u2026 / Regulation of long-term synaptic dep\u2026","41":"Innate immune response / Regulation of gene expression","60":"Interphotoreceptor matrix / Hyaluronic acid binding","66":"Transforming growth factor beta comp\u2026 / Cardiac muscle cell development","61":"Protein export from nucleus / Centriole","67":"Transition metal ion binding / Cul5-RING ubiquitin ligase complex","68":"Module 68 (WDR88)","77":"Receptor recycling / Endosome organization","78":"Module 78 (putative uncharacterized protein C8orf49)","59":"Urokinase plasminogen activator sign\u2026 / Cell activation","76":"Non-collagenous component of basemen\u2026"};
 const HAS_CLUSTERS = Object.keys(CLUSTERS).length > 0;
 const CILIARY_SETS = {"syscilia":["ABCC4","ABLIM1","ABLIM3","ACE2","ACTR2","ADAM17","ADAMTS20","ADAMTS9","ADCY3","ADCY5","ADCY6","ADGRV1","AGBL5","AGR3","AHI1","AIPL1","AK7","AK8","AKT1","ALMS1","ALPK1","ANAPC2","ANKRD26","ANKS3","ANKS6","ANO1","ANO2","ARF4","ARHGAP36","ARL13B","ARL2","ARL2BP","ARL3","ARL6","ARMC2","ARMC4","ARMC9","ASAP1","ATAT1","ATG3","ATG5","ATMIN","ATOH1","ATP4A","ATXN10","AURKA","B9D1","B9D2","BAG6","BBIP1","BBOF1","BBS1","BBS10","BBS12","BBS2","BBS4","BBS5","BBS7","BBS9","C11ORF74","C2CD3","C8orf37","CACNA1C","CATIP","CAV1","CBY1","CC2D2A","CCDC103","CCDC114","CCDC13","CCDC151","CCDC181","CCDC28B","CCDC39","CCDC40","CCDC65","CCDC66","CCDC78","CCNO","CCP110","CCT2","CDC14A","CDC20","CDC20B","CDH23","CDK10","CDK20","CDKL5","CDKN1B","CELSR2","CELSR3","CENPF","CENPJ","CEP104","CEP120","CEP128","CEP131","CEP135","CEP162","CEP164","CEP170","CEP19","CEP250","CEP290","CEP350","CEP41","CEP68","CEP72","CEP78","CEP83","CEP89","CEP97","CETN2","CETN3","CFAP100","CFAP126","CFAP157","CFAP161","CFAP221","CFAP298","CFAP300","CFAP36","CFAP410","CFAP43","CFAP47","CFAP52","CFAP53","CFAP54","CFAP57","CFAP58","CFAP65","CFAP69","CFAP70","CHMP4B","CILK","CIP2A","CLCN4","CLDN2","CLRN1","CLUAP1","CNGA1","CNGA2","CNGA4","CNGB1","CPLANE1","CPLANE2","CRB3","CRHR2","CROCC","CSNK1D","CSPP1","CTNNB1","CUL7","CYLD","CYS1","DAW1","DCDC2","DDX59","DIAPH1","DISC1","DLEC1","DNAAF1","DNAAF2","DNAAF3","DNAAF4","DNAAF5","DNAAF6","DNAH1","DNAH10","DNAH11","DNAH17","DNAH2","DNAH5","DNAH6","DNAH7","DNAH9","DNAI1","DNAI2","DNAJB13","DNAL1","DNALI1","DNMBP","DPCD","DPYSL2","DRC1","DRC3","DRC7","DRD1","DRD2","DRD5","DVL1","DYNC2H1","DYNC2LI1","DYNLL1","DYNLL2","DYNLRB1","DYNLRB2","DYNLT1","DZANK1","DZIP1","DZIP1L","E2F4","EFCAB7","EFHC1","EGFR","EHD1","EHD3","ENKUR","ENTR1","EVC","EVC2","EXOC3","EXOC4","EXOC5","EXOC6","EXOC6B","EZH2","FAM149B1","FAM161A","FAM183BP","FAM92A","FAM92B","FANK1","FBF1","FGFR3","FHDC1","FLCN","FLNA","FNBP1L","FOPNL","FOXJ1","FOXN4","FSD1","FSIP2","FSTL1","FUZ","GALNT11","GALR2","GALR3","GAS2L2","GAS8","GLI1","GLI2","GLI3","GLIS2","GMNC","GNAT1","GNB1","GOLGB1","GPBAR","GPR161","GPR173","GPR20","GPR22","GPR83","GPR88","GPSM1","GRK1","GRK2","GSK3B","HAP1","HAVCR1","HDAC6","HIF1A","HNF1B","HSD11B1","HSP90AA1","HSPA8","HSPB11","HTR6","HTT","HYDIN","HYLS1","IFT122","IFT140","IFT172","IFT20","IFT22","IFT27","IFT43","IFT46","IFT52","IFT57","IFT74","IFT80","IFT81","IFT88","IGF1","IGF1R","INPP5B","INPP5E","INTU","INVS","IQCB1","IQCE","IQCG","IRS1","JADE1","JAZF1","JHY","KATNAL1","KATNAL2","KCNF1","KCNH1","KCNJ10","KCNJ13","KCNQ1","KCTD10","KCTD17","KDM3A","KIAA0556","KIAA0586","KIAA0753","KIAA1549","KIF13B","KIF14","KIF17","KIF19","KIF24","KIF27","KIF2A","KIF3A","KIF3B","KIF3C","KIF5B","KIF6","KIF7","KIFC1","KISS1R","KIZ","KLC1","LCA5","LIMA1","LIMK2","LRBA","LRRC23","LRRC34","LRRC45","LRRC56","LRRC6","LRRK2","LUZP1","LZTFL1","MACF1","MAGI2","MAK","MAL","MAP1LC3A","MAPK1","MAPK15","MAPK3","MAPKAP1","MAPRE1","MARCHF7","MARK4","MAS1","MCHR1","MCIDAS","MCM2","MCRS1","MDM1","MIB1","MIR182","MIR183","MIR34B","MIR34C","MKKS","MKS1","MLF1","MMP21","MNS1","MOK","MORN5","MPHOSPH9","MTOR","MYB","MYH10","MYO15A","MYO3B","MYO5A","MYO7A","NDE1","NEDD9","NEK1","NEK10","NEK2","NEK3","NEK4","NEK8","NEURL4","NFE2L2","NGFR","NIN","NINL","NME3","NME5","NME7","NME8","NOTCH1","NOTO","NPHP1","NPHP3","NPHP4","NPY2R","NPY5R","NR1H4","NUDC","NUDT16L1","NUMB","NUP205","NUP214","NUP35","NUP37","NUP62","NUP93","NUP98","OCRL","ODF2","OFD1","ONECUT1","OPN1LW","OPN1MW","OPN1MW2","OPN1SW","OPRL1","ORC1","P2RY14","PACRG","PACSIN1","PACSIN2","PAFAH1B1","PARD3","PARD6A","PCARE","PCDH15","PCM1","PCNT","PDE4C","PDE6A","PDE6B","PDE6D","PDE6G","PDZD7","PIBF1","PIFO","PIK3AP","PIK3C2A","PIK3R4","PKD1","PKD1L1","PKD2","PKD2L1","PKHD1","PLA2G3","PLK1","PLK4","POC1A","POC1B","POC5","POMK","PPARA","PPP1R42","PPP5C","PQBP1","PRDX1","PRICKLE1","PRICKLE2","PRICKLE3","PRKACA","PRKACG","PROM1","PRPF31","PRPF6","PRPF8","PRPH2","PTCH1","PTGER4","PTK2","PTPDC1","PTPN11","QRFPR","RAB10","RAB11A","RAB11FIP3","RAB17","RAB23","RAB28","RAB29","RAB34","RAB3IP","RAB8A","RABEP2","RABL2A","RABL2B","RAN","RANBP1","RCAN2","RCSD1","RFX2","RFX3","RFX4","RFX7","RHO","RILPL1","RILPL2","RIPOR2","ROM1","ROPN1L","RP1","RP1L1","RP2","RPGR","RPGRIP1","RPGRIP1L","RRP7A","RSPH1","RSPH3","RSPH4A","RSPH6A","RSPH9","RTTN","RUVBL1","RUVBL2","SALL1","SASS6","SAXO1","SCAPER","SCLT1","SDCCAG8","SENP3","SEPT2","SEPT6","SEPT7","SHH","SIAH2","SIRT2","SLC47A2","SLC9A3R1","SMAD2","SMAD3","SMO","SNAP25","SNAP29","SNX10","SNX17","SPA17","SPAG1","SPAG16","SPAG17","SPAG6","SPATA7","SPEF1","SPEF2","SREBF1","SRGAP3","SSNA1","SSTR3","SSX2IP","STIL","STK11","STK36","STK38L","STOML3","STUB1","STX3","SUFU","SYNE1","SYNE2","TAPT1","TAZ","TBC1D30","TBC1D32","TBC1D7","TBCCD1","TCHP","TCTEX1D2","TCTN1","TCTN2","TCTN3","TEKT1","TEKT2","TEKT4","TEKT5","TESK1","TGBFBR1","TGBFBR2","TGFB1","TMEM107","TMEM138","TMEM17","TMEM216","TMEM231","TMEM237","TMEM67","TNPO1","TOGARAM1","TOPORS","TP73","TPPP2","TPRA1","TRAF3IP1","TRAPPC10","TRAPPC3","TRAPPC9","TRIM32","TRIP11","TRPV4","TRRAP","TSC1","TSC2","TSGA10","TTBK2","TTC12","TTC17","TTC21B","TTC23","TTC25","TTC26","TTC29","TTC30A","TTC30B","TTC6","TTC8","TTK","TTLL1","TTLL3","TTLL5","TTLL6","TTLL8","TTLL9","TUB","TUBA1A","TUBA1C","TUBA4A","TUBB2A","TUBB2B","TUBB3","TUBB4B","TUBE1","TUBGCP2","TUBGCP3","TUBGCP4","TUBGCP5","TUBGCP6","TULP1","TULP3","TXNDC15","UBR5","UBXN10","ULK4","UMOD","USH1C","USH1G","USH2A","USP14","USP8","USP9X","VANGL2","VCP","VDAC3","VHL","VPS45","VPS4A","WASF3","WDPCP","WDR11","WDR19","WDR34","WDR35","WDR44","WDR5","WDR60","WDR62","WDR63","WDR66","WDR78","WDR90","WDR92","WHRN","WRAP73","XPNPEP3","YAP1","YIF1B","ZIC2","ZMYND10","ZNF423"],"ciliacarta":["ABCA4","ABCC4","ABHD2","ABHD6","ABLIM1","ABLIM3","ACTL7A","ACTR1A","ACTR2","ACTR3","ADAMTS16","ADCY10","ADCY3","ADCY5","ADCY6","ADGB","ADRBK1","AGBL2","AGBL4","AGR3","AHI1","AK1","AK2","AK7","AK8","AKAP14","AKAP3","AKAP4","AKAP9","AKT1","ALDH1A1","ALMS1","AMBRA1","ANKMY2","ANKS6","ANO2","ANXA1","AP3M2","APOA1BP","APOBEC4","APOO","APP","ARF4","ARFGEF2","ARHGAP35","ARL13B","ARL2BP","ARL3","ARL6","ARMC3","ARMC4","ARR3","ASAP1","ATAT1","ATG14","ATG16L1","ATG3","ATG5","ATG7","ATMIN","ATP2A2","ATP2B4","ATP6V0D1","ATP6V1C1","ATP6V1D","ATP8A2","ATXN10","AURKA","AVIL","AZI1","B9D1","B9D2","BBIP1","BBS1","BBS10","BBS12","BBS2","BBS4","BBS5","BBS7","BBS9","BEST2","C10orf107","C11orf49","C11orf63","C11orf70","C11orf74","C11orf88","C12orf10","C12orf55","C14orf79","C15orf26","C16orf71","C16orf80","C1orf101","C1orf114","C1orf173","C1orf192","C1orf194","C1orf222","C20orf26","C20orf85","C21orf2","C21orf58","C21orf59","C2CD3","C2orf71","C2orf73","C4orf22","C5orf30","C5orf42","C5orf49","C6orf118","C6orf165","C6orf170","C7orf57","C7orf63","C8orf37","C8orf47","C9orf116","C9orf117","C9orf135","C9orf171","C9orf24","CABS1","CABYR","CACNA1F","CALCR","CALML4","CAPS","CAPSL","CARS","CASC1","CASK","CATSPER1","CATSPER2","CATSPER3","CATSPER4","CATSPERB","CATSPERD","CATSPERG","CAV1","CBY1","CC2D2A","CCDC103","CCDC104","CCDC108","CCDC11","CCDC113","CCDC114","CCDC13","CCDC135","CCDC146","CCDC147","CCDC151","CCDC164","CCDC17","CCDC170","CCDC172","CCDC173","CCDC176","CCDC19","CCDC28B","CCDC33","CCDC37","CCDC39","CCDC40","CCDC41","CCDC42B","CCDC63","CCDC65","CCDC74A","CCDC74B","CCDC78","CCDC81","CCDC88A","CCL15-CCL14","CCNO","CCP110","CCR6","CCSAP","CCT2","CCT3","CCT8","CDC14A","CDC14B","CDH23","CDHR1","CDHR3","CDK1","CDK20","CDK5RAP2","CELSR3","CENPF","CENPJ","CEP104","CEP120","CEP135","CEP152","CEP164","CEP19","CEP192","CEP250","CEP290","CEP41","CEP57","CEP63","CEP70","CEP72","CEP76","CEP78","CEP89","CEP97","CERKL","CETN1","CETN2","CETN3","CIB2","CKAP5","CLASP1","CLDN2","CLTB","CLTC","CLUAP1","CNGA1","CNGA2","CNGA3","CNGA4","CNGB1","CNGB3","CNOT10","CNTRL","COPS8","COQ10A","CRB3","CROCC","CSNK1A1","CSNK1D","CSNK1E","CSNK1G1","CSNK2B","CST11","CTD-2373H9.6","CTD-3148I10.1","CTNNB1","CYB5D1","CYFIP2","CYLD","CYS1","DAAM1","DCDC2","DCTN1","DCTN2","DCTN3","DDAH1","DDX6","DEFB1","DFNB31","DHRS3","DISC1","DLD","DLG5","DMD","DNAAF1","DNAAF2","DNAAF3","DNAH1","DNAH10","DNAH11","DNAH12","DNAH14","DNAH17","DNAH2","DNAH3","DNAH5","DNAH6","DNAH7","DNAH8","DNAH9","DNAI1","DNAI2","DNAJA1","DNAJA4","DNAJB13","DNAL1","DNAL4","DNALI1","DNHD1","DNM2","DPCD","DPYSL2","DRD1","DRD2","DRD5","DSTN","DVL1","DYDC1","DYDC2","DYNC1H1","DYNC1I2","DYNC2H1","DYNC2LI1","DYNLL1","DYNLRB1","DYNLRB2","DYNLT1","DYX1C1","DZANK1","DZIP1","DZIP1L","E2F4","EEF1A1","EFCAB1","EFCAB12","EFCAB2","EFCAB7","EFHC1","EFHC2","EFTUD2","EHD1","EHD3","ELMOD2","ELMOD3","EML1","ENAH","ENKD1","ENKUR","ENPP5","EPS15","EVC","EVC2","EVI5L","EXOC3","EXOC4","EXOC5","EXOC6","EXOC6B","EZR","FAIM","FAM154A","FAM154B","FAM161A","FAM179A","FAM179B","FAM216B","FAM229B","FAM49B","FAM65B","FAM81B","FAM92A1","FAM92B","FANK1","FBF1","FBXO15","FGFR1OP","FLCN","FLNA","FNBP1L","FOCAD","FOPNL","FOXJ1","FSCB","FUZ","GABARAP","GALNT11","GALR3","GAS8","GLI1","GLI2","GLI3","GLIS2","GMNC","GNA11","GNAQ","GNAS","GNAT1","GNAT2","GNAT3","GNB1","GNB5","GNGT1","GORAB","GPI","GPR157","GPR161","GPR83","GPR98","GRK1","GRK4","GRK7","GRXCR1","GSK3B","GSN","GSTA1","GSTA2","GSTM3","GUCA1A","GUCA1B","GUCA1C","GUCA2B","GUCY2D","GUCY2F","HAP1","HAUS1","HAUS2","HAUS3","HAUS4","HAUS5","HAUS6","HAUS7","HAUS8","HAVCR1","HDAC6","HEATR2","HHIP","HIF1A","HIPK1","HK1","HMGB2","HNF1A","HNF1B","HSP90AA1","HSP90AB1","HSP90B1","HSPA1L","HSPA4L","HSPA8","HSPB11","HSPBP1","HTR6","HTT","HUWE1","HYAL3","HYDIN","HYLS1","ICK","IFT122","IFT140","IFT172","IFT20","IFT27","IFT43","IFT46","IFT52","IFT57","IFT74","IFT80","IFT81","IFT88","IGBP1","INHA","INPP5E","INTU","INVS","IPO5","IQCA1","IQCB1","IQCD","IQCE","IQCG","IQCH","IQCK","IQUB","KATNAL1","KATNAL2","KCNJ16","KCNRG","KCTD17","KIAA0586","KIAA0753","KIAA1009","KIAA1377","KIAA1407","KIAA1984","KIF17","KIF19","KIF24","KIF27","KIF2A","KIF3A","KIF3B","KIF3C","KIF5A","KIF5B","KIF5C","KIF7","KIF9","KIFAP3","KLC3","KNCN","LAMA5","LCA5","LDHC","LRBA","LRGUK","LRP2BP","LRRC23","LRRC34","LRRC43","LRRC46","LRRC48","LRRC49","LRRC6","LRRC73","LYZL4","LZTFL1","MAATS1","MAGI2","MAK","MAL","MAP1A","MAP1B","MAP1LC3B","MAP4","MAP6","MAP9","MAPRE1","MAPRE3","MARK4","MCHR1","MCIN","MDH1B","MDM1","MERTK","MKKS","MKS1","MLF1","MNS1","MOK","MORN2","MORN3","MORN5","MROH2B","MYB","MYH10","MYO15A","MYO5A","MYO5B","MYO7A","MYOC","MYRIP","NAPEPLD","NBEA","NDE1","NEDD1","NEK1","NEK11","NEK2","NEK4","NEK8","NEURL","NGFR","NIN","NINL","NME5","NME7","NME8","NOTCH1","NOTO","NPHP1","NPHP3","NPHP4","NPY2R","NT5C3","NTPCR","NUBP1","NUBP2","NUDC","NUDCD3","NUP214","NUP35","NUP37","NUP62","NUP93","OCRL","ODF1","ODF2","ODF3","OFD1","ONECUT1","ONECUT2","OPN1LW","OPN1MW","OPN1SW","OPN3","OPN4","OPN5","ORC1","OSBPL6","OSCP1","OXCT2","PABPC1L","PACRG","PAFAH1B1","PARD3","PARD6A","PCDH15","PCDHB15","PCDP1","PCM1","PCNT","PDC","PDE1C","PDE4C","PDE6A","PDE6B","PDE6D","PDE6G","PDZD7","PEX6","PFKM","PFN2","PGAM4","PGK2","PHC1","PHF17","PHLPP2","PHTF1","PIBF1","PIFO","PIGS","PIH1D2","PIH1D3","PIK3C3","PIK3R4","PIN1","PKD1","PKD1L1","PKD2","PKD2L1","PKHD1","PKHD1L1","PKIG","PKM","PLA2G3","PLCB4","PLEKHB1","PLK1","PLK4","POC1A","POC1B","POR","PPEF2","PPID","PPP1R7","PPP2CB","PPP2R1A","PPP5C","PRCD","PRKACA","PRKACB","PRKACG","PRKAR1A","PRKAR1B","PRKAR2A","PRKAR2B","PROM1","PROM2","PRPH2","PSEN1","PSEN2","PSMC2","PSMC5","PTCH1","PTCHD3","PTGS1","PTPDC1","PTPN23","PTPRK","RAB10","RAB11A","RAB11FIP3","RAB15","RAB17","RAB23","RAB27A","RAB28","RAB36","RAB3IP","RAB8A","RABGAP1L","RABL2A","RABL2B","RABL5","RALGAPA1","RAN","RANBP1","RAPGEF2","RBKS","RFX2","RFX3","RFX4","RGS22","RGS9","RGS9BP","RHO","RIBC1","RIBC2","RILP","RILPL1","RILPL2","RNF38","ROM1","ROPN1B","ROPN1L","RP1","RP11-77K12.7","RP2","RPGR","RPGRIP1","RPGRIP1L","RRAD","RRH","RSG1","RSPH1","RSPH10B","RSPH10B2","RSPH3","RSPH4A","RSPH9","RTDR1","RTTN","RUVBL1","RUVBL2","SAG","SASS6","SCCPDH","SCLT1","SCNN1A","SDCCAG8","SEC61A2","SEC63","SF3A1","SF3B2","SFI1","SGK196","SHANK2","SHH","SHROOM3","SKP1","SLC22A4","SLC25A31","SLC26A3","SLC26A6","SLC27A2","SLC47A2","SLC9A3R1","SLC9B1","SLC9B2","SLC9C1","SLIRP","SMO","SNAP25","SNAP29","SNTN","SNX10","SORD","SPA17","SPAG1","SPAG16","SPAG17","SPAG4","SPAG6","SPATA17","SPATA4","SPATA6","SPATA7","SPEF1","SPEF2","SPTAN1","SPTBN5","SQSTM1","SRGAP3","SSNA1","SSTR3","SSX2IP","STIL","STK33","STK36","STK38L","STOML3","STRC","STX3","SUFU","SYNE1","SYNE2","Sep-02","Sep-04","Sep-06","Sep-07","Sep-09","Sep-12","TACR1","TACR2","TACR3","TAPT1","TAS2R4","TAS2R43","TAS2R46","TBC1D30","TBC1D7","TBCC","TCEA2","TCHP","TCP11","TCTEX1D2","TCTEX1D4","TCTN1","TCTN2","TCTN3","TEKT1","TEKT2","TEKT3","TEKT4","TEKT5","TEX26","TEX40","TEX9","TMEM107","TMEM138","TMEM141","TMEM17","TMEM216","TMEM218","TMEM231","TMEM232","TMEM237","TMEM67","TMEM80","TNPO1","TOPORS","TP53BP1","TPGS1","TPPP2","TPPP3","TRAF3IP1","TRAPPC10","TRAPPC3","TRAPPC9","TRIM32","TRIM59","TRIP11","TROVE2","TRPV4","TSGA10","TSNAXIP1","TSPEAR","TSSC1","TSSK1B","TTBK2","TTC12","TTC18","TTC21A","TTC21B","TTC26","TTC29","TTC30A","TTC30B","TTC40","TTC8","TTK","TTLL1","TTLL11","TTLL3","TTLL4","TTLL5","TTLL6","TTLL7","TTLL8","TTLL9","TUB","TUBA1A","TUBA1B","TUBA1C","TUBA3D","TUBA4A","TUBB","TUBB2A","TUBB2B","TUBB3","TUBB4A","TUBB4B","TUBE1","TUBG1","TUBGCP2","TUBGCP3","TUBGCP4","TUBGCP5","TUBGCP6","TULP1","TULP2","TULP3","TULP4","TXNDC8","UBE2B","UBXN10","ULK3","ULK4","UMOD","UNC119B","USH1C","USH1G","USH2A","VANGL2","VDAC3","VHL","VPS35","VWA3B","WDPCP","WDR16","WDR19","WDR34","WDR35","WDR47","WDR5","WDR5B","WDR60","WDR63","WDR66","WDR69","WDR78","WDR96","WRAP53","WRAP73","WWTR1","XPNPEP3","YWHAE","YWHAG","YWHAQ","ZBBX","ZMYND10","ZMYND12","ZNF423","ZNF474","ZSCAN18"],"both":["ABCA4","ABCC4","ABHD2","ABHD6","ABLIM1","ABLIM3","ACE2","ACTL7A","ACTR1A","ACTR2","ACTR3","ADAM17","ADAMTS16","ADAMTS20","ADAMTS9","ADCY10","ADCY3","ADCY5","ADCY6","ADGB","ADGRV1","ADRBK1","AGBL2","AGBL4","AGBL5","AGR3","AHI1","AIPL1","AK1","AK2","AK7","AK8","AKAP14","AKAP3","AKAP4","AKAP9","AKT1","ALDH1A1","ALMS1","ALPK1","AMBRA1","ANAPC2","ANKMY2","ANKRD26","ANKS3","ANKS6","ANO1","ANO2","ANXA1","AP3M2","APOA1BP","APOBEC4","APOO","APP","ARF4","ARFGEF2","ARHGAP35","ARHGAP36","ARL13B","ARL2","ARL2BP","ARL3","ARL6","ARMC2","ARMC3","ARMC4","ARMC9","ARR3","ASAP1","ATAT1","ATG14","ATG16L1","ATG3","ATG5","ATG7","ATMIN","ATOH1","ATP2A2","ATP2B4","ATP4A","ATP6V0D1","ATP6V1C1","ATP6V1D","ATP8A2","ATXN10","AURKA","AVIL","AZI1","B9D1","B9D2","BAG6","BBIP1","BBOF1","BBS1","BBS10","BBS12","BBS2","BBS4","BBS5","BBS7","BBS9","BEST2","C10orf107","C11ORF74","C11orf49","C11orf63","C11orf70","C11orf74","C11orf88","C12orf10","C12orf55","C14orf79","C15orf26","C16orf71","C16orf80","C1orf101","C1orf114","C1orf173","C1orf192","C1orf194","C1orf222","C20orf26","C20orf85","C21orf2","C21orf58","C21orf59","C2CD3","C2orf71","C2orf73","C4orf22","C5orf30","C5orf42","C5orf49","C6orf118","C6orf165","C6orf170","C7orf57","C7orf63","C8orf37","C8orf47","C9orf116","C9orf117","C9orf135","C9orf171","C9orf24","CABS1","CABYR","CACNA1C","CACNA1F","CALCR","CALML4","CAPS","CAPSL","CARS","CASC1","CASK","CATIP","CATSPER1","CATSPER2","CATSPER3","CATSPER4","CATSPERB","CATSPERD","CATSPERG","CAV1","CBY1","CC2D2A","CCDC103","CCDC104","CCDC108","CCDC11","CCDC113","CCDC114","CCDC13","CCDC135","CCDC146","CCDC147","CCDC151","CCDC164","CCDC17","CCDC170","CCDC172","CCDC173","CCDC176","CCDC181","CCDC19","CCDC28B","CCDC33","CCDC37","CCDC39","CCDC40","CCDC41","CCDC42B","CCDC63","CCDC65","CCDC66","CCDC74A","CCDC74B","CCDC78","CCDC81","CCDC88A","CCL15-CCL14","CCNO","CCP110","CCR6","CCSAP","CCT2","CCT3","CCT8","CDC14A","CDC14B","CDC20","CDC20B","CDH23","CDHR1","CDHR3","CDK1","CDK10","CDK20","CDK5RAP2","CDKL5","CDKN1B","CELSR2","CELSR3","CENPF","CENPJ","CEP104","CEP120","CEP128","CEP131","CEP135","CEP152","CEP162","CEP164","CEP170","CEP19","CEP192","CEP250","CEP290","CEP350","CEP41","CEP57","CEP63","CEP68","CEP70","CEP72","CEP76","CEP78","CEP83","CEP89","CEP97","CERKL","CETN1","CETN2","CETN3","CFAP100","CFAP126","CFAP157","CFAP161","CFAP221","CFAP298","CFAP300","CFAP36","CFAP410","CFAP43","CFAP47","CFAP52","CFAP53","CFAP54","CFAP57","CFAP58","CFAP65","CFAP69","CFAP70","CHMP4B","CIB2","CILK","CIP2A","CKAP5","CLASP1","CLCN4","CLDN2","CLRN1","CLTB","CLTC","CLUAP1","CNGA1","CNGA2","CNGA3","CNGA4","CNGB1","CNGB3","CNOT10","CNTRL","COPS8","COQ10A","CPLANE1","CPLANE2","CRB3","CRHR2","CROCC","CSNK1A1","CSNK1D","CSNK1E","CSNK1G1","CSNK2B","CSPP1","CST11","CTD-2373H9.6","CTD-3148I10.1","CTNNB1","CUL7","CYB5D1","CYFIP2","CYLD","CYS1","DAAM1","DAW1","DCDC2","DCTN1","DCTN2","DCTN3","DDAH1","DDX59","DDX6","DEFB1","DFNB31","DHRS3","DIAPH1","DISC1","DLD","DLEC1","DLG5","DMD","DNAAF1","DNAAF2","DNAAF3","DNAAF4","DNAAF5","DNAAF6","DNAH1","DNAH10","DNAH11","DNAH12","DNAH14","DNAH17","DNAH2","DNAH3","DNAH5","DNAH6","DNAH7","DNAH8","DNAH9","DNAI1","DNAI2","DNAJA1","DNAJA4","DNAJB13","DNAL1","DNAL4","DNALI1","DNHD1","DNM2","DNMBP","DPCD","DPYSL2","DRC1","DRC3","DRC7","DRD1","DRD2","DRD5","DSTN","DVL1","DYDC1","DYDC2","DYNC1H1","DYNC1I2","DYNC2H1","DYNC2LI1","DYNLL1","DYNLL2","DYNLRB1","DYNLRB2","DYNLT1","DYX1C1","DZANK1","DZIP1","DZIP1L","E2F4","EEF1A1","EFCAB1","EFCAB12","EFCAB2","EFCAB7","EFHC1","EFHC2","EFTUD2","EGFR","EHD1","EHD3","ELMOD2","ELMOD3","EML1","ENAH","ENKD1","ENKUR","ENPP5","ENTR1","EPS15","EVC","EVC2","EVI5L","EXOC3","EXOC4","EXOC5","EXOC6","EXOC6B","EZH2","EZR","FAIM","FAM149B1","FAM154A","FAM154B","FAM161A","FAM179A","FAM179B","FAM183BP","FAM216B","FAM229B","FAM49B","FAM65B","FAM81B","FAM92A","FAM92A1","FAM92B","FANK1","FBF1","FBXO15","FGFR1OP","FGFR3","FHDC1","FLCN","FLNA","FNBP1L","FOCAD","FOPNL","FOXJ1","FOXN4","FSCB","FSD1","FSIP2","FSTL1","FUZ","GABARAP","GALNT11","GALR2","GALR3","GAS2L2","GAS8","GLI1","GLI2","GLI3","GLIS2","GMNC","GNA11","GNAQ","GNAS","GNAT1","GNAT2","GNAT3","GNB1","GNB5","GNGT1","GOLGB1","GORAB","GPBAR","GPI","GPR157","GPR161","GPR173","GPR20","GPR22","GPR83","GPR88","GPR98","GPSM1","GRK1","GRK2","GRK4","GRK7","GRXCR1","GSK3B","GSN","GSTA1","GSTA2","GSTM3","GUCA1A","GUCA1B","GUCA1C","GUCA2B","GUCY2D","GUCY2F","HAP1","HAUS1","HAUS2","HAUS3","HAUS4","HAUS5","HAUS6","HAUS7","HAUS8","HAVCR1","HDAC6","HEATR2","HHIP","HIF1A","HIPK1","HK1","HMGB2","HNF1A","HNF1B","HSD11B1","HSP90AA1","HSP90AB1","HSP90B1","HSPA1L","HSPA4L","HSPA8","HSPB11","HSPBP1","HTR6","HTT","HUWE1","HYAL3","HYDIN","HYLS1","ICK","IFT122","IFT140","IFT172","IFT20","IFT22","IFT27","IFT43","IFT46","IFT52","IFT57","IFT74","IFT80","IFT81","IFT88","IGBP1","IGF1","IGF1R","INHA","INPP5B","INPP5E","INTU","INVS","IPO5","IQCA1","IQCB1","IQCD","IQCE","IQCG","IQCH","IQCK","IQUB","IRS1","JADE1","JAZF1","JHY","KATNAL1","KATNAL2","KCNF1","KCNH1","KCNJ10","KCNJ13","KCNJ16","KCNQ1","KCNRG","KCTD10","KCTD17","KDM3A","KIAA0556","KIAA0586","KIAA0753","KIAA1009","KIAA1377","KIAA1407","KIAA1549","KIAA1984","KIF13B","KIF14","KIF17","KIF19","KIF24","KIF27","KIF2A","KIF3A","KIF3B","KIF3C","KIF5A","KIF5B","KIF5C","KIF6","KIF7","KIF9","KIFAP3","KIFC1","KISS1R","KIZ","KLC1","KLC3","KNCN","LAMA5","LCA5","LDHC","LIMA1","LIMK2","LRBA","LRGUK","LRP2BP","LRRC23","LRRC34","LRRC43","LRRC45","LRRC46","LRRC48","LRRC49","LRRC56","LRRC6","LRRC73","LRRK2","LUZP1","LYZL4","LZTFL1","MAATS1","MACF1","MAGI2","MAK","MAL","MAP1A","MAP1B","MAP1LC3A","MAP1LC3B","MAP4","MAP6","MAP9","MAPK1","MAPK15","MAPK3","MAPKAP1","MAPRE1","MAPRE3","MARCHF7","MARK4","MAS1","MCHR1","MCIDAS","MCIN","MCM2","MCRS1","MDH1B","MDM1","MERTK","MIB1","MIR182","MIR183","MIR34B","MIR34C","MKKS","MKS1","MLF1","MMP21","MNS1","MOK","MORN2","MORN3","MORN5","MPHOSPH9","MROH2B","MTOR","MYB","MYH10","MYO15A","MYO3B","MYO5A","MYO5B","MYO7A","MYOC","MYRIP","NAPEPLD","NBEA","NDE1","NEDD1","NEDD9","NEK1","NEK10","NEK11","NEK2","NEK3","NEK4","NEK8","NEURL","NEURL4","NFE2L2","NGFR","NIN","NINL","NME3","NME5","NME7","NME8","NOTCH1","NOTO","NPHP1","NPHP3","NPHP4","NPY2R","NPY5R","NR1H4","NT5C3","NTPCR","NUBP1","NUBP2","NUDC","NUDCD3","NUDT16L1","NUMB","NUP205","NUP214","NUP35","NUP37","NUP62","NUP93","NUP98","OCRL","ODF1","ODF2","ODF3","OFD1","ONECUT1","ONECUT2","OPN1LW","OPN1MW","OPN1MW2","OPN1SW","OPN3","OPN4","OPN5","OPRL1","ORC1","OSBPL6","OSCP1","OXCT2","P2RY14","PABPC1L","PACRG","PACSIN1","PACSIN2","PAFAH1B1","PARD3","PARD6A","PCARE","PCDH15","PCDHB15","PCDP1","PCM1","PCNT","PDC","PDE1C","PDE4C","PDE6A","PDE6B","PDE6D","PDE6G","PDZD7","PEX6","PFKM","PFN2","PGAM4","PGK2","PHC1","PHF17","PHLPP2","PHTF1","PIBF1","PIFO","PIGS","PIH1D2","PIH1D3","PIK3AP","PIK3C2A","PIK3C3","PIK3R4","PIN1","PKD1","PKD1L1","PKD2","PKD2L1","PKHD1","PKHD1L1","PKIG","PKM","PLA2G3","PLCB4","PLEKHB1","PLK1","PLK4","POC1A","POC1B","POC5","POMK","POR","PPARA","PPEF2","PPID","PPP1R42","PPP1R7","PPP2CB","PPP2R1A","PPP5C","PQBP1","PRCD","PRDX1","PRICKLE1","PRICKLE2","PRICKLE3","PRKACA","PRKACB","PRKACG","PRKAR1A","PRKAR1B","PRKAR2A","PRKAR2B","PROM1","PROM2","PRPF31","PRPF6","PRPF8","PRPH2","PSEN1","PSEN2","PSMC2","PSMC5","PTCH1","PTCHD3","PTGER4","PTGS1","PTK2","PTPDC1","PTPN11","PTPN23","PTPRK","QRFPR","RAB10","RAB11A","RAB11FIP3","RAB15","RAB17","RAB23","RAB27A","RAB28","RAB29","RAB34","RAB36","RAB3IP","RAB8A","RABEP2","RABGAP1L","RABL2A","RABL2B","RABL5","RALGAPA1","RAN","RANBP1","RAPGEF2","RBKS","RCAN2","RCSD1","RFX2","RFX3","RFX4","RFX7","RGS22","RGS9","RGS9BP","RHO","RIBC1","RIBC2","RILP","RILPL1","RILPL2","RIPOR2","RNF38","ROM1","ROPN1B","ROPN1L","RP1","RP11-77K12.7","RP1L1","RP2","RPGR","RPGRIP1","RPGRIP1L","RRAD","RRH","RRP7A","RSG1","RSPH1","RSPH10B","RSPH10B2","RSPH3","RSPH4A","RSPH6A","RSPH9","RTDR1","RTTN","RUVBL1","RUVBL2","SAG","SALL1","SASS6","SAXO1","SCAPER","SCCPDH","SCLT1","SCNN1A","SDCCAG8","SEC61A2","SEC63","SENP3","SEPT2","SEPT6","SEPT7","SF3A1","SF3B2","SFI1","SGK196","SHANK2","SHH","SHROOM3","SIAH2","SIRT2","SKP1","SLC22A4","SLC25A31","SLC26A3","SLC26A6","SLC27A2","SLC47A2","SLC9A3R1","SLC9B1","SLC9B2","SLC9C1","SLIRP","SMAD2","SMAD3","SMO","SNAP25","SNAP29","SNTN","SNX10","SNX17","SORD","SPA17","SPAG1","SPAG16","SPAG17","SPAG4","SPAG6","SPATA17","SPATA4","SPATA6","SPATA7","SPEF1","SPEF2","SPTAN1","SPTBN5","SQSTM1","SREBF1","SRGAP3","SSNA1","SSTR3","SSX2IP","STIL","STK11","STK33","STK36","STK38L","STOML3","STRC","STUB1","STX3","SUFU","SYNE1","SYNE2","Sep-02","Sep-04","Sep-06","Sep-07","Sep-09","Sep-12","TACR1","TACR2","TACR3","TAPT1","TAS2R4","TAS2R43","TAS2R46","TAZ","TBC1D30","TBC1D32","TBC1D7","TBCC","TBCCD1","TCEA2","TCHP","TCP11","TCTEX1D2","TCTEX1D4","TCTN1","TCTN2","TCTN3","TEKT1","TEKT2","TEKT3","TEKT4","TEKT5","TESK1","TEX26","TEX40","TEX9","TGBFBR1","TGBFBR2","TGFB1","TMEM107","TMEM138","TMEM141","TMEM17","TMEM216","TMEM218","TMEM231","TMEM232","TMEM237","TMEM67","TMEM80","TNPO1","TOGARAM1","TOPORS","TP53BP1","TP73","TPGS1","TPPP2","TPPP3","TPRA1","TRAF3IP1","TRAPPC10","TRAPPC3","TRAPPC9","TRIM32","TRIM59","TRIP11","TROVE2","TRPV4","TRRAP","TSC1","TSC2","TSGA10","TSNAXIP1","TSPEAR","TSSC1","TSSK1B","TTBK2","TTC12","TTC17","TTC18","TTC21A","TTC21B","TTC23","TTC25","TTC26","TTC29","TTC30A","TTC30B","TTC40","TTC6","TTC8","TTK","TTLL1","TTLL11","TTLL3","TTLL4","TTLL5","TTLL6","TTLL7","TTLL8","TTLL9","TUB","TUBA1A","TUBA1B","TUBA1C","TUBA3D","TUBA4A","TUBB","TUBB2A","TUBB2B","TUBB3","TUBB4A","TUBB4B","TUBE1","TUBG1","TUBGCP2","TUBGCP3","TUBGCP4","TUBGCP5","TUBGCP6","TULP1","TULP2","TULP3","TULP4","TXNDC15","TXNDC8","UBE2B","UBR5","UBXN10","ULK3","ULK4","UMOD","UNC119B","USH1C","USH1G","USH2A","USP14","USP8","USP9X","VANGL2","VCP","VDAC3","VHL","VPS35","VPS45","VPS4A","VWA3B","WASF3","WDPCP","WDR11","WDR16","WDR19","WDR34","WDR35","WDR44","WDR47","WDR5","WDR5B","WDR60","WDR62","WDR63","WDR66","WDR69","WDR78","WDR90","WDR92","WDR96","WHRN","WRAP53","WRAP73","WWTR1","XPNPEP3","YAP1","YIF1B","YWHAE","YWHAG","YWHAQ","ZBBX","ZIC2","ZMYND10","ZMYND12","ZNF423","ZNF474","ZSCAN18"]};
+const ALL_CILIARY = new Set(CILIARY_SETS["both"] || []);
+let lastClickedClusterId = null;
 let geneFilterMode = 'all';
 
 function getActiveGeneSet() {
@@ -755,7 +775,11 @@ function initCy() {
     cy.on('tap', 'node', function(evt) {
         const d = evt.target.data();
         if (d.isLabel) {
-            zoomToCluster(d.clusterId);
+            handleClusterClick(d.clusterId);
+            return;
+        }
+        if (currentView === 'all_clusters' && d.clusterId !== undefined) {
+            handleClusterClick(d.clusterId, d.id);
             return;
         }
         const name = d.id;
@@ -767,7 +791,8 @@ function initCy() {
     cy.on('mouseover', 'node', function(evt) {
         const d = evt.target.data();
         if (d.isLabel) {
-            tooltip.innerHTML = `<strong>${d.fullName}</strong><br>Click to zoom into cluster`;
+            const isZoomed = lastClickedClusterId === d.clusterId;
+            tooltip.innerHTML = `<strong>${d.fullName}</strong><br>${isZoomed ? 'Click to open full cluster' : 'Click to zoom in (click again for full cluster)'}`;
             tooltip.style.display = 'block';
             return;
         }
@@ -866,20 +891,24 @@ function renderEgoNetwork(geneName) {
     const topn = getTopN();
     const info = G[geneName];
 
-    // Filter partners strictly above threshold, up to top N
-    const filtered = info.p.filter(p => p.j >= thresh).slice(0, topn);
-    const totalAbove = info.p.filter(p => p.j >= thresh).length;
+    // Filter partners strictly above threshold, and matching active ciliary set
+    const activeSet = getActiveGeneSet();
+    const qualifying = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n)));
+    const filtered = qualifying.slice(0, topn);
+    const totalAbove = qualifying.length;
 
     // 1. Render Sidebar
     const dispGene = geneName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const isFocusCil = ALL_CILIARY.has(geneName);
+    const filterNotice = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${document.getElementById('gene-filter').selectedOptions[0].text})` : '';
     document.getElementById('gene-info').innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <h2 style="margin-bottom:0;">${dispGene}</h2>
+            <h2 style="margin-bottom:0;">${dispGene}${isFocusCil ? ' <span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}</h2>
             <a href="${getUniProtUrl(geneName)}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${dispGene} on UniProt">UniProt ↗</a>
         </div>
         <div class="meta" style="margin-top:4px;">
             Independent losses: <strong>${info.l}</strong> &nbsp;|&nbsp;
-            Partners shown: <strong>${filtered.length}</strong> of ${totalAbove} above threshold
+            Partners shown: <strong>${filtered.length}</strong> of ${totalAbove} above threshold${filterNotice}
             ${totalAbove > topn ? ' (increase "Show Top" to see more)' : ''}
         </div>
         ${getGeneClusterHtml(geneName)}
@@ -890,10 +919,12 @@ function renderEgoNetwork(geneName) {
         const pct = (p.j * 100).toFixed(0);
         const escaped = p.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const dispName = p.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const isCil = ALL_CILIARY.has(p.n);
         html += `
         <div class="partner" data-gene="${escaped}">
             <span class="rank">#${i + 1}</span>
             <span class="pname in-graph">${dispName}</span>
+            ${isCil ? '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}
             <div class="jaccard-bar">
                 <div class="fill" style="width:${pct}%; background:${jaccardColor(p.j)};"></div>
             </div>
@@ -1066,6 +1097,7 @@ function showAllClusters(isFilterUpdate) {
     currentClusterHighlightGene = null;
     selectedGene = null;
     searchInput.value = '';
+    if (!isFilterUpdate) lastClickedClusterId = null;
 
     const thresh = parseFloat(document.getElementById('thresh').value);
     const MAX_NODES_PER_CLUSTER = 30;
@@ -1138,11 +1170,13 @@ function showAllClusters(isFilterUpdate) {
     }
 
     // 1. Build sidebar
+    const activeSet = getActiveGeneSet();
+    const filterText = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${document.getElementById('gene-filter').selectedOptions[0].text})` : '';
     document.getElementById('gene-info').innerHTML = `
         <h2>🔬 All Clusters <span style="font-size:11px;color:#8892b0;font-weight:400;">(Leiden)</span></h2>
         <div class="meta">
-            ${nClusters} clusters, ${Object.keys(GENE_CL).length} genes assigned<br>
-            Click a cluster to zoom in, double-click to see full detail.
+            <strong>${nClusters}</strong> clusters shown${filterText}<br>
+            Click a cluster to zoom in • <strong>Click again</strong> (or double-click) to view all members.
         </div>
     `;
 
@@ -1151,6 +1185,7 @@ function showAllClusters(isFilterUpdate) {
         const size = getClusterMembers(cid).length;
         const color = clusterColors[cid] || '#38bdf8';
         const cname = CLUSTER_NAMES[cid] || `Cluster ${cid}`;
+        const cilCount = (CLUSTERS[cid] || []).filter(name => ALL_CILIARY.has(name)).length;
         sideHtml += `
         <div class="cluster-entry" data-cluster-id="${cid}" ondblclick="showSingleCluster(${cid})" title="C${cid}: ${cname}">
             <span class="swatch" style="background:${color};"></span>
@@ -1159,17 +1194,18 @@ function showAllClusters(isFilterUpdate) {
                     <strong style="color:#7eb8ff;">C${cid}</strong>: ${cname}
                 </div>
             </div>
+            ${cilCount > 0 ? `<span class="cilia-badge" style="font-size:8px;padding:0 3px;" title="${cilCount} curated ciliary genes in cluster">${cilCount} cil</span>` : ''}
             <span class="csize">${size} gene${size !== 1 ? 's' : ''}</span>
         </div>`;
     });
     document.getElementById('partner-list').innerHTML = sideHtml;
 
-    // Click handler for cluster entries (zoom)
+    // Click handler for cluster entries (zoom on 1st click, open full cluster on 2nd click)
     document.querySelectorAll('.cluster-entry').forEach(el => {
         el.addEventListener('click', function(e) {
-            if (e.detail >= 2) return; // skip double-click
+            if (e.detail >= 2) return; // skip double-click handled by ondblclick
             const cid = parseInt(this.dataset.clusterId);
-            zoomToCluster(cid);
+            handleClusterClick(cid);
         });
     });
 
@@ -1288,6 +1324,17 @@ function showAllClusters(isFilterUpdate) {
     showToast(`Showing ${nClusters} Leiden clusters (${cy.nodes().length} nodes). Click a cluster in the sidebar to zoom, double-click for detail.`, 4000);
 }
 
+
+function handleClusterClick(cid, highlightGene) {
+    if (lastClickedClusterId === cid) {
+        lastClickedClusterId = null;
+        showSingleCluster(cid, highlightGene);
+    } else {
+        lastClickedClusterId = cid;
+        zoomToCluster(cid);
+    }
+}
+
 function zoomToCluster(cid) {
     const clusterNodes = cy.nodes().filter(n => n.data('clusterId') === cid && !n.data('isLabel'));
     if (clusterNodes.length === 0) return;
@@ -1299,14 +1346,19 @@ function zoomToCluster(cid) {
     cy.nodes().removeClass('focus');
     clusterNodes.addClass('focus');
 
-    // Update sidebar highlight
+    // Update sidebar highlight and scroll into view
     document.querySelectorAll('.cluster-entry').forEach(el => {
-        el.style.background = parseInt(el.dataset.clusterId) === cid ? '#1a2a4a' : '';
+        const isCurrent = parseInt(el.dataset.clusterId) === cid;
+        el.style.background = isCurrent ? '#1a2a4a' : '';
+        if (isCurrent) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
+    const cname = CLUSTER_NAMES[cid] || `Cluster ${cid}`;
+    showToast(`Zoomed to C${cid}: ${cname}. Click again to open full cluster.`, 3500);
 }
 
 function showSingleCluster(cid, highlightGene, isFilterUpdate) {
     if (!CLUSTERS[cid]) return;
+    lastClickedClusterId = null;
     currentView = 'single_cluster';
     currentClusterId = cid;
     currentClusterHighlightGene = highlightGene || null;
@@ -1332,10 +1384,12 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {
 
     // Sidebar
     const hlEscaped = highlightGene ? highlightGene.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+    const activeSet = getActiveGeneSet();
+    const filterText = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${document.getElementById('gene-filter').selectedOptions[0].text})` : '';
     document.getElementById('gene-info').innerHTML = `
         <h2 style="color:${color}; font-size:16px;">C${cid}: ${cname}</h2>
         <div class="meta">
-            <strong>${shownMembers.length}</strong> of ${members.length} members shown &nbsp;|&nbsp;
+            <strong>${shownMembers.length}</strong> of ${members.length} members shown${filterText} &nbsp;|&nbsp;
             <a href="#" onclick="showAllClusters(); return false;" style="color:#7eb8ff;text-decoration:underline;">← Back to all clusters</a>
             ${shownMembers.length < members.length ? ' (increase "Show Top" to see more)' : ''}
             ${highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${hlEscaped}</strong></span>` : ''}
@@ -1348,10 +1402,12 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {
         const inGraph = shownSet.has(m.n);
         const dispName = m.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const escaped = m.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const isCil = ALL_CILIARY.has(m.n);
         html += `
         <div class="partner" data-gene="${escaped}" style="${isHl ? 'background:#1a2a4a; border-left:3px solid #38bdf8;' : (!inGraph ? 'opacity:0.45;' : '')}">
             <span class="rank">#${i + 1}</span>
             <span class="pname ${inGraph ? 'in-graph' : ''}" style="${isHl ? 'color:#38bdf8; font-weight:700;' : ''}">${dispName}</span>
+            ${isCil ? '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}
             <span class="ploss" style="width:auto;">${m.l}L</span>
             <a href="${getUniProtUrl(m.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${dispName} on UniProt" onclick="event.stopPropagation();">↗</a>
         </div>`;
@@ -1491,6 +1547,8 @@ document.getElementById('gene-filter').addEventListener('change', function() {
         showSingleCluster(currentClusterId, currentClusterHighlightGene, false);
     } else if (currentView === 'all_clusters') {
         showAllClusters(false);
+    } else if (currentView === 'gene' && selectedGene) {
+        renderNetwork(selectedGene);
     }
 });
 
