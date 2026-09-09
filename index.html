@@ -592,6 +592,9 @@ const graphGenes = new Set();
 const graphEdges = new Set();
 const expandedGenes = [];  // ordered list of genes user explicitly expanded
 let clusterViewActive = false;
+let currentView = 'none';  // 'gene' | 'single_cluster' | 'all_clusters' | 'none'
+let currentClusterId = null;
+let currentClusterHighlightGene = null;
 const searchInput = document.getElementById('search');
 const sugBox = document.getElementById('suggestions');
 
@@ -824,6 +827,10 @@ function addEdge(a, b, j) {
 // ---- Render Network: dispatch to ego view or whole-module (multi-hop) view ----
 function renderNetwork(geneName) {
     if (!geneName || !G[geneName]) return;
+    currentView = 'gene';
+    clusterViewActive = false;
+    currentClusterId = null;
+    currentClusterHighlightGene = null;
     selectedGene = geneName;
     searchInput.value = geneName;
 
@@ -1122,6 +1129,10 @@ function clearGraph() {
     graphGenes.clear();
     graphEdges.clear();
     selectedGene = null;
+    currentView = 'none';
+    currentClusterId = null;
+    currentClusterHighlightGene = null;
+    clusterViewActive = false;
     searchInput.value = '';
     document.getElementById('gene-info').innerHTML =
         '<div class="empty-state" style="height:auto;min-height:50px;font-size:12px;">Select a gene to see its top partners</div>';
@@ -1152,7 +1163,10 @@ function showAllClusters() {
         showToast('No cluster data available. Run leiden_cluster.py first.', 3000);
         return;
     }
+    currentView = 'all_clusters';
     clusterViewActive = true;
+    currentClusterId = null;
+    currentClusterHighlightGene = null;
     selectedGene = null;
     searchInput.value = '';
 
@@ -1332,8 +1346,11 @@ function zoomToCluster(cid) {
     });
 }
 
-function showSingleCluster(cid, highlightGene) {
+function showSingleCluster(cid, highlightGene, isFilterUpdate) {
     if (!CLUSTERS[cid]) return;
+    currentView = 'single_cluster';
+    currentClusterId = cid;
+    currentClusterHighlightGene = highlightGene || null;
     clusterViewActive = false;
 
     const thresh = parseFloat(document.getElementById('thresh').value);
@@ -1345,12 +1362,13 @@ function showSingleCluster(cid, highlightGene) {
     const sorted = members.map(n => ({ n, l: G[n].l })).sort((a, b) => b.l - a.l);
 
     // Sidebar
+    const hlEscaped = highlightGene ? highlightGene.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
     document.getElementById('gene-info').innerHTML = `
         <h2 style="color:${color}; font-size:16px;">C${cid}: ${cname}</h2>
         <div class="meta">
             <strong>${members.length}</strong> member genes &nbsp;|&nbsp;
             <a href="#" onclick="showAllClusters(); return false;" style="color:#7eb8ff;text-decoration:underline;">← Back to all clusters</a>
-            ${highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${highlightGene}</strong></span>` : ''}
+            ${highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${hlEscaped}</strong></span>` : ''}
         </div>
     `;
 
@@ -1396,7 +1414,7 @@ function showSingleCluster(cid, highlightGene) {
     }
 
     runLayout();
-    if (highlightGene) {
+    if (highlightGene && !isFilterUpdate) {
         const hNode = cy.getElementById(highlightGene);
         if (hNode.length) {
             hNode.select();
@@ -1413,7 +1431,13 @@ let debounceTimer = null;
 function onFilterChange() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-        if (selectedGene) renderNetwork(selectedGene);
+        if (currentView === 'single_cluster' && currentClusterId !== null) {
+            showSingleCluster(currentClusterId, currentClusterHighlightGene, true);
+        } else if (currentView === 'all_clusters') {
+            showAllClusters();
+        } else if (selectedGene) {
+            renderNetwork(selectedGene);
+        }
     }, 80);
 }
 
