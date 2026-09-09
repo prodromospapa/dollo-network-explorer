@@ -176,12 +176,13 @@ body {
     position: relative;
 }
 #sidebar {
-    width: 320px;
+    width: 370px;
     background: #111827;
     border-left: 1px solid #2a3050;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    flex-shrink: 0;
 }
 #gene-info {
     padding: 12px;
@@ -205,29 +206,34 @@ body {
 #partner-list .partner {
     display: flex;
     align-items: center;
-    padding: 7px 12px;
+    padding: 6px 10px;
     border-bottom: 1px solid #1a2040;
     cursor: pointer;
-    transition: background 0.1s;
-    gap: 8px;
+    transition: background 0.12s;
+    gap: 6px;
+    min-width: 0;
 }
 #partner-list .partner:hover { background: #1a2a4a; }
 #partner-list .partner .rank {
-    color: #556;
+    color: #64748b;
     font-size: 11px;
-    width: 24px;
+    width: 22px;
     text-align: right;
     flex-shrink: 0;
 }
 #partner-list .partner .pname {
     flex: 1;
-    font-size: 13px;
+    min-width: 0;
+    font-size: 12.5px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 #partner-list .partner .pname.in-graph { color: #5eff8a; }
 #partner-list .partner .jaccard-bar {
-    width: 80px;
-    height: 14px;
+    width: 60px;
+    height: 11px;
     background: #1a2040;
     border-radius: 3px;
     overflow: hidden;
@@ -242,38 +248,42 @@ body {
 #partner-list .partner .jaccard-val {
     font-size: 11px;
     color: #8892b0;
-    width: 45px;
+    width: 38px;
     text-align: right;
     flex-shrink: 0;
 }
 #partner-list .partner .ploss {
     font-size: 11px;
-    color: #665;
-    width: 30px;
+    color: #94a3b8;
+    width: 28px;
     text-align: right;
     flex-shrink: 0;
 }
 #partner-list .partner .partner-ext-link {
-    color: #64748b;
-    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    font-size: 11px;
     font-weight: 600;
-    padding: 1px 4px;
+    padding: 1px 5px;
     border-radius: 3px;
     text-decoration: none;
     transition: all 0.15s;
-    opacity: 0.45;
+    opacity: 0.9;
     flex-shrink: 0;
-    line-height: 1;
+    line-height: 1.2;
     margin-left: 2px;
 }
-#partner-list .partner:hover .partner-ext-link {
-    opacity: 1;
-    color: #7eb8ff;
-}
+#partner-list .partner:hover .partner-ext-link,
 #partner-list .partner .partner-ext-link:hover {
-    background: #1e293b;
-    color: #38bdf8 !important;
-    text-decoration: underline;
+    opacity: 1;
+    background: rgba(56, 189, 248, 0.25);
+    border-color: #38bdf8;
+    color: #ffffff !important;
+    text-decoration: none;
 }
 .gene-ext-link {
     display: inline-flex;
@@ -307,6 +317,7 @@ body {
     margin-left: 4px;
     vertical-align: middle;
     line-height: 1.4;
+    flex-shrink: 0;
 }
 .non-ciliary-badge {
     display: inline-block;
@@ -322,6 +333,7 @@ body {
     margin-left: 4px;
     vertical-align: middle;
     line-height: 1.4;
+    flex-shrink: 0;
 }
 
 .cilia-badge {
@@ -959,7 +971,10 @@ function renderEgoNetwork(geneName) {
     const filterNotice = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${document.getElementById('gene-filter').selectedOptions[0].text})` : '';
     document.getElementById('gene-info').innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <h2 style="margin-bottom:0;">${dispGene}${isFocusCil ? ' <span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}</h2>
+            <h2 style="margin-bottom:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px;">
+                <span style="overflow:hidden; text-overflow:ellipsis;">${dispGene}</span>
+                ${isFocusCil ? '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}
+            </h2>
             <a href="${getUniProtUrl(geneName)}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${dispGene} on UniProt">UniProt ↗</a>
         </div>
         <div class="meta" style="margin-top:4px;">
