@@ -611,6 +611,38 @@ body {{
     flex-shrink: 0;
 }}
 
+
+.bridge-badge {{
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+    line-height: 1.4;
+}}
+.non-ciliary-badge {{
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px dashed rgba(245, 158, 11, 0.4);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+    line-height: 1.4;
+}}
+
 .cilia-badge {{
     display: inline-block;
     font-size: 9px;
@@ -1030,6 +1062,38 @@ function initCy() {{
                 }}
             }},
             {{
+                selector: 'node.non-ciliary',
+                style: {{
+                    'opacity': 0.38,
+                    'background-color': '#475569',
+                    'border-width': 1.5,
+                    'border-style': 'dashed',
+                    'border-color': '#94a3b8',
+                    'color': '#94a3b8',
+                    'text-opacity': 0.75,
+                }}
+            }},
+            {{
+                selector: 'node.focus.non-ciliary',
+                style: {{
+                    'opacity': 0.75,
+                    'border-width': 2.5,
+                    'border-style': 'dashed',
+                    'border-color': '#f59e0b',
+                    'color': '#f59e0b',
+                    'text-opacity': 1,
+                    'z-index': 25,
+                }}
+            }},
+            {{
+                selector: 'edge.bridge-edge',
+                style: {{
+                    'line-style': 'dashed',
+                    'opacity': 0.20,
+                    'line-color': '#94a3b8',
+                }}
+            }},
+            {{
                 selector: 'node:selected',
                 style: {{
                     'border-width': 3,
@@ -1118,7 +1182,8 @@ function initCy() {{
         const cid = d.id ? GENE_CL[d.id] : undefined;
         const clName = (cid !== undefined && CLUSTER_NAMES[cid]) ? `: ${{CLUSTER_NAMES[cid]}}` : '';
         const clInfo = (cid !== undefined) ? `<br><span style="color:#7eb8ff;">Cluster ${{cid}}</span>${{clName}}` : '';
-        tooltip.innerHTML = `<strong>${{d.label}}</strong><br>Losses: ${{d.losses}}${{clInfo}}`;
+        const nonCilTag = d.isNonCiliary ? '<br><span style="color:#f59e0b;font-weight:600;">⚠️ Non-ciliary bridge (connects ciliary genes)</span>' : '';
+        tooltip.innerHTML = `<strong>${{d.label}}</strong>${{nonCilTag}}<br>Losses: ${{d.losses}}${{clInfo}}`;
         tooltip.style.display = 'block';
     }});
     cy.on('mouseover', 'edge', function(evt) {{
@@ -1138,7 +1203,7 @@ function initCy() {{
 }}
 
 // ---- Add gene node to graph ----
-function addGeneNode(name, isFocus) {{
+function addGeneNode(name, isFocus, isNonCiliary) {{
     if (!G[name] || graphGenes.has(name)) return;
     const info = G[name];
     graphGenes.add(name);
@@ -1148,6 +1213,7 @@ function addGeneNode(name, isFocus) {{
 
     let classes = [];
     if (isFocus) classes.push('focus');
+    if (isNonCiliary) classes.push('non-ciliary');
     if (!showLabels && !isFocus) classes.push('hide-label');
 
     cy.add({{
@@ -1158,13 +1224,14 @@ function addGeneNode(name, isFocus) {{
             fullName: name,
             losses: info.l,
             size: lossSize(info.l) * (isFocus ? 1.35 : 1.0),
-            color: lossColor(info.l),
+            color: isNonCiliary ? '#475569' : lossColor(info.l),
+            isNonCiliary: !!isNonCiliary,
         }},
         classes: classes.join(' ')
     }});
 }}
 
-function addEdge(a, b, j) {{
+function addEdge(a, b, j, isBridgeEdge) {{
     const eid = a < b ? `${{a}}||${{b}}` : `${{b}}||${{a}}`;
     if (graphEdges.has(eid)) return;
     graphEdges.add(eid);
@@ -1178,9 +1245,10 @@ function addEdge(a, b, j) {{
             jaccard: j,
             source_name: a < b ? a : b,
             target_name: a < b ? b : a,
-            width: 0.5 + j * 2.5,
-            color: jaccardColor(j),
-        }}
+            width: isBridgeEdge ? 0.8 : (0.5 + j * 2.5),
+            color: isBridgeEdge ? '#94a3b8' : jaccardColor(j),
+        }},
+        classes: isBridgeEdge ? 'bridge-edge' : ''
     }});
 }}
 
@@ -1222,7 +1290,7 @@ function renderEgoNetwork(geneName) {{
     const filterNotice = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${{document.getElementById('gene-filter').selectedOptions[0].text}})` : '';
     document.getElementById('gene-info').innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <h2 style="margin-bottom:0;">${{dispGene}}${{isFocusCil ? ' <span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}}</h2>
+            <h2 style="margin-bottom:0;">${{dispGene}}${{isFocusCil ? ' <span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : (activeSet ? ' <span class="non-ciliary-badge" title="Query gene is non-ciliary, but bridges the ciliary partners shown below">non-ciliary query</span>' : '')}}</h2>
             <a href="${{getUniProtUrl(geneName)}}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${{dispGene}} on UniProt">UniProt ↗</a>
         </div>
         <div class="meta" style="margin-top:4px;">
@@ -1260,13 +1328,14 @@ function renderEgoNetwork(geneName) {{
     graphEdges.clear();
     document.getElementById('empty-msg').style.display = 'none';
 
-    // Add Focus Gene
-    addGeneNode(geneName, true);
+    // Add Focus Gene (dimmed if non-ciliary while ciliary filter is active)
+    const isFocusDimmed = activeSet && !activeSet.has(geneName);
+    addGeneNode(geneName, true, isFocusDimmed);
 
     // Add exactly the partners in the list
     for (const p of filtered) {{
-        addGeneNode(p.n, false);
-        addEdge(geneName, p.n, p.j);
+        addGeneNode(p.n, false, false);
+        addEdge(geneName, p.n, p.j, isFocusDimmed);
     }}
 
     // Cross-link: add edges between any two partner nodes in the list if j >= thresh
@@ -1685,30 +1754,91 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
 
     const thresh = parseFloat(document.getElementById('thresh').value);
     const topn = getTopN();
-    const members = getClusterMembers(cid);
+    const activeSet = getActiveGeneSet();
+    const allMembers = (CLUSTERS[cid] || []).filter(n => G[n]);
     const color = clusterColors[cid] || 'hsl(200, 65%, 55%)';
     const cname = CLUSTER_NAMES[cid] || `Cluster ${{cid}}`;
 
-    // Sort by loss count
-    const sorted = members.map(n => ({{ n, l: G[n].l }})).sort((a, b) => b.l - a.l);
+    let members = [];
+    let shownMembers = [];
+    const bridgeSet = new Set();
 
-    // Filter to top N members based on "Show Top"
-    let shownMembers = sorted.slice(0, topn);
-    // Always include the focus/highlight gene if specified
-    if (highlightGene && !shownMembers.some(m => m.n === highlightGene)) {{
-        const hlObj = sorted.find(m => m.n === highlightGene);
-        if (hlObj) shownMembers.push(hlObj);
+    if (!activeSet) {{
+        // All genes mode
+        members = allMembers;
+        const sorted = members.map(n => ({{ n, l: G[n].l, isCil: ALL_CILIARY.has(n), isBridge: false }})).sort((a, b) => b.l - a.l);
+        shownMembers = sorted.slice(0, topn);
+        if (highlightGene && !shownMembers.some(m => m.n === highlightGene)) {{
+            const hlObj = sorted.find(m => m.n === highlightGene);
+            if (hlObj) shownMembers.push(hlObj);
+        }}
+    }} else {{
+        // Curated Ciliary Filter is ACTIVE:
+        // Ciliary members
+        const cilMembers = allMembers.filter(n => activeSet.has(n));
+        const cilSet = new Set(cilMembers);
+
+        // Find non-ciliary genes that connect >= 2 ciliary members (or connects highlightGene)
+        const nonCilMembers = allMembers.filter(n => !activeSet.has(n));
+        const bridgeMap = new Map(); // nonCilGene -> count of ciliary connections
+
+        for (const u of nonCilMembers) {{
+            const gi = G[u];
+            if (!gi) continue;
+            let nConnected = 0;
+            for (const p of gi.p) {{
+                if (p.j >= thresh && cilSet.has(p.n)) {{
+                    nConnected++;
+                }}
+            }}
+            const isHl = highlightGene && u === highlightGene;
+            if (nConnected >= 2 || (isHl && nConnected >= 1)) {{
+                bridgeMap.set(u, nConnected);
+            }}
+        }}
+
+        const sortedCil = cilMembers.map(n => ({{ n, l: G[n].l, isCil: true, isBridge: false, nBridges: 0 }}))
+            .sort((a, b) => b.l - a.l);
+
+        const sortedBridges = [...bridgeMap.keys()].map(u => ({{
+            n: u,
+            l: G[u].l,
+            isCil: false,
+            isBridge: true,
+            nBridges: bridgeMap.get(u)
+        }})).sort((a, b) => (b.nBridges - a.nBridges) || (b.l - a.l));
+
+        members = [...sortedCil, ...sortedBridges];
+
+        let shownCil = sortedCil.slice(0, topn);
+        if (highlightGene && cilSet.has(highlightGene) && !shownCil.some(m => m.n === highlightGene)) {{
+            const hlObj = sortedCil.find(m => m.n === highlightGene);
+            if (hlObj) shownCil.push(hlObj);
+        }}
+
+        const remainingSlots = Math.max(0, topn - shownCil.length);
+        let shownBridges = sortedBridges.slice(0, Math.max(remainingSlots, (highlightGene && bridgeMap.has(highlightGene)) ? 1 : 0));
+        if (highlightGene && !cilSet.has(highlightGene) && bridgeMap.has(highlightGene) && !shownBridges.some(m => m.n === highlightGene)) {{
+            const hlObj = sortedBridges.find(m => m.n === highlightGene);
+            if (hlObj) shownBridges.push(hlObj);
+        }}
+
+        shownMembers = [...shownCil, ...shownBridges];
+        sortedBridges.forEach(b => bridgeSet.add(b.n));
     }}
+
+    const sorted = members;
     const shownSet = new Set(shownMembers.map(m => m.n));
 
     // Sidebar
     const hlEscaped = highlightGene ? highlightGene.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
-    const activeSet = getActiveGeneSet();
     const filterText = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${{document.getElementById('gene-filter').selectedOptions[0].text}})` : '';
+    const nBridgesShown = shownMembers.filter(m => bridgeSet.has(m.n)).length;
+    const bridgeNotice = nBridgesShown > 0 ? ` <span style="color:#94a3b8;">(+${{nBridgesShown}} dimmed bridge${{nBridgesShown !== 1 ? 's' : ''}})</span>` : '';
     document.getElementById('gene-info').innerHTML = `
         <h2 style="color:${{color}}; font-size:16px;">C${{cid}}: ${{cname}}</h2>
         <div class="meta">
-            <strong>${{shownMembers.length}}</strong> of ${{members.length}} members shown${{filterText}} &nbsp;|&nbsp;
+            <strong>${{shownMembers.length - nBridgesShown}}</strong> ciliary members shown${{bridgeNotice}}${{filterText}} &nbsp;|&nbsp;
             <a href="#" onclick="showAllClusters(); return false;" style="color:#7eb8ff;text-decoration:underline;">← Back to all clusters</a>
             ${{shownMembers.length < members.length ? ' (increase "Show Top" to see more)' : ''}}
             ${{highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${{hlEscaped}}</strong></span>` : ''}}
@@ -1722,11 +1852,29 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
         const dispName = m.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const escaped = m.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const isCil = ALL_CILIARY.has(m.n);
+        const isBridge = bridgeSet.has(m.n);
+
+        let rowStyle = '';
+        if (isHl) {{
+            rowStyle = 'background:#1a2a4a; border-left:3px solid #38bdf8;';
+        }} else if (isBridge) {{
+            rowStyle = inGraph ? 'opacity:0.65; background:rgba(71,85,105,0.18);' : 'opacity:0.32;';
+        }} else if (!inGraph) {{
+            rowStyle = 'opacity:0.45;';
+        }}
+
+        let badgeHtml = '';
+        if (isCil) {{
+            badgeHtml = '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>';
+        }} else if (isBridge) {{
+            badgeHtml = `<span class="bridge-badge" title="Non-ciliary gene bridging ${{m.nBridges || 2}} ciliary members">bridge (${{m.nBridges || 2}} cil)</span>`;
+        }}
+
         html += `
-        <div class="partner" data-gene="${{escaped}}" style="${{isHl ? 'background:#1a2a4a; border-left:3px solid #38bdf8;' : (!inGraph ? 'opacity:0.45;' : '')}}">
+        <div class="partner" data-gene="${{escaped}}" style="${{rowStyle}}">
             <span class="rank">#${{i + 1}}</span>
-            <span class="pname ${{inGraph ? 'in-graph' : ''}}" style="${{isHl ? 'color:#38bdf8; font-weight:700;' : ''}}">${{dispName}}</span>
-            ${{isCil ? '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}}
+            <span class="pname ${{inGraph ? 'in-graph' : ''}}" style="${{isHl ? 'color:#38bdf8; font-weight:700;' : (isBridge ? 'color:#94a3b8;font-style:italic;' : '')}}">${{dispName}}</span>
+            ${{badgeHtml}}
             <span class="ploss" style="width:auto;">${{m.l}}L</span>
             <a href="${{getUniProtUrl(m.n)}}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${{dispName}} on UniProt" onclick="event.stopPropagation();">↗</a>
         </div>`;
@@ -1750,9 +1898,10 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
 
         shownMembers.forEach(m => {{
             if (!graphGenes.has(m.n)) {{
-                addGeneNode(m.n, m.n === highlightGene);
+                const isBridge = bridgeSet.has(m.n);
+                addGeneNode(m.n, m.n === highlightGene, isBridge);
                 const node = cy.getElementById(m.n);
-                if (node.length && m.n !== highlightGene) node.data('color', color);
+                if (node.length && m.n !== highlightGene && !isBridge) node.data('color', color);
                 const angle = Math.random() * 2 * Math.PI;
                 const dist = 60 + Math.random() * 120;
                 node.position({{ x: refPos.x + Math.cos(angle) * dist, y: refPos.y + Math.sin(angle) * dist }});
@@ -1774,7 +1923,8 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
             if (!gi) return;
             for (const p of gi.p) {{
                 if (p.j >= thresh && shownSet.has(p.n)) {{
-                    addEdge(m.n, p.n, p.j);
+                    const isBridgeEdge = bridgeSet.has(m.n) || bridgeSet.has(p.n);
+                    addEdge(m.n, p.n, p.j, isBridgeEdge);
                 }}
             }}
         }});
@@ -1790,9 +1940,10 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
     document.getElementById('empty-msg').style.display = 'none';
 
     for (const m of shownMembers) {{
-        addGeneNode(m.n, m.n === highlightGene);
+        const isBridge = bridgeSet.has(m.n);
+        addGeneNode(m.n, m.n === highlightGene, isBridge);
         const node = cy.getElementById(m.n);
-        if (node.length && m.n !== highlightGene) node.data('color', color);
+        if (node.length && m.n !== highlightGene && !isBridge) node.data('color', color);
     }}
 
     for (const m of shownMembers) {{
@@ -1800,7 +1951,8 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
         if (!gi) continue;
         for (const p of gi.p) {{
             if (p.j >= thresh && shownSet.has(p.n)) {{
-                addEdge(m.n, p.n, p.j);
+                const isBridgeEdge = bridgeSet.has(m.n) || bridgeSet.has(p.n);
+                addEdge(m.n, p.n, p.j, isBridgeEdge);
             }}
         }}
     }}
