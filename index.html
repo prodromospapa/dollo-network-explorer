@@ -1489,7 +1489,16 @@ function exportCytoscape() {
 
 
 
+
+// ---- Status Bar ----
+function updateStatus() {
+    if (!cy) return;
+    document.getElementById('status-nodes').textContent = `Nodes: ${cy.nodes().length}`;
+    document.getElementById('status-edges').textContent = `Edges: ${cy.edges().length}`;
+}
+
 // ---- Search & Autocomplete ----
+
 let sugIdx = -1;
 let sugItems = [];
 
