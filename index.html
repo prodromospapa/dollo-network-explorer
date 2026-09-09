@@ -679,6 +679,7 @@ function initCy() {
             tooltip.style.display = 'block';
             return;
         }
+        const clInfo = d.id && GENE_CL[d.id] !== undefined ? `<br>Cluster: ${GENE_CL[d.id]}` : '';
         const cid = d.id ? GENE_CL[d.id] : undefined;
         const clName = (cid !== undefined && CLUSTER_NAMES[cid]) ? `: ${CLUSTER_NAMES[cid]}` : '';
         const clInfo = (cid !== undefined) ? `<br><span style="color:#7eb8ff;">Cluster ${cid}</span>${clName}` : '';
@@ -1106,8 +1107,10 @@ function showAllClusters() {
         const color = clusterColors[cid];
         const cname = CLUSTER_NAMES[cid] || `Cluster ${cid}`;
         sideHtml += `
+        <div class="cluster-entry" data-cluster-id="${cid}" ondblclick="showSingleCluster(${cid})">
         <div class="cluster-entry" data-cluster-id="${cid}" ondblclick="showSingleCluster(${cid})" title="C${cid}: ${cname}">
             <span class="swatch" style="background:${color};"></span>
+            <span class="cname">Cluster ${cid}</span>
             <div style="flex:1; min-width:0; overflow:hidden;">
                 <div class="cname" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     <strong style="color:#7eb8ff;">C${cid}</strong>: ${cname}
@@ -1193,9 +1196,7 @@ function showAllClusters() {
             group: 'nodes',
             data: {
                 id: labelId,
-                label: `C${cid}: ${shortName}
-(${members.length} genes)` + (hiddenCount > 0 ? `
-+${hiddenCount} more` : ''),
+                label: `C${cid}: ${shortName}\n(${members.length} genes)` + (hiddenCount > 0 ? `\n+${hiddenCount} more` : ''),
                 fullName: `Cluster ${cid}: ${cname} (${members.length} genes)`,
                 losses: 0,
                 size: 1,
@@ -1248,6 +1249,8 @@ function showAllClusters() {
         'text-valign': 'center',
         'text-halign': 'center',
         'text-wrap': 'wrap',
+        'text-max-width': '140px',
+        'text-opacity': 0.85,
         'text-max-width': '150px',
         'text-opacity': 0.9,
         'width': 1,
@@ -1500,14 +1503,21 @@ document.getElementById('legend-toggle').addEventListener('click', function(e) {
 });
 
 // ---- Init ----
-document.addEventListener('DOMContentLoaded', () => {
+function startExplorer() {
     initCy();
-    // Hide cluster button if no cluster data
     if (!HAS_CLUSTERS) {
         const btn = document.getElementById('btn-all-clusters');
-        if (btn) { btn.style.display = 'none'; }
+        if (btn) btn.style.display = 'none';
+        const headBtn = document.getElementById('btn-all-clusters-head');
+        if (headBtn) headBtn.style.display = 'none';
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startExplorer);
+} else {
+    startExplorer();
+}
 </script>
 </body>
 </html>
