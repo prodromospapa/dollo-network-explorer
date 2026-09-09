@@ -1487,8 +1487,110 @@ function exportCytoscape() {
     URL.revokeObjectURL(url);
 }
 
-// Initialize
-initCy();
+
+
+// ---- Search & Autocomplete ----
+let sugIdx = -1;
+let sugItems = [];
+
+searchInput.addEventListener('input', function() {
+    const q = this.value.trim().toUpperCase();
+    sugIdx = -1;
+    if (q.length === 0) {
+        sugBox.style.display = 'none';
+        return;
+    }
+    // Exact prefix matches first, then contains
+    const prefix = NAMES.filter(n => n.toUpperCase().startsWith(q));
+    const contains = NAMES.filter(n => !n.toUpperCase().startsWith(q) && n.toUpperCase().includes(q));
+    sugItems = [...prefix, ...contains].slice(0, 20);
+    if (sugItems.length === 0) {
+        sugBox.style.display = 'none';
+        return;
+    }
+    sugBox.innerHTML = sugItems.map((n, i) => {
+        const escaped = n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const dispName = n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<div data-gene="${escaped}" ${i === sugIdx ? 'class="active"' : ''}>${dispName} <span style="color:#556;font-size:11px;">${G[n] ? G[n].l + 'L' : ''}</span></div>`;
+    }).join('');
+    sugBox.style.display = 'block';
+});
+
+searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        sugIdx = Math.min(sugIdx + 1, sugItems.length - 1);
+        highlightSug();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        sugIdx = Math.max(sugIdx - 1, 0);
+        highlightSug();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const pick = sugIdx >= 0 ? sugItems[sugIdx] : sugItems[0];
+        if (pick) pickSuggestion(pick);
+    } else if (e.key === 'Escape') {
+        sugBox.style.display = 'none';
+    }
+});
+
+function highlightSug() {
+    const divs = sugBox.querySelectorAll('div');
+    divs.forEach((d, i) => d.classList.toggle('active', i === sugIdx));
+}
+
+function pickSuggestion(name) {
+    sugBox.style.display = 'none';
+    searchInput.value = name;
+    renderNetwork(name);
+}
+
+searchInput.addEventListener('blur', () => {
+    setTimeout(() => sugBox.style.display = 'none', 200);
+});
+
+// ---- Event delegation for data-gene clicks ----
+document.getElementById('partner-list').addEventListener('click', function(e) {
+    const row = e.target.closest('.partner[data-gene]');
+    if (row && row.dataset.gene) renderNetwork(row.dataset.gene);
+});
+
+document.getElementById('suggestions').addEventListener('mousedown', function(e) {
+    // mousedown instead of click so it fires before the blur hides the dropdown
+    const item = e.target.closest('[data-gene]');
+    if (item) {
+        e.preventDefault();
+        pickSuggestion(item.dataset.gene);
+    }
+});
+
+// ---- Legend Toggle ----
+document.getElementById('legend-toggle').addEventListener('click', function(e) {
+    e.stopPropagation();
+    const body = document.getElementById('legend-body');
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    this.textContent = isHidden ? '−' : '+';
+});
+
+// ---- Init ----
+function startExplorer() {
+    initCy();
+    if (!HAS_CLUSTERS) {
+        const btn = document.getElementById('btn-all-clusters');
+        if (btn) btn.style.display = 'none';
+        const headBtn = document.getElementById('btn-all-clusters-head');
+        if (headBtn) headBtn.style.display = 'none';
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startExplorer);
+} else {
+    startExplorer();
+}
+
+
 
 </script>
 </body>
