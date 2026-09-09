@@ -253,6 +253,50 @@ body {
     text-align: right;
     flex-shrink: 0;
 }
+#partner-list .partner .partner-ext-link {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: all 0.15s;
+    opacity: 0.45;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-left: 2px;
+}
+#partner-list .partner:hover .partner-ext-link {
+    opacity: 1;
+    color: #7eb8ff;
+}
+#partner-list .partner .partner-ext-link:hover {
+    background: #1e293b;
+    color: #38bdf8 !important;
+    text-decoration: underline;
+}
+.gene-ext-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.15s;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.gene-ext-link:hover {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #ffffff;
+    text-decoration: none;
+}
 #status-bar {
     background: #111827;
     border-top: 1px solid #2a3050;
@@ -530,6 +574,15 @@ function getGeneClusterHtml(geneName) {
         </div>
         <button class="btn btn-accent" style="padding:3px 9px; font-size:11px; white-space:nowrap; flex-shrink:0; font-weight:600;" data-cid="${cid}" data-gene="${escaped}" onclick="showSingleCluster(parseInt(this.dataset.cid), this.dataset.gene)">View Cluster →</button>
     </div>`;
+}
+
+function getUniProtUrl(gene) {
+    if (!gene) return 'https://www.uniprot.org';
+    const trimmed = gene.trim();
+    if (/^[A-Za-z0-9_-]+$/.test(trimmed)) {
+        return `https://www.uniprot.org/uniprotkb?query=gene_exact:${encodeURIComponent(trimmed)}+AND+organism_id:9606`;
+    }
+    return `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(trimmed)}+AND+organism_id:9606`;
 }
 
 // ---- State & DOM references ----
@@ -845,9 +898,13 @@ function renderModule(geneName) {
     }
 
     // 1. Sidebar summary
+    const dispGene = geneName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     document.getElementById('gene-info').innerHTML = `
-        <h2>${geneName} <span style="font-size:11px;color:#8892b0;font-weight:400;">(module)</span></h2>
-        <div class="meta">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <h2 style="margin-bottom:0;">${dispGene} <span style="font-size:11px;color:#8892b0;font-weight:400;">(module)</span></h2>
+            <a href="${getUniProtUrl(geneName)}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${dispGene} on UniProt">UniProt ↗</a>
+        </div>
+        <div class="meta" style="margin-top:4px;">
             Independent losses: <strong>${info.l}</strong><br>
             Module size: <strong>${moduleGenes.size}</strong> genes, <strong>${moduleEdges.size}</strong> edges
             over ${hop} hop${hop === 1 ? '' : 's'}
@@ -870,6 +927,7 @@ function renderModule(geneName) {
             <span class="rank">#${i + 1}</span>
             <span class="pname in-graph">${dispName}</span>
             <span class="ploss" style="width:auto;">${m.l}L</span>
+            <a href="${getUniProtUrl(m.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${dispName} on UniProt" onclick="event.stopPropagation();">↗</a>
         </div>`;
     });
     document.getElementById('partner-list').innerHTML = html;
@@ -912,9 +970,13 @@ function renderEgoNetwork(geneName) {
     const totalAbove = info.p.filter(p => p.j >= thresh).length;
 
     // 1. Render Sidebar
+    const dispGene = geneName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     document.getElementById('gene-info').innerHTML = `
-        <h2>${geneName}</h2>
-        <div class="meta">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <h2 style="margin-bottom:0;">${dispGene}</h2>
+            <a href="${getUniProtUrl(geneName)}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${dispGene} on UniProt">UniProt ↗</a>
+        </div>
+        <div class="meta" style="margin-top:4px;">
             Independent losses: <strong>${info.l}</strong> &nbsp;|&nbsp;
             Partners shown: <strong>${filtered.length}</strong> of ${totalAbove} above threshold
             ${totalAbove > topn ? ' (increase "Show Top" to see more)' : ''}
@@ -936,6 +998,7 @@ function renderEgoNetwork(geneName) {
             </div>
             <span class="jaccard-val">${p.j.toFixed(3)}</span>
             <span class="ploss">${p.l}L</span>
+            <a href="${getUniProtUrl(p.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${dispName} on UniProt" onclick="event.stopPropagation();">↗</a>
         </div>`;
     });
     document.getElementById('partner-list').innerHTML = html;
@@ -1301,6 +1364,7 @@ function showSingleCluster(cid, highlightGene) {
             <span class="rank">#${i + 1}</span>
             <span class="pname in-graph" style="${isHl ? 'color:#38bdf8; font-weight:700;' : ''}">${dispName}</span>
             <span class="ploss" style="width:auto;">${m.l}L</span>
+            <a href="${getUniProtUrl(m.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" title="Open ${dispName} on UniProt" onclick="event.stopPropagation();">↗</a>
         </div>`;
     });
     document.getElementById('partner-list').innerHTML = html;
