@@ -1058,7 +1058,8 @@ function renderEgoNetwork(geneName) {
 }
 
 // ---- Layout ----
-function runLayout() {
+function runLayout(randomize) {
+    if (randomize === undefined) randomize = true;
     if (!cy || cy.nodes().length === 0) return;
 
     const layoutMode = document.getElementById('layout-select') ? document.getElementById('layout-select').value : 'cose';
@@ -1069,7 +1070,7 @@ function runLayout() {
             name: 'concentric',
             animate: true,
             animationDuration: 500,
-            fit: true,
+            fit: randomize,
             padding: 60,
             concentric: function(node) {
                 if (node.data('id') === selectedGene) return 100;
@@ -1083,7 +1084,7 @@ function runLayout() {
             name: 'circle',
             animate: true,
             animationDuration: 500,
-            fit: true,
+            fit: randomize,
             padding: 60,
             spacingFactor: 1.2,
         };
@@ -1092,8 +1093,8 @@ function runLayout() {
         layoutConfig = {
             name: 'cose',
             animate: true,
-            animationDuration: 600,
-            randomize: true,
+            animationDuration: 500,
+            randomize: randomize,
             componentSpacing: 100,
             nodeRepulsion: function(node) { return 800000; },
             nodeOverlap: 40,
@@ -1101,21 +1102,23 @@ function runLayout() {
             edgeElasticity: function(edge) { return 20; },
             nestingFactor: 1.2,
             gravity: 0.1,
-            numIter: 1000,
-            initialTemp: 1000,
+            numIter: randomize ? 1000 : 500,
+            initialTemp: randomize ? 1000 : 200,
             coolingFactor: 0.95,
             minTemp: 1.0,
-            fit: true,
+            fit: randomize,
             padding: 60,
         };
     }
 
     const layout = cy.layout(layoutConfig);
-    layout.promiseOn('layoutstop').then(() => {
-        cy.animate({
-            fit: { padding: 60 }
-        }, { duration: 300 });
-    });
+    if (randomize) {
+        layout.promiseOn('layoutstop').then(() => {
+            cy.animate({
+                fit: { padding: 60 }
+            }, { duration: 300 });
+        });
+    }
     layout.run();
 }
 
@@ -1546,8 +1549,10 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {
     updateStatus();
 }
 
-// Debounced filter handler so sliding feels instantaneous and smooth
+// Debounced filter handler: adjusts in-place immediately, then refreshes layout after 1s of inactivity
 let debounceTimer = null;
+let layoutRefreshTimer = null;
+
 function onFilterChange() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -1559,6 +1564,14 @@ function onFilterChange() {
             renderNetwork(selectedGene);
         }
     }, 80);
+
+    // After 1 second of no further filter changes, refresh layout
+    clearTimeout(layoutRefreshTimer);
+    layoutRefreshTimer = setTimeout(() => {
+        if (currentView === 'single_cluster' || currentView === 'gene') {
+            runLayout(false);
+        }
+    }, 1000);
 }
 
 document.getElementById('thresh').addEventListener('input', function() {
