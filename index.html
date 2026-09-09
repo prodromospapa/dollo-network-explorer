@@ -107,11 +107,36 @@ body {
 }
 .btn-danger:hover { background: #3a1a1a; }
 .btn-clusters {
-    background: #1a2a3a;
-    border-color: #3a6a8a;
-    color: #7ecfff;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border: 1px solid #38bdf8;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
 }
-.btn-clusters:hover { background: #2a3a5a; color: #aef; }
+.btn-clusters:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 12px rgba(56, 189, 248, 0.6);
+}
+.btn-clusters-header {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border: 1px solid #38bdf8;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 7px 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.45);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-clusters-header:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.65);
+    transform: translateY(-1px);
+}
 .cluster-entry {
     display: flex;
     align-items: center;
@@ -366,7 +391,8 @@ body {
 </head>
 <body>
 <div id="header">
-    <h1>🧬 Gene Loss-Concordance Network</h1>
+    <h1>🧬 Gene Loss Network</h1>
+    <button class="btn btn-clusters-header" onclick="showAllClusters()" id="btn-all-clusters-head" title="Show all Leiden clusters at once">🔬 All Clusters (Leiden)</button>
     <div class="search-box">
         <input type="text" id="search" placeholder="Search gene (e.g. SCAPER, CEP290)..." autocomplete="off">
         <div id="suggestions"></div>
@@ -406,8 +432,16 @@ body {
 <div id="main">
     <div id="cy">
         <div class="empty-state" id="empty-msg">
-            Search for a gene above to begin exploring the network.<br>
-            Click genes in the graph or partner list to expand.
+            <div style="max-width: 500px; padding: 24px; background: rgba(17, 24, 39, 0.85); border: 1px solid #2a3558; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+                <div style="font-size: 36px; margin-bottom: 12px;">🧬</div>
+                <div style="font-size: 18px; font-weight: 600; color: #7eb8ff; margin-bottom: 8px;">Explore Co-Loss Networks & Modules</div>
+                <div style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px;">
+                    Search for any gene above (e.g. <strong>SCAPER</strong>, <strong>CEP290</strong>) to explore its direct co-loss network, or view the global partition across all 80 Leiden clusters.
+                </div>
+                <button class="btn btn-clusters-header" onclick="showAllClusters()" style="font-size: 14px; padding: 10px 24px;">
+                    🔬 View All 80 Clusters (Leiden Modules)
+                </button>
+            </div>
         </div>
         <div id="legend">
             <div class="legend-header">
