@@ -1102,73 +1102,136 @@ body {{
         <div class="modal-body">
             <!-- Venn Diagram SVG -->
             <div style="text-align:center;">
-                <svg viewBox="0 0 580 340" width="100%" height="280" xmlns="http://www.w3.org/2000/svg" style="background:#0b1120; border-radius:8px; border:1px solid #1e293b;">
+                <svg viewBox="0 0 650 350" width="100%" height="310" xmlns="http://www.w3.org/2000/svg" style="background:#0b1120; border-radius:10px; border:1px solid #1e293b; user-select:none;">
                   <defs>
-                    <radialGradient id="grad-v2" cx="40%" cy="45%" r="60%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
-                      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.10"/>
+                    <!-- Radial Gradients for Sets -->
+                    <radialGradient id="grad-v2" cx="35%" cy="40%" r="65%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.32"/>
+                      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.06"/>
                     </radialGradient>
-                    <radialGradient id="grad-v1" cx="35%" cy="50%" r="60%">
-                      <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"/>
-                      <stop offset="100%" stop-color="#059669" stop-opacity="0.12"/>
+                    <radialGradient id="grad-cc" cx="65%" cy="40%" r="65%">
+                      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.30"/>
+                      <stop offset="100%" stop-color="#d97706" stop-opacity="0.06"/>
                     </radialGradient>
-                    <radialGradient id="grad-cc" cx="60%" cy="50%" r="60%">
-                      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.32"/>
-                      <stop offset="100%" stop-color="#d97706" stop-opacity="0.08"/>
+                    <radialGradient id="grad-v1" cx="45%" cy="50%" r="60%">
+                      <stop offset="0%" stop-color="#10b981" stop-opacity="0.40"/>
+                      <stop offset="100%" stop-color="#059669" stop-opacity="0.10"/>
                     </radialGradient>
+                    
+                    <!-- Filter for glow / shadow -->
+                    <filter id="badge-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
+                    </filter>
                   </defs>
 
-                  <!-- Circle 3: CiliaCarta (935 genes from CiliaCarta.csv) -->
-                  <circle cx="345" cy="170" r="125" fill="url(#grad-cc)" stroke="#f59e0b" stroke-width="2.2" stroke-opacity="0.85"/>
+                  <!-- ================= CIRCLES ================= -->
+                  <!-- CIRCLE 3: CiliaCarta (935 genes) -->
+                  <circle cx="408" cy="175" r="128" fill="url(#grad-cc)" stroke="#f59e0b" stroke-width="2.2" stroke-opacity="0.9">
+                    <title>CiliaCarta (935 genes): Genome-wide Bayesian integration of co-expression, genomics, and proteomics</title>
+                  </circle>
 
-                  <!-- Circle 1: SCGSv2 (509 genes from ciliary_genes.csv) -->
-                  <circle cx="205" cy="170" r="95" fill="url(#grad-v2)" stroke="#38bdf8" stroke-width="2.2" stroke-opacity="0.85"/>
+                  <!-- CIRCLE 1: SYSCILIA v2 (509 genes) -->
+                  <circle cx="225" cy="175" r="112" fill="url(#grad-v2)" stroke="#38bdf8" stroke-width="2.2" stroke-opacity="0.9">
+                    <title>SYSCILIA v2 (509 genes): 2021 Gold Standard (408 First-order + 102 Second-order)</title>
+                  </circle>
 
-                  <!-- Circle 2: SCGSv1 (275 genes) - nested within SCGSv2 with left bias -->
-                  <circle cx="165" cy="175" r="60" fill="url(#grad-v1)" stroke="#34d399" stroke-width="2" stroke-opacity="0.85"/>
+                  <!-- CIRCLE 2: SYSCILIA v1 (275 genes) - sits in overlap -->
+                  <circle cx="280" cy="198" r="68" fill="url(#grad-v1)" stroke="#10b981" stroke-width="2.2" stroke-opacity="0.95">
+                    <title>SYSCILIA v1 (275 genes): Original 2013 Gold Standard (227 verified + 48 candidates)</title>
+                  </circle>
 
-                  <!-- Set Titles -->
-                  <text x="150" y="88" fill="#38bdf8" font-size="13" font-weight="800" text-anchor="middle">SYSCILIA v2</text>
-                  <text x="150" y="102" fill="#7dd3fc" font-size="10.5" text-anchor="middle">(SCGSv2: 509)</text>
+                  <!-- ================= SET TITLES ================= -->
+                  <!-- SCGSv2 Title (Top Left) -->
+                  <g transform="translate(150, 16)" text-anchor="middle">
+                    <text fill="#38bdf8" font-size="13" font-weight="800" letter-spacing="0.3">SYSCILIA v2</text>
+                    <text y="13" fill="#7dd3fc" font-size="10.5" font-weight="600">(SCGSv2: 509 genes)</text>
+                  </g>
 
-                  <text x="125" y="205" fill="#34d399" font-size="11.5" font-weight="800" text-anchor="middle">SCGSv1</text>
-                  <text x="125" y="218" fill="#a7f3d0" font-size="10" text-anchor="middle">(275)</text>
+                  <!-- CiliaCarta Title (Top Right) -->
+                  <g transform="translate(485, 16)" text-anchor="middle">
+                    <text fill="#f59e0b" font-size="13.5" font-weight="800" letter-spacing="0.3">CiliaCarta</text>
+                    <text y="13" fill="#fcd34d" font-size="10.5" font-weight="600">(CiliaCarta.csv: 935 genes)</text>
+                  </g>
 
-                  <text x="405" y="78" fill="#f59e0b" font-size="13.5" font-weight="800" text-anchor="middle">CiliaCarta</text>
-                  <text x="405" y="93" fill="#fcd34d" font-size="11" text-anchor="middle">(CiliaCarta.csv: 935)</text>
+                  <!-- SCGSv1 Title & Pointer Line (Bottom) -->
+                  <g transform="translate(235, 314)" text-anchor="middle">
+                    <text fill="#34d399" font-size="12.5" font-weight="800">SYSCILIA v1</text>
+                    <text y="13" fill="#6ee7b7" font-size="9.5" font-weight="600">(SCGSv1: 275 genes)</text>
+                  </g>
+                  <polyline points="255,302 272,278 278,258" stroke="#10b981" stroke-width="1.3" stroke-dasharray="3 2" fill="none"/>
+                  <circle cx="278" cy="258" r="2.5" fill="#10b981"/>
 
-                  <!-- Regional Counts -->
-                  <!-- Triple core intersection (v1 & v2 & cc): 238 -->
-                  <text x="218" y="172" fill="#ffffff" font-size="15" font-weight="900" text-anchor="middle">238</text>
-                  <text x="218" y="185" fill="#e2e8f0" font-size="8.5" text-anchor="middle">Core Shared</text>
+                  <!-- ================= CALLOUT 1: 85 genes (SCGSv2 & CiliaCarta only) ================= -->
+                  <!-- Placed at top with a crisp elbow leader line pointing into the upper overlap lens -->
+                  <g transform="translate(315, 34)" text-anchor="middle">
+                    <rect x="-46" y="-13" width="92" height="28" rx="5" fill="#0b1120" fill-opacity="0.95" stroke="#f59e0b" stroke-width="1.2" stroke-opacity="0.9" filter="url(#badge-shadow)"/>
+                    <text y="0" fill="#fde68a" font-size="12.5" font-weight="800">85 genes</text>
+                    <text y="10" fill="#fcd34d" font-size="7.5" font-weight="600">v2 ∩ CiliaCarta only</text>
+                    <title>v2 ∩ CiliaCarta only (85 genes): Shared by SYSCILIA v2 and CiliaCarta, not in v1</title>
+                  </g>
+                  <polyline points="315,49 315,75 328,100" stroke="#f59e0b" stroke-width="1.3" fill="none"/>
+                  <circle cx="328" cy="100" r="2.5" fill="#f59e0b"/>
 
-                  <!-- SCGSv2 & CiliaCarta only: 85 -->
-                  <text x="268" y="145" fill="#fde68a" font-size="12.5" font-weight="700" text-anchor="middle">85</text>
+                  <!-- ================= CALLOUT 2: 4 genes (v1 historical candidates) ================= -->
+                  <!-- Leader line from bottom left into the lower rim of v1 -->
+                  <g transform="translate(95, 260)" text-anchor="start">
+                    <rect x="-6" y="-13" width="86" height="28" rx="5" fill="#0b1120" fill-opacity="0.95" stroke="#34d399" stroke-width="1.2" stroke-opacity="0.8" filter="url(#badge-shadow)"/>
+                    <text x="37" y="0" fill="#6ee7b7" font-size="11.5" font-weight="800" text-anchor="middle">4 genes</text>
+                    <text x="37" y="10" fill="#a7f3d0" font-size="7.5" font-weight="600" text-anchor="middle">v1 candidates only</text>
+                    <title>SCGSv1 candidates only (4 genes): 2013 paper predictions not retained in v2</title>
+                  </g>
+                  <polyline points="175,254 212,246 226,238" stroke="#34d399" stroke-width="1.3" fill="none"/>
+                  <circle cx="226" cy="238" r="2.5" fill="#34d399"/>
 
-                  <!-- SCGSv2 only: 154 (e.g. SCAPER) -->
-                  <text x="210" y="120" fill="#bae6fd" font-size="12.5" font-weight="700" text-anchor="middle">154</text>
-                  <text x="210" y="131" fill="#38bdf8" font-size="8" text-anchor="middle">(e.g. SCAPER)</text>
+                  <!-- ================= DIRECT REGIONS ================= -->
 
-                  <!-- SCGSv1 & SCGSv2 only: 32 -->
-                  <text x="155" y="145" fill="#6ee7b7" font-size="11" font-weight="600" text-anchor="middle">32</text>
+                  <!-- 1. TRIPLE INTERSECTION: Core Shared (238 genes) -->
+                  <g transform="translate(318, 190)" text-anchor="middle">
+                    <rect x="-42" y="-22" width="84" height="44" rx="7" fill="#070d1e" fill-opacity="0.96" stroke="#38bdf8" stroke-width="1.4" filter="url(#badge-shadow)"/>
+                    <text y="-4" fill="#ffffff" font-size="16" font-weight="900" letter-spacing="0.3">238</text>
+                    <text y="9" fill="#93c5fd" font-size="9" font-weight="700">Core Shared</text>
+                    <text y="18" fill="#7dd3fc" font-size="7.5" opacity="0.85">v1 ∩ v2 ∩ CC</text>
+                    <title>Core Shared (238 genes): Supported by SYSCILIA v1, SYSCILIA v2, and CiliaCarta (e.g. IFT88, BBS1, CEP290)</title>
+                  </g>
 
-                  <!-- SCGSv1 only / unassigned: 4 -->
-                  <text x="120" y="175" fill="#a7f3d0" font-size="10" font-weight="600" text-anchor="middle">4</text>
+                  <!-- 2. CILIACARTA ONLY (611 genes) -->
+                  <g transform="translate(476, 175)" text-anchor="middle">
+                    <text y="-6" fill="#fde047" font-size="18" font-weight="900">611</text>
+                    <text y="10" fill="#fef08a" font-size="10" font-weight="700">CiliaCarta only</text>
+                    <text y="23" fill="#fcd34d" font-size="8.5" opacity="0.8">Bayesian ML &amp; GO</text>
+                    <title>CiliaCarta Exclusive (611 genes): Genome-wide Bayesian predictions and GO annotations outside SYSCILIA gold standards</title>
+                  </g>
 
-                  <!-- CiliaCarta unique (genome-wide predictions / GO): 611 -->
-                  <text x="405" y="172" fill="#fde047" font-size="15" font-weight="800" text-anchor="middle">611</text>
-                  <text x="405" y="186" fill="#fef08a" font-size="8.5" text-anchor="middle">CiliaCarta Predictions / GO</text>
+                  <!-- 3. SCGSv2 ONLY (154 genes, e.g. SCAPER) -->
+                  <g transform="translate(156, 172)" text-anchor="middle">
+                    <text y="-6" fill="#7dd3fc" font-size="17" font-weight="900">154</text>
+                    <text y="9" fill="#38bdf8" font-size="9.5" font-weight="700">SCGSv2 only</text>
+                    <text y="21" fill="#bae6fd" font-size="8.5" font-style="italic">(includes SCAPER)</text>
+                    <title>SCGSv2 Exclusive (154 genes): Modern ciliopathy and regulatory genes added in 2021 Gold Standard (e.g. SCAPER)</title>
+                  </g>
 
-                  <!-- Bottom Legend Bar -->
-                  <g transform="translate(35, 318)" font-size="10" fill="#94a3b8">
+                  <!-- 4. SCGSv1 & SCGSv2 ONLY (32 genes) -->
+                  <g transform="translate(242, 198)" text-anchor="middle">
+                    <rect x="-24" y="-12" width="48" height="24" rx="4" fill="#061c18" fill-opacity="0.75" stroke="#10b981" stroke-width="0.8"/>
+                    <text y="2" fill="#a7f3d0" font-size="12" font-weight="800">32</text>
+                    <text y="10" fill="#6ee7b7" font-size="7" font-weight="600">v1 ∩ v2</text>
+                    <title>SCGSv1 ∩ SCGSv2 only (32 genes): High-confidence components in both SYSCILIA versions outside CiliaCarta</title>
+                  </g>
+
+                  <!-- ================= BOTTOM LEGEND BAR ================= -->
+                  <g transform="translate(32, 336)" font-size="9.5" fill="#94a3b8">
                     <circle cx="0" cy="0" r="4" fill="#38bdf8"/>
-                    <text x="7" y="3">SCGSv2: 509</text>
-                    <circle cx="105" cy="0" r="4" fill="#34d399"/>
-                    <text x="112" y="3">SCGSv1: 275</text>
+                    <text x="8" y="3.5">SCGSv2: <tspan fill="#e2e8f0" font-weight="700">509</tspan></text>
+                    
+                    <circle cx="105" cy="0" r="4" fill="#10b981"/>
+                    <text x="113" y="3.5">SCGSv1: <tspan fill="#e2e8f0" font-weight="700">275</tspan></text>
+                    
                     <circle cx="210" cy="0" r="4" fill="#f59e0b"/>
-                    <text x="217" y="3">CiliaCarta: 935</text>
-                    <circle cx="350" cy="0" r="4" fill="#a855f7"/>
-                    <text x="357" y="3">All Ciliary Union: 1,132 genes</text>
+                    <text x="218" y="3.5">CiliaCarta: <tspan fill="#e2e8f0" font-weight="700">935</tspan></text>
+                    
+                    <circle cx="342" cy="0" r="4" fill="#a855f7"/>
+                    <text x="350" y="3.5">All Ciliary Union: <tspan fill="#38bdf8" font-weight="700">1,132</tspan> genes</text>
+                    <text x="520" y="3.5" fill="#64748b" font-size="8.5">(+7 curated in CSV)</text>
                   </g>
                 </svg>
             </div>
