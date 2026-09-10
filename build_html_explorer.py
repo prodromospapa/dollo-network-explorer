@@ -714,6 +714,128 @@ body {{
     color: #ffffff;
     text-decoration: none;
 }}
+
+.btn-info-circle {{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.38);
+    color: #38bdf8;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    margin-left: 4px;
+    vertical-align: middle;
+    line-height: 1;
+    flex-shrink: 0;
+}}
+.btn-info-circle:hover {{
+    background: rgba(56, 189, 248, 0.3);
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+    transform: scale(1.08);
+}}
+.modal-overlay {{
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(3, 7, 18, 0.82);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}}
+.modal-overlay.active {{
+    display: flex;
+}}
+.modal-container {{
+    background: #111827;
+    border: 1px solid #2a3558;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.15);
+    width: 100%;
+    max-width: 690px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}}
+@keyframes modalScaleIn {{
+    from {{ transform: scale(0.95); opacity: 0; }}
+    to {{ transform: scale(1); opacity: 1; }}
+}}
+.modal-header {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid #1f293d;
+    background: #0d1322;
+}}
+.modal-close {{
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.12s;
+}}
+.modal-close:hover {{
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}}
+.modal-body {{
+    padding: 16px 18px;
+    overflow-y: auto;
+}}
+.dataset-table {{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    color: #cbd5e1;
+    margin-top: 10px;
+}}
+.dataset-table th {{
+    background: #1a2238;
+    color: #94a3b8;
+    text-align: left;
+    padding: 7px 10px;
+    font-weight: 600;
+    border-bottom: 1px solid #2a3558;
+}}
+.dataset-table td {{
+    padding: 7px 10px;
+    border-bottom: 1px solid #1a2238;
+    vertical-align: middle;
+}}
+.dataset-table tr:hover td {{
+    background: rgba(30, 41, 59, 0.45);
+}}
+.badge-sub {{
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    margin-left: 3px;
+}}
+.btn-sm {{
+    padding: 2px 8px;
+    font-size: 11px;
+}}
 #status-bar {{
     background: #111827;
     border-top: 1px solid #2a3050;
@@ -884,6 +1006,7 @@ body {{
             <option value="ciliacarta_full">CiliaCarta (Full - 935 genes)</option>
             <option value="both">All Ciliary (521 genes)</option>
         </select>
+        <button id="btn-cilia-info" class="btn-info-circle" title="Explain ciliary datasets & view Venn diagram" onclick="openCiliaModal()">ⓘ</button>
         <button class="btn btn-accent" onclick="fitGraph()">Fit view</button>
         <button class="btn" onclick="exportCytoscape()">Export JSON</button>
         <button class="btn btn-danger" onclick="clearGraph()">Clear graph</button>
@@ -958,7 +1081,171 @@ body {{
 <div class="cy-tooltip" id="tooltip"></div>
 <div id="toast"></div>
 
+<div id="cilia-modal-overlay" class="modal-overlay" onclick="closeCiliaModal(event)">
+    <div class="modal-container" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">🧬</span>
+                <h3 style="margin:0; font-size:16px; color:#f1f5f9;">Ciliary Gene Datasets &amp; Intersections</h3>
+            </div>
+            <button class="modal-close" onclick="closeCiliaModal()" title="Close (Esc)">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- Venn Diagram SVG -->
+            <div style="text-align:center;">
+                <svg viewBox="0 0 560 330" width="100%" height="260" xmlns="http://www.w3.org/2000/svg" style="background:#0b1120; border-radius:8px; border:1px solid #1e293b;">
+                  <defs>
+                    <radialGradient id="grad-v2" cx="40%" cy="45%" r="60%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.32"/>
+                      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.08"/>
+                    </radialGradient>
+                    <radialGradient id="grad-v1" cx="35%" cy="50%" r="60%">
+                      <stop offset="0%" stop-color="#34d399" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#059669" stop-opacity="0.10"/>
+                    </radialGradient>
+                    <radialGradient id="grad-cc" cx="60%" cy="50%" r="60%">
+                      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.32"/>
+                      <stop offset="100%" stop-color="#d97706" stop-opacity="0.08"/>
+                    </radialGradient>
+                  </defs>
+
+                  <!-- Outer boundary for CiliaCarta Full (935 genes) -->
+                  <rect x="25" y="25" width="510" height="265" rx="14" fill="rgba(168,85,247,0.03)" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="6 5" stroke-opacity="0.55"/>
+                  <text x="42" y="46" fill="#c084fc" font-size="11.5" font-weight="700" letter-spacing="0.3">CiliaCarta Full (935 genes)</text>
+                  <text x="42" y="60" fill="#a855f7" font-size="10" opacity="0.85">+611 additional genome-wide Bayesian predictions &amp; GO annotations</text>
+
+                  <!-- Circle 1: SCGSv2 (509 genes) -->
+                  <circle cx="220" cy="175" r="102" fill="url(#grad-v2)" stroke="#38bdf8" stroke-width="2.2" stroke-opacity="0.85"/>
+
+                  <!-- Circle 2: SCGSv1 (275 genes) -->
+                  <circle cx="175" cy="185" r="65" fill="url(#grad-v1)" stroke="#34d399" stroke-width="2" stroke-opacity="0.85"/>
+
+                  <!-- Circle 3: CiliaCarta (361 genes in curated set) -->
+                  <circle cx="325" cy="185" r="82" fill="url(#grad-cc)" stroke="#f59e0b" stroke-width="2.2" stroke-opacity="0.85"/>
+
+                  <!-- Set Titles -->
+                  <text x="160" y="98" fill="#38bdf8" font-size="12.5" font-weight="800" text-anchor="middle">SYSCILIA v2</text>
+                  <text x="160" y="112" fill="#7dd3fc" font-size="10" text-anchor="middle">(SCGSv2: 509)</text>
+
+                  <text x="135" y="222" fill="#34d399" font-size="11.5" font-weight="800" text-anchor="middle">SCGSv1</text>
+                  <text x="135" y="234" fill="#a7f3d0" font-size="9.5" text-anchor="middle">(275)</text>
+
+                  <text x="380" y="130" fill="#f59e0b" font-size="12.5" font-weight="800" text-anchor="middle">CiliaCarta</text>
+                  <text x="380" y="144" fill="#fcd34d" font-size="10" text-anchor="middle">(Curated: 361)</text>
+
+                  <!-- Intersection numbers -->
+                  <text x="240" y="186" fill="#ffffff" font-size="15" font-weight="900" text-anchor="middle">262</text>
+                  <text x="240" y="198" fill="#e2e8f0" font-size="8.5" text-anchor="middle">Core Shared</text>
+
+                  <text x="295" y="168" fill="#fde68a" font-size="12" font-weight="700" text-anchor="middle">95</text>
+
+                  <text x="205" y="140" fill="#bae6fd" font-size="12" font-weight="700" text-anchor="middle">144</text>
+                  <text x="205" y="151" fill="#38bdf8" font-size="8" text-anchor="middle">(e.g. SCAPER)</text>
+
+                  <text x="160" y="156" fill="#6ee7b7" font-size="10.5" font-weight="600" text-anchor="middle">8</text>
+
+                  <text x="122" y="185" fill="#a7f3d0" font-size="10" font-weight="600" text-anchor="middle">5</text>
+
+                  <text x="375" y="205" fill="#fde047" font-size="10.5" font-weight="600" text-anchor="middle">4</text>
+
+                  <!-- Bottom Legend -->
+                  <g transform="translate(35, 305)" font-size="9.5" fill="#94a3b8">
+                    <circle cx="0" cy="0" r="4" fill="#38bdf8"/>
+                    <text x="7" y="3">SCGSv2: 509</text>
+                    <circle cx="95" cy="0" r="4" fill="#34d399"/>
+                    <text x="102" y="3">SCGSv1: 275</text>
+                    <circle cx="185" cy="0" r="4" fill="#f59e0b"/>
+                    <text x="192" y="3">CiliaCarta (curated): 361</text>
+                    <circle cx="330" cy="0" r="4" fill="#a855f7"/>
+                    <text x="337" y="3">CiliaCarta Full: 935</text>
+                    <circle cx="450" cy="0" r="4" fill="#38bdf8"/>
+                    <text x="457" y="3">All Union: 521</text>
+                  </g>
+                </svg>
+            </div>
+
+            <!-- Explanatory Breakdown Table -->
+            <table class="dataset-table">
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Genes</th>
+                        <th>In Matrix (L &ge; 5)</th>
+                        <th>Description &amp; Key Evidence</th>
+                        <th>Quick Select</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong style="color:#7dd3fc;">SYSCILIA v2</strong><br><span class="badge-sub">SCGSv2</span></td>
+                        <td><strong>509</strong></td>
+                        <td>309</td>
+                        <td>2021 Gold Standard: <strong>408</strong> First-order (core/structural) + <strong>102</strong> Second-order (regulatory). Includes recent ciliopathy genes (e.g. <strong>SCAPER</strong>).</td>
+                        <td><button class="btn btn-sm btn-accent" onclick="selectFilterAndClose('syscilia_v2')">Select</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#6ee7b7;">SYSCILIA v1</strong><br><span class="badge-sub">SCGSv1</span></td>
+                        <td><strong>275</strong></td>
+                        <td>185</td>
+                        <td>Original 2013 Gold Standard (van Dam et al.): 227 confirmed ciliary components + 48 high-confidence candidate predictions.</td>
+                        <td><button class="btn btn-sm" onclick="selectFilterAndClose('syscilia_v1')">Select</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#fde047;">CiliaCarta</strong><br><span class="badge-sub">Curated</span></td>
+                        <td><strong>361</strong></td>
+                        <td>237</td>
+                        <td>Intersection of CiliaCarta Bayesian predictions present within the SYSCILIA curated reference table.</td>
+                        <td><button class="btn btn-sm" onclick="selectFilterAndClose('ciliacarta')">Select</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#c084fc;">CiliaCarta Full</strong><br><span class="badge-sub">Full 935</span></td>
+                        <td><strong>935</strong></td>
+                        <td>597</td>
+                        <td>Complete 2019 compendium (van Dam et al. 2019): integrates co-expression, comparative genomics, proteomics, and 285 ML-predicted candidates.</td>
+                        <td><button class="btn btn-sm" onclick="selectFilterAndClose('ciliacarta_full')">Select</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#38bdf8;">All Ciliary</strong><br><span class="badge-sub">Union</span></td>
+                        <td><strong>521</strong></td>
+                        <td>318</td>
+                        <td>Complete union of all curated ciliary structural components and regulators in <code>ciliary_genes.csv</code>.</td>
+                        <td><button class="btn btn-sm" onclick="selectFilterAndClose('both')">Select</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script>
+function openCiliaModal() {{
+    const el = document.getElementById('cilia-modal-overlay');
+    if (el) el.classList.add('active');
+}}
+function closeCiliaModal(e) {{
+    if (e && e.target && e.target !== document.getElementById('cilia-modal-overlay') && !e.target.classList.contains('modal-close')) {{
+        return;
+    }}
+    const el = document.getElementById('cilia-modal-overlay');
+    if (el) el.classList.remove('active');
+}}
+function selectFilterAndClose(val) {{
+    const sel = document.getElementById('gene-filter');
+    if (sel) {{
+        sel.value = val;
+        sel.dispatchEvent(new Event('change'));
+    }}
+    const el = document.getElementById('cilia-modal-overlay');
+    if (el) el.classList.remove('active');
+}}
+document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') {{
+        const el = document.getElementById('cilia-modal-overlay');
+        if (el && el.classList.contains('active')) {{
+            el.classList.remove('active');
+        }}
+    }}
+}});
 // ---- Embedded data ----
 const G = {data_json};
 const NAMES = {names_json};
