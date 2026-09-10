@@ -111,34 +111,69 @@ def main():
     # All gene names for autocomplete
     all_names = sorted(gene_data.keys())
 
-    # Load curated ciliary gene sets for the cluster-view filter.
-    def read_gene_set(path, column):
-        gene_set = set()
-        if not path.exists():
-            return gene_set
-        with open(path, newline="") as f:
-            for row in csv.DictReader(f):
-                symbol = (row.get(column) or "").strip()
-                if symbol:
-                    gene_set.add(symbol)
-        return gene_set
-
+    # Load curated ciliary gene sets for the cluster-view and network filters.
     data_roots = [base, base.parent]
-    syscilia_path = next((root / "cilia_gene_panel_scgsv1.csv"
-                          for root in data_roots
-                          if (root / "cilia_gene_panel_scgsv1.csv").exists()), None)
+    ciliary_genes_path = next((root / "ciliary_genes.csv"
+                               for root in data_roots
+                               if (root / "ciliary_genes.csv").exists()), None)
     ciliacarta_path = next((root / "CiliaCarta.csv"
                             for root in data_roots
                             if (root / "CiliaCarta.csv").exists()), None)
-    syscilia_genes = read_gene_set(syscilia_path, "resolved_symbol") if syscilia_path else set()
-    ciliacarta_genes = read_gene_set(ciliacarta_path, "Associated Gene Name") if ciliacarta_path else set()
+
+    v2_genes = set()
+    v1_genes = set()
+    cc_genes = set()
+    all_ciliary = set()
+    cilia_info = {}
+
+    if ciliary_genes_path and ciliary_genes_path.exists():
+        with open(ciliary_genes_path, newline="") as f:
+            for row in csv.DictReader(f):
+                gene = (row.get("Gene Name") or "").strip()
+                if not gene:
+                    continue
+                all_ciliary.add(gene)
+                is_first = (row.get("First order") or "").strip().lower() == "x"
+                is_second = (row.get("Second order") or "").strip().lower() == "x"
+                is_v1 = (row.get("In SCGSv1") or "").strip().lower() == "x" or (row.get("Predicted in SCGSv1 paper") or "").strip().lower() == "x"
+                is_cc = (row.get("Predicted in CiliaCarta") or "").strip().lower() == "x"
+                loc = (row.get("Localisation") or "").strip()
+
+                if is_first or is_second:
+                    v2_genes.add(gene)
+                if is_v1:
+                    v1_genes.add(gene)
+                if is_cc:
+                    cc_genes.add(gene)
+
+                v2_order = "First order" if is_first else ("Second order" if is_second else "")
+                cilia_info[gene] = {
+                    "v2": v2_order,
+                    "v1": is_v1,
+                    "cc": is_cc,
+                    "loc": loc
+                }
+
+    ciliacarta_full_genes = set()
+    if ciliacarta_path and ciliacarta_path.exists():
+        with open(ciliacarta_path, newline="") as f:
+            for row in csv.DictReader(f):
+                sym = (row.get("Associated Gene Name") or "").strip()
+                if sym:
+                    ciliacarta_full_genes.add(sym)
+
     ciliary_sets = {
-        "syscilia": sorted(syscilia_genes),
-        "ciliacarta": sorted(ciliacarta_genes),
-        "both": sorted(syscilia_genes | ciliacarta_genes),
+        "syscilia_v2": sorted(v2_genes),
+        "syscilia_v1": sorted(v1_genes),
+        "ciliacarta": sorted(cc_genes),
+        "ciliacarta_full": sorted(ciliacarta_full_genes) if ciliacarta_full_genes else sorted(cc_genes),
+        "both": sorted(all_ciliary),
+        "all_ciliary": sorted(all_ciliary),
+        "syscilia": sorted(v2_genes),
     }
-    print(f"  Ciliary filter sets: SYSCILIA={len(syscilia_genes)}, "
-          f"CiliaCarta={len(ciliacarta_genes)}, both={len(syscilia_genes | ciliacarta_genes)}")
+    print(f"  Ciliary filter sets from ciliary_genes.csv: "
+          f"SCGSv2={len(v2_genes)}, SCGSv1={len(v1_genes)}, CiliaCarta={len(cc_genes)}, "
+          f"All Ciliary={len(all_ciliary)} (CiliaCarta full file={len(ciliacarta_full_genes)})")
 
     # Load Leiden cluster assignments (if available)
     cluster_data = {}   # cluster_id (int) -> [gene_name, ...]
@@ -192,7 +227,7 @@ def main():
     output_path = args.output or str(website_dir / "index.html")
 
     html = build_html(gene_data, all_names, args.top_k, cluster_data,
-                      gene_to_cluster, cluster_names, ciliary_sets)
+                      gene_to_cluster, cluster_names, ciliary_sets, cilia_info)
 
     with open(output_path, "w") as f:
         f.write(html)
@@ -300,7 +335,7 @@ def annotate_clusters_with_go(cluster_data, base_dir):
 
 
 def build_html(gene_data, all_names, top_k, cluster_data=None, gene_to_cluster=None,
-               cluster_names=None, ciliary_sets=None):
+               cluster_names=None, ciliary_sets=None, cilia_info=None):
     """Build the complete self-contained HTML string."""
 
     data_json = json.dumps(gene_data, separators=(",", ":"))
@@ -316,6 +351,7 @@ def build_html(gene_data, all_names, top_k, cluster_data=None, gene_to_cluster=N
         gene_cluster_json = "{}"
         cluster_names_json = "{}"
     ciliary_sets_json = json.dumps(ciliary_sets or {}, separators=(",", ":"))
+    cilia_info_json = json.dumps(cilia_info or {}, separators=(",", ":"))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -842,9 +878,11 @@ body {{
         <label style="margin-left:4px;">Genes:</label>
         <select id="gene-filter" class="btn" style="padding:4px 8px;" title="Filter cluster views by curated ciliary gene set">
             <option value="all" selected>All genes</option>
-            <option value="syscilia">SYSCILIA (SCGSv2)</option>
-            <option value="ciliacarta">CiliaCarta</option>
-            <option value="both">SYSCILIA + CiliaCarta</option>
+            <option value="syscilia_v2">SYSCILIA v2 (SCGSv2 - 509 genes)</option>
+            <option value="syscilia_v1">SYSCILIA v1 (SCGSv1 - 275 genes)</option>
+            <option value="ciliacarta">CiliaCarta (361 genes)</option>
+            <option value="ciliacarta_full">CiliaCarta (Full - 935 genes)</option>
+            <option value="both">All Ciliary (521 genes)</option>
         </select>
         <button class="btn btn-accent" onclick="fitGraph()">Fit view</button>
         <button class="btn" onclick="exportCytoscape()">Export JSON</button>
@@ -929,9 +967,29 @@ const GENE_CL = {gene_cluster_json};
 const CLUSTER_NAMES = {cluster_names_json};
 const HAS_CLUSTERS = Object.keys(CLUSTERS).length > 0;
 const CILIARY_SETS = {ciliary_sets_json};
-const ALL_CILIARY = new Set(CILIARY_SETS["both"] || []);
+const CILIA_INFO = {cilia_info_json};
+const ALL_CILIARY = new Set(CILIARY_SETS["all_ciliary"] || CILIARY_SETS["both"] || []);
 let lastClickedClusterId = null;
 let geneFilterMode = 'all';
+
+function getCiliaBadgeHtml(geneName) {{
+    if (!ALL_CILIARY.has(geneName)) return '';
+    const info = (typeof CILIA_INFO !== 'undefined' && CILIA_INFO[geneName]) ? CILIA_INFO[geneName] : null;
+    let title = 'Curated ciliary component (SYSCILIA / CiliaCarta)';
+    if (info) {{
+        const parts = [];
+        if (info.v2) parts.push(`SCGSv2 (${{info.v2}})`);
+        else parts.push('SCGSv2');
+        if (info.v1) parts.push('SCGSv1');
+        if (info.cc) parts.push('CiliaCarta');
+        const dsText = parts.length ? parts.join(', ') : 'Curated Ciliary';
+        title = `Curated ciliary component: ${{dsText}}`;
+        if (info.loc) {{
+            title += `\\nLocalization: ${{info.loc}}`;
+        }}
+    }}
+    return `<span class="cilia-badge" title="${{title.replace(/"/g, '&quot;')}}">cilia</span>`;
+}}
 
 function getActiveGeneSet() {{
     if (geneFilterMode === 'all') return null;
@@ -1292,7 +1350,7 @@ function renderEgoNetwork(geneName) {{
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
             <h2 style="margin-bottom:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px;">
                 <span style="overflow:hidden; text-overflow:ellipsis;">${{dispGene}}</span>
-                ${{isFocusCil ? '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}}
+                ${{getCiliaBadgeHtml(geneName)}}
             </h2>
             <a href="${{getUniProtUrl(geneName)}}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${{dispGene}} on UniProt">UniProt ↗</a>
         </div>
@@ -1309,12 +1367,11 @@ function renderEgoNetwork(geneName) {{
         const pct = (p.j * 100).toFixed(0);
         const escaped = p.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const dispName = p.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const isCil = ALL_CILIARY.has(p.n);
         html += `
         <div class="partner" data-gene="${{escaped}}">
             <span class="rank">#${{i + 1}}</span>
             <span class="pname in-graph">${{dispName}}</span>
-            ${{isCil ? '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>' : ''}}
+            ${{getCiliaBadgeHtml(p.n)}}
             <div class="jaccard-bar">
                 <div class="fill" style="width:${{pct}}%; background:${{jaccardColor(p.j)}};"></div>
             </div>
@@ -1838,10 +1895,11 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
     const filterText = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${{document.getElementById('gene-filter').selectedOptions[0].text}})` : '';
     const nBridgesShown = shownMembers.filter(m => bridgeSet.has(m.n)).length;
     const bridgeNotice = nBridgesShown > 0 ? ` <span style="color:#94a3b8;">(+${{nBridgesShown}} dimmed bridge${{nBridgesShown !== 1 ? 's' : ''}})</span>` : '';
+    const memberLabel = geneFilterMode !== 'all' ? 'ciliary members' : 'members';
     document.getElementById('gene-info').innerHTML = `
         <h2 style="color:${{color}}; font-size:16px;">C${{cid}}: ${{cname}}</h2>
         <div class="meta">
-            <strong>${{shownMembers.length - nBridgesShown}}</strong> ciliary members shown${{bridgeNotice}}${{filterText}} &nbsp;|&nbsp;
+            <strong>${{shownMembers.length - nBridgesShown}}</strong> ${{memberLabel}} shown${{bridgeNotice}}${{filterText}} &nbsp;|&nbsp;
             <a href="#" onclick="showAllClusters(); return false;" style="color:#7eb8ff;text-decoration:underline;">← Back to all clusters</a>
             ${{shownMembers.length < members.length ? ' (increase "Show Top" to see more)' : ''}}
             ${{highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${{hlEscaped}}</strong></span>` : ''}}
@@ -1868,7 +1926,7 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
 
         let badgeHtml = '';
         if (isCil) {{
-            badgeHtml = '<span class="cilia-badge" title="Curated ciliary component (SYSCILIA / CiliaCarta)">cilia</span>';
+            badgeHtml = getCiliaBadgeHtml(m.n);
         }} else if (m.isHopper) {{
             badgeHtml = `<span class="bridge-badge" title="Hopper: intermediate node bridging ${{m.nBridges || 2}} ciliary members">hopper (${{m.nBridges || 2}} cil)</span>`;
         }}
