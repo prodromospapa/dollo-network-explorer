@@ -574,12 +574,17 @@ body {{
     padding: 6px 10px;
     border-bottom: 1px solid #1a2040;
     cursor: pointer;
-    transition: background 0.12s;
+    transition: background 0.12s, border-left 0.12s;
     gap: 6px;
     min-width: 0;
 }}
-#partner-list .partner:hover {{ background: #1a2a4a; }}
+#partner-list .partner:hover,
+#partner-list .partner.hover-highlight {{
+    background: #1e3258;
+    border-left: 3px solid #f59e0b;
+}}
 #partner-list .partner .rank {{
+
     color: #64748b;
     font-size: 11px;
     width: 22px;
@@ -1448,9 +1453,38 @@ function initCy() {{
                     'opacity': 0.20,
                     'line-color': '#94a3b8',
                 }}
+            {{
+                selector: 'node.hover-highlight',
+                style: {{
+                    'border-width': 4,
+                    'border-color': '#f59e0b',
+                    'border-opacity': 1,
+                    'font-size': 13,
+                    'font-weight': 'bold',
+                    'color': '#ffffff',
+                    'text-opacity': 1,
+                    'text-outline-width': 3,
+                    'text-outline-color': '#000000',
+                    'z-index': 999,
+                    'min-zoomed-font-size': 0,
+                    'underlay-color': '#f59e0b',
+                    'underlay-padding': 6,
+                    'underlay-opacity': 0.40,
+                    'underlay-shape': 'ellipse',
+                }}
+            }},
+            {{
+                selector: 'edge.hover-highlight',
+                style: {{
+                    'width': 2.8,
+                    'line-color': '#f59e0b',
+                    'opacity': 0.95,
+                    'z-index': 998,
+                }}
             }},
             {{
                 selector: 'node:selected',
+
                 style: {{
                     'border-width': 3,
                     'border-color': '#38bdf8',
@@ -1541,6 +1575,15 @@ function initCy() {{
         const nonCilTag = d.isNonCiliary ? '<br><span style="color:#f59e0b;font-weight:600;">⚠️ Non-ciliary bridge (connects ciliary genes)</span>' : '';
         tooltip.innerHTML = `<strong>${{d.label}}</strong>${{nonCilTag}}<br>Losses: ${{d.losses}}${{clInfo}}`;
         tooltip.style.display = 'block';
+
+        if (d.id) {{
+            document.querySelectorAll('#partner-list .partner.hover-highlight').forEach(el => el.classList.remove('hover-highlight'));
+            const sideEl = document.querySelector(`#partner-list .partner[data-gene="${{CSS.escape(d.id)}}"]`);
+            if (sideEl) {{
+                sideEl.classList.add('hover-highlight');
+                sideEl.scrollIntoView({{ block: 'nearest', behavior: 'smooth' }});
+            }}
+        }}
     }});
     cy.on('mouseover', 'edge', function(evt) {{
         const d = evt.target.data();
@@ -1553,7 +1596,9 @@ function initCy() {{
     }});
     cy.on('mouseout', function() {{
         tooltip.style.display = 'none';
+        document.querySelectorAll('#partner-list .partner.hover-highlight').forEach(el => el.classList.remove('hover-highlight'));
     }});
+
 
     document.getElementById('empty-msg').style.display = 'flex';
 }}
@@ -2452,11 +2497,43 @@ searchInput.addEventListener('blur', () => {{
     setTimeout(() => sugBox.style.display = 'none', 200);
 }});
 
-// ---- Event delegation for data-gene clicks ----
+// ---- Event delegation for sidebar hover and clicks ----
+let currentHoveredGene = null;
+
+document.getElementById('partner-list').addEventListener('mouseover', function(e) {{
+    const row = e.target.closest('.partner[data-gene]');
+    const gene = row ? row.dataset.gene : null;
+    if (gene === currentHoveredGene) return;
+    currentHoveredGene = gene;
+
+    if (cy) {{
+        cy.batch(() => {{
+            cy.elements('.hover-highlight').removeClass('hover-highlight');
+            if (gene) {{
+                const node = cy.getElementById(gene);
+                if (node.length) {{
+                    node.addClass('hover-highlight');
+                    node.connectedEdges().addClass('hover-highlight');
+                }}
+            }}
+        }});
+    }}
+}});
+
+document.getElementById('partner-list').addEventListener('mouseleave', function() {{
+    currentHoveredGene = null;
+    if (cy) {{
+        cy.batch(() => {{
+            cy.elements('.hover-highlight').removeClass('hover-highlight');
+        }});
+    }}
+}});
+
 document.getElementById('partner-list').addEventListener('click', function(e) {{
     const row = e.target.closest('.partner[data-gene]');
     if (row && row.dataset.gene) renderNetwork(row.dataset.gene);
 }});
+
 
 document.getElementById('suggestions').addEventListener('mousedown', function(e) {{
     // mousedown instead of click so it fires before the blur hides the dropdown
