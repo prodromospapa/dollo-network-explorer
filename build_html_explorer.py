@@ -996,43 +996,52 @@ body {{
 </head>
 <body>
 <div id="header">
-    <h1>🧬 Gene Loss Network</h1>
-    <button class="btn btn-clusters-header" onclick="showAllClusters()" id="btn-all-clusters-head" title="Show all Leiden clusters at once">🔬 All Clusters (Leiden)</button>
-    <div class="search-box">
-        <input type="text" id="search" placeholder="Search gene (e.g. SCAPER, CEP290)..." autocomplete="off">
-        <div id="suggestions"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 15px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <h1>🧬 Gene Loss Network</h1>
+            <button class="btn btn-clusters-header" onclick="showAllClusters()" id="btn-all-clusters-head" title="Show all Leiden clusters at once">🔬 All Clusters</button>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Search gene (e.g. SCAPER)..." autocomplete="off">
+                <div id="suggestions"></div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-clusters" style="background:linear-gradient(135deg, #1e3a8a 0%, #172554 100%); border-color:#3b82f6; color:#bfdbfe; box-shadow: 0 2px 8px rgba(59,130,246,0.3);" onclick="openCiliaModal()" title="View Ciliary Gene Sets (SYSCILIA v2 / CiliaCarta)">📊 Ciliary Sets</button>
+            <button class="btn btn-danger" onclick="clearGraph()">Clear graph</button>
+        </div>
     </div>
-    <div class="controls">
+    
+    <div class="controls" style="width: 100%; justify-content: flex-start; padding-top: 10px; margin-top: 5px; border-top: 1px solid #2a3050;">
         <label>Min Jaccard: <span id="thresh-val">0.10</span></label>
         <input type="range" id="thresh" min="0.05" max="1.0" step="0.01" value="0.10">
-        <label>Show Top: <span id="topn-val">25</span></label>
+        
+        <label style="margin-left:10px;">Show Top: <span id="topn-val">25</span></label>
         <input type="range" id="topn" min="1" max="{top_k}" step="1" value="25">
         <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;" title="Ignore the Show Top cap and use every stored partner above Min Jaccard (up to {top_k} per gene)">
             <input type="checkbox" id="toggle-topn-max"> Max
         </label>
-        <label style="margin-left:5px;">Layout:</label>
+        
+        <label style="margin-left:15px;">Layout:</label>
         <select id="layout-select" class="btn" style="padding:4px 8px;">
             <option value="cose" selected>Force (Spread)</option>
             <option value="concentric">Concentric (Radial)</option>
             <option value="circle">Circle</option>
         </select>
-        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;margin-left:4px;">
+        
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;margin-left:10px;">
             <input type="checkbox" id="toggle-labels" checked> Labels
         </label>
-        <label style="margin-left:4px;">Genes:</label>
+        
+        <label style="margin-left:15px;">Genes:</label>
         <select id="gene-filter" class="btn" style="padding:4px 8px;" title="Filter cluster views by curated ciliary gene set">
             <option value="all" selected>All genes</option>
-            <option value="syscilia_v2">SYSCILIA v2 (SCGSv2 - 509 genes)</option>
-            <option value="ciliacarta">CiliaCarta (935 genes)</option>
-            <option value="shared_core">Shared — intersection (323 genes)</option>
-            <option value="both">All Ciliary — union (1,121 genes)</option>
+            <option value="syscilia_v2">SYSCILIA v2</option>
+            <option value="ciliacarta">CiliaCarta</option>
+            <option value="shared_core">Shared Core</option>
+            <option value="both">All Ciliary (Union)</option>
         </select>
-
-        <button id="btn-cilia-info" class="btn-info-circle" title="Explain ciliary datasets & view Venn diagram" onclick="openCiliaModal()">ⓘ</button>
-        <button class="btn btn-accent" onclick="fitGraph()">Fit view</button>
-        <button class="btn" onclick="exportCytoscape()">Export JSON</button>
-        <button class="btn btn-danger" onclick="clearGraph()">Clear graph</button>
-        <button class="btn btn-clusters" onclick="showAllClusters()" id="btn-all-clusters" title="Show all Leiden clusters at once">🔬 All Clusters</button>
+        
+        <button class="btn btn-accent" style="margin-left:auto;" onclick="fitGraph()">Fit view</button>
     </div>
 </div>
 <div id="main">
@@ -2046,7 +2055,7 @@ function showAllClusters(isFilterUpdate) {{
 
     // Compute grid layout for cluster centers
     const cols = Math.ceil(Math.sqrt(nClusters));
-    const spacing = 600;  // spacing between cluster centers
+    const spacing = 800;  // spacing between cluster centers
 
     clusterIds.forEach((cid, idx) => {{
         const members = getClusterMembers(cid);
@@ -2069,7 +2078,7 @@ function showAllClusters(isFilterUpdate) {{
 
         // Place members in a small circle around the cluster center
         const nVis = visibleMembers.length;
-        const radius = Math.max(40, Math.min(180, Math.sqrt(nVis) * 30));
+        const radius = Math.max(60, Math.min(220, Math.sqrt(nVis) * 35));
 
         visibleMembers.forEach((m, mi) => {{
             const angle = (2 * Math.PI * mi) / nVis;
