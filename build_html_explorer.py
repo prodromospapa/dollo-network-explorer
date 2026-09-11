@@ -1010,10 +1010,12 @@ body {{
         <label style="margin-left:4px;">Genes:</label>
         <select id="gene-filter" class="btn" style="padding:4px 8px;" title="Filter cluster views by curated ciliary gene set">
             <option value="all" selected>All genes</option>
+            <option value="syscilia_v2">SYSCILIA v2 (SCGSv2 - 509 genes)</option>
             <option value="ciliacarta">CiliaCarta (935 genes)</option>
             <option value="shared_core">Shared — intersection (323 genes)</option>
             <option value="both">All Ciliary — union (1,121 genes)</option>
         </select>
+
         <button id="btn-cilia-info" class="btn-info-circle" title="Explain ciliary datasets & view Venn diagram" onclick="openCiliaModal()">ⓘ</button>
         <button class="btn btn-accent" onclick="fitGraph()">Fit view</button>
         <button class="btn" onclick="exportCytoscape()">Export JSON</button>
@@ -1121,36 +1123,36 @@ body {{
                     <title>CiliaCarta (935 genes): Genome-wide Bayesian integration of co-expression, comparative genomics, and proteomics (van Dam et al. 2019)</title>
                   </circle>
 
-                  <!-- Curated Gold Standard circle (smaller, drawn on top) -->
+                  <!-- SYSCILIA v2 Gold Standard circle (smaller, drawn on top) -->
                   <circle cx="255" cy="155" r="112" fill="url(#grad-v2)" stroke="#38bdf8" stroke-width="2.4" stroke-opacity="0.90">
-                    <title>Curated Gold Standard (509 genes): High-confidence experimentally verified ciliary genes from curated literature</title>
+                    <title>SYSCILIA v2 / SCGSv2 (509 genes): 2021 Gold Standard — 408 First-order core + 102 Second-order regulatory (van Dam et al. 2021)</title>
                   </circle>
 
                   <!-- Set titles -->
                   <g transform="translate(188, 18)" text-anchor="middle">
-                    <text fill="#38bdf8" font-size="14" font-weight="800" letter-spacing="0.3">Curated</text>
-                    <text y="15" fill="#7dd3fc" font-size="11" font-weight="600">(Gold Standard · 509 genes)</text>
+                    <text fill="#38bdf8" font-size="14" font-weight="800" letter-spacing="0.3">SYSCILIA v2</text>
+                    <text y="15" fill="#7dd3fc" font-size="11" font-weight="600">(SCGSv2 · 509 genes)</text>
                   </g>
                   <g transform="translate(472, 18)" text-anchor="middle">
                     <text fill="#f59e0b" font-size="14" font-weight="800" letter-spacing="0.3">CiliaCarta</text>
                     <text y="15" fill="#fcd34d" font-size="11" font-weight="600">(van Dam 2019 · 935 genes)</text>
                   </g>
 
-                  <!-- LEFT CRESCENT: Curated only (186 genes, incl. SCAPER) -->
+                  <!-- LEFT CRESCENT: SCGSv2 only (186 genes, incl. SCAPER) -->
                   <g transform="translate(196, 155)" text-anchor="middle">
                     <text y="-10" fill="#7dd3fc" font-size="28" font-weight="900">186</text>
-                    <text y="14" fill="#38bdf8" font-size="12" font-weight="700">Curated only</text>
+                    <text y="14" fill="#38bdf8" font-size="12" font-weight="700">SCGSv2 only</text>
                     <text y="28" fill="#bae6fd" font-size="10" font-style="italic">(incl. SCAPER)</text>
-                    <title>Curated only (186 genes): High-confidence ciliary genes from curated literature not yet in CiliaCarta, including SCAPER.</title>
+                    <title>SCGSv2 Exclusive (186 genes): Core ciliopathy and regulatory genes unique to the 2021 Gold Standard, including SCAPER.</title>
                   </g>
 
                   <!-- CENTER: Shared intersection (323 genes) -->
                   <g transform="translate(322, 155)" text-anchor="middle">
                     <rect x="-50" y="-30" width="100" height="60" rx="9" fill="#070d1e" fill-opacity="0.96" stroke="#34d399" stroke-width="1.6" filter="url(#badge-shadow)"/>
                     <text y="-6" fill="#ffffff" font-size="22" font-weight="900" letter-spacing="0.5">323</text>
-                    <text y="10" fill="#6ee7b7" font-size="11" font-weight="800">Shared</text>
-                    <text y="22" fill="#34d399" font-size="9" opacity="0.9">Curated ∩ CiliaCarta</text>
-                    <title>Shared intersection (323 genes): Supported by both curated gold standard and CiliaCarta Bayesian evidence. Highest-confidence ciliary components (e.g. IFT88, BBS1, CEP290, IFT172, NPHP4).</title>
+                    <text y="10" fill="#6ee7b7" font-size="11" font-weight="800">Shared Core</text>
+                    <text y="22" fill="#34d399" font-size="9" opacity="0.9">SCGSv2 ∩ CiliaCarta</text>
+                    <title>Shared Core (323 genes): Supported by both SYSCILIA v2 (curated gold standard) and CiliaCarta (Bayesian evidence). Highest-confidence ciliary components (e.g. IFT88, BBS1, CEP290, IFT172, NPHP4).</title>
                   </g>
 
                   <!-- RIGHT CRESCENT: CiliaCarta only (612 genes) -->
@@ -1158,13 +1160,13 @@ body {{
                     <text y="-10" fill="#fde047" font-size="28" font-weight="900">612</text>
                     <text y="14" fill="#fef08a" font-size="12" font-weight="700">CiliaCarta only</text>
                     <text y="28" fill="#fcd34d" font-size="10" opacity="0.85">Bayesian ML &amp; GO</text>
-                    <title>CiliaCarta Exclusive (612 genes): Genome-wide Bayesian machine-learning predictions and GO-annotation-based inclusions not in the curated gold standard.</title>
+                    <title>CiliaCarta Exclusive (612 genes): Genome-wide Bayesian machine-learning predictions and GO-annotation-based inclusions not in SYSCILIA v2.</title>
                   </g>
 
                   <!-- Bottom legend -->
                   <g transform="translate(35, 314)" font-size="10" fill="#94a3b8">
                     <circle cx="0" cy="-2" r="5" fill="#38bdf8"/>
-                    <text x="9" y="2">Curated: <tspan fill="#e2e8f0" font-weight="700">509</tspan></text>
+                    <text x="9" y="2">SCGSv2: <tspan fill="#e2e8f0" font-weight="700">509</tspan></text>
 
                     <circle cx="120" cy="-2" r="5" fill="#f59e0b"/>
                     <text x="129" y="2">CiliaCarta: <tspan fill="#e2e8f0" font-weight="700">935</tspan></text>
@@ -1178,10 +1180,7 @@ body {{
                 </svg>
             </div>
 
-
-
             <!-- Explanatory Breakdown Table -->
-
             <table class="dataset-table">
                 <thead>
                     <tr>
@@ -1194,30 +1193,36 @@ body {{
                 </thead>
                 <tbody>
                     <tr>
+                        <td><strong style="color:#7dd3fc;">SYSCILIA v2</strong><br><span class="badge-sub">SCGSv2</span></td>
+                        <td><strong>509</strong></td>
+                        <td>310</td>
+                        <td>2021 Gold Standard (van Dam et al.): <strong>408</strong> First-order (core/structural) + <strong>102</strong> Second-order (regulatory). Includes recent ciliopathy genes (e.g. <strong>SCAPER</strong>).</td>
+                        <td><button class="btn btn-sm btn-accent" onclick="selectFilterAndClose('syscilia_v2')">Select</button></td>
+                    </tr>
+                    <tr>
                         <td><strong style="color:#fde047;">CiliaCarta</strong><br><span class="badge-sub">CiliaCarta.csv</span></td>
                         <td><strong>935</strong></td>
                         <td>514</td>
                         <td>Complete compendium (van Dam et al. 2019): Bayesian integration of co-expression, comparative genomics, and proteomics across 935 ciliary genes.</td>
-                        <td><button class="btn btn-sm btn-accent" onclick="selectFilterAndClose('ciliacarta')">Select</button></td>
+                        <td><button class="btn btn-sm" onclick="selectFilterAndClose('ciliacarta')">Select</button></td>
                     </tr>
                     <tr>
-                        <td><strong style="color:#34d399;">Shared</strong><br><span class="badge-sub">Intersection</span></td>
+                        <td><strong style="color:#34d399;">Shared Core</strong><br><span class="badge-sub">SCGSv2 ∩ CC</span></td>
                         <td><strong>323</strong></td>
                         <td>206</td>
-                        <td>Highest-confidence ciliary genes present in <em>both</em> the curated gold standard and CiliaCarta (Bayesian evidence). (e.g. <strong>IFT88</strong>, <strong>BBS1</strong>, <strong>CEP290</strong>).</td>
+                        <td>Highest-confidence ciliary genes present in <em>both</em> SYSCILIA v2 (curated gold standard) and CiliaCarta (Bayesian evidence). (e.g. <strong>IFT88</strong>, <strong>BBS1</strong>, <strong>CEP290</strong>).</td>
                         <td><button class="btn btn-sm" onclick="selectFilterAndClose('shared_core')">Select</button></td>
                     </tr>
                     <tr>
                         <td><strong style="color:#c084fc;">All Ciliary</strong><br><span class="badge-sub">Union</span></td>
                         <td><strong>1,121</strong></td>
                         <td>618</td>
-                        <td>Full union of all curated ciliary genes (509) and CiliaCarta (935). Includes SCAPER and all Bayesian predictions.</td>
+                        <td>Comprehensive union of SYSCILIA v2 (509 genes) and CiliaCarta (935 genes). Includes SCAPER and all Bayesian predictions.</td>
                         <td><button class="btn btn-sm" onclick="selectFilterAndClose('both')">Select</button></td>
                     </tr>
                 </tbody>
-
-
             </table>
+
         </div>
     </div>
 </div>
@@ -1267,10 +1272,10 @@ let geneFilterMode = 'all';
 function getCiliaBadgeHtml(geneName) {{
     if (!ALL_CILIARY.has(geneName)) return '';
     const info = (typeof CILIA_INFO !== 'undefined' && CILIA_INFO[geneName]) ? CILIA_INFO[geneName] : null;
-    let title = 'Curated ciliary component';
+    let title = 'Curated ciliary component (SYSCILIA v2 / CiliaCarta)';
     if (info) {{
         const parts = [];
-        if (info.v2) parts.push(`Curated (${{info.v2}})`);
+        if (info.v2) parts.push(`SYSCILIA v2 (${{info.v2}})`);
         if (info.cc) parts.push('CiliaCarta');
         const dsText = parts.length ? parts.join(', ') : 'Curated Ciliary';
         title = `Curated ciliary component: ${{dsText}}`;
@@ -1280,6 +1285,8 @@ function getCiliaBadgeHtml(geneName) {{
     }}
     return `<span class="cilia-badge" title="${{title.replace(/"/g, '&quot;')}}">cilia</span>`;
 }}
+
+
 
 
 function getActiveGeneSet() {{
