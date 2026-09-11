@@ -1267,10 +1267,10 @@ let geneFilterMode = 'all';
 function getCiliaBadgeHtml(geneName) {{
     if (!ALL_CILIARY.has(geneName)) return '';
     const info = (typeof CILIA_INFO !== 'undefined' && CILIA_INFO[geneName]) ? CILIA_INFO[geneName] : null;
-    let title = 'Curated ciliary component (SYSCILIA v2 / CiliaCarta)';
+    let title = 'Curated ciliary component';
     if (info) {{
         const parts = [];
-        if (info.v2) parts.push(`SCGSv2 (${{info.v2}})`);
+        if (info.v2) parts.push(`Curated (${{info.v2}})`);
         if (info.cc) parts.push('CiliaCarta');
         const dsText = parts.length ? parts.join(', ') : 'Curated Ciliary';
         title = `Curated ciliary component: ${{dsText}}`;
@@ -1280,6 +1280,7 @@ function getCiliaBadgeHtml(geneName) {{
     }}
     return `<span class="cilia-badge" title="${{title.replace(/"/g, '&quot;')}}">cilia</span>`;
 }}
+
 
 function getActiveGeneSet() {{
     if (geneFilterMode === 'all') return null;
@@ -2122,59 +2123,32 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
         }}
     }} else {{
         // Curated Ciliary Filter is ACTIVE:
-        // Ciliary members
+        // STRICTLY ciliary members of this cluster matching the active filter
         const cilMembers = allMembers.filter(n => activeSet.has(n));
         const cilSet = new Set(cilMembers);
 
-        // Find non-ciliary genes that connect >= 2 ciliary members (or connects highlightGene)
-        const nonCilMembers = allMembers.filter(n => !activeSet.has(n));
-        const bridgeMap = new Map(); // nonCilGene -> count of ciliary connections
+        const sortedCil = cilMembers.map(n => ({{
+            n,
+            l: G[n].l,
+            isCil: true,
+            isHopper: false
+        }})).sort((a, b) => b.l - a.l);
 
-        for (const u of nonCilMembers) {{
-            const gi = G[u];
-            if (!gi) continue;
-            let nConnected = 0;
-            for (const p of gi.p) {{
-                if (p.j >= thresh && cilSet.has(p.n)) {{
-                    nConnected++;
-                }}
+        members = sortedCil;
+        shownMembers = sortedCil.slice(0, topn);
+
+        // If a focus gene was explicitly searched:
+        if (highlightGene && !shownMembers.some(m => m.n === highlightGene)) {{
+            if (cilSet.has(highlightGene)) {{
+                const hlObj = sortedCil.find(m => m.n === highlightGene);
+                if (hlObj) shownMembers.push(hlObj);
+            }} else if (G[highlightGene]) {{
+                // Non-ciliary focus gene kept visible at top with dimmed styling
+                const hlObj = {{ n: highlightGene, l: G[highlightGene].l, isCil: false, isHopper: true }};
+                shownMembers.unshift(hlObj);
+                members.unshift(hlObj);
             }}
-            const isHl = highlightGene && u === highlightGene;
-            if (nConnected >= 2 || (isHl && nConnected >= 1)) {{
-                bridgeMap.set(u, nConnected);
-            }}
         }}
-
-        const sortedCil = cilMembers.map(n => ({{ n, l: G[n].l, isCil: true, isBridge: false, nBridges: 0 }}))
-            .sort((a, b) => b.l - a.l);
-
-        // Direct cluster members are NOT hoppers (they are genuine cluster members like DRC9 in C6)
-        // Only mark as hopper if the node is an external connector from outside the primary module
-        const sortedBridges = [...bridgeMap.keys()].map(u => ({{
-            n: u,
-            l: G[u].l,
-            isCil: false,
-            isHopper: false, // Direct cluster member, not a hopper!
-            nBridges: bridgeMap.get(u)
-        }})).sort((a, b) => (b.nBridges - a.nBridges) || (b.l - a.l));
-
-        members = [...sortedCil, ...sortedBridges];
-
-        let shownCil = sortedCil.slice(0, topn);
-        if (highlightGene && cilSet.has(highlightGene) && !shownCil.some(m => m.n === highlightGene)) {{
-            const hlObj = sortedCil.find(m => m.n === highlightGene);
-            if (hlObj) shownCil.push(hlObj);
-        }}
-
-        const remainingSlots = Math.max(0, topn - shownCil.length);
-        let shownBridges = sortedBridges.slice(0, Math.max(remainingSlots, (highlightGene && bridgeMap.has(highlightGene)) ? 1 : 0));
-        if (highlightGene && !cilSet.has(highlightGene) && bridgeMap.has(highlightGene) && !shownBridges.some(m => m.n === highlightGene)) {{
-            const hlObj = sortedBridges.find(m => m.n === highlightGene);
-            if (hlObj) shownBridges.push(hlObj);
-        }}
-
-        shownMembers = [...shownCil, ...shownBridges];
-        sortedBridges.forEach(b => bridgeSet.add(b.n));
     }}
 
     const sorted = members;
@@ -2183,13 +2157,11 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
     // Sidebar
     const hlEscaped = highlightGene ? highlightGene.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
     const filterText = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${{document.getElementById('gene-filter').selectedOptions[0].text}})` : '';
-    const nBridgesShown = shownMembers.filter(m => bridgeSet.has(m.n)).length;
-    const bridgeNotice = nBridgesShown > 0 ? ` <span style="color:#94a3b8;">(+${{nBridgesShown}} dimmed bridge${{nBridgesShown !== 1 ? 's' : ''}})</span>` : '';
     const memberLabel = geneFilterMode !== 'all' ? 'ciliary members' : 'members';
     document.getElementById('gene-info').innerHTML = `
         <h2 style="color:${{color}}; font-size:16px;">C${{cid}}: ${{cname}}</h2>
         <div class="meta">
-            <strong>${{shownMembers.length - nBridgesShown}}</strong> ${{memberLabel}} shown${{bridgeNotice}}${{filterText}} &nbsp;|&nbsp;
+            <strong>${{shownMembers.length}}</strong> of ${{members.length}} ${{memberLabel}} shown${{filterText}} &nbsp;|&nbsp;
             <a href="#" onclick="showAllClusters(); return false;" style="color:#7eb8ff;text-decoration:underline;">← Back to all clusters</a>
             ${{shownMembers.length < members.length ? ' (increase "Show Top" to see more)' : ''}}
             ${{highlightGene ? `<br><span style="color:#5eff8a;">Focus gene: <strong>${{hlEscaped}}</strong></span>` : ''}}
@@ -2203,7 +2175,6 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
         const dispName = m.n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const escaped = m.n.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const isCil = ALL_CILIARY.has(m.n);
-        const isBridge = bridgeSet.has(m.n);
 
         let rowStyle = '';
         if (isHl) {{
@@ -2218,7 +2189,7 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
         if (isCil) {{
             badgeHtml = getCiliaBadgeHtml(m.n);
         }} else if (m.isHopper) {{
-            badgeHtml = `<span class="bridge-badge" title="Hopper: intermediate node bridging ${{m.nBridges || 2}} ciliary members">hopper (${{m.nBridges || 2}} cil)</span>`;
+            badgeHtml = `<span class="bridge-badge" title="Focus gene: non-ciliary">focus (non-ciliary)</span>`;
         }}
 
         html += `
@@ -2231,6 +2202,8 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
         </div>`;
     }});
     document.getElementById('partner-list').innerHTML = html;
+
+
 
     // In-place graph adjustment if isFilterUpdate and graph already exists
     if (isFilterUpdate && cy && cy.nodes().length > 0) {{
