@@ -577,13 +577,19 @@ body {{
     transition: background 0.12s, border-left 0.12s;
     gap: 6px;
     min-width: 0;
-}}
 #partner-list .partner:hover,
 #partner-list .partner.hover-highlight {{
-    background: #1e3258;
-    border-left: 3px solid #f59e0b;
+    background: #1e3258 !important;
+    border-left: 3px solid #f59e0b !important;
+    opacity: 1 !important;
+}}
+.cluster-entry:hover,
+.cluster-entry.hover-highlight {{
+    background: #1e3258 !important;
+    border-left: 3px solid #f59e0b !important;
 }}
 #partner-list .partner .rank {{
+
 
     color: #64748b;
     font-size: 11px;
@@ -1453,8 +1459,10 @@ function initCy() {{
                     'opacity': 0.20,
                     'line-color': '#94a3b8',
                 }}
+            }},
             {{
                 selector: 'node.hover-highlight',
+
                 style: {{
                     'border-width': 4,
                     'border-color': '#f59e0b',
@@ -1577,6 +1585,11 @@ function initCy() {{
         tooltip.style.display = 'block';
 
         if (d.id) {{
+            cy.batch(() => {{
+                cy.elements('.hover-highlight').removeClass('hover-highlight');
+                evt.target.addClass('hover-highlight');
+                evt.target.connectedEdges().addClass('hover-highlight');
+            }});
             document.querySelectorAll('#partner-list .partner.hover-highlight').forEach(el => el.classList.remove('hover-highlight'));
             const sideEl = document.querySelector(`#partner-list .partner[data-gene="${{CSS.escape(d.id)}}"]`);
             if (sideEl) {{
@@ -1596,8 +1609,14 @@ function initCy() {{
     }});
     cy.on('mouseout', function() {{
         tooltip.style.display = 'none';
-        document.querySelectorAll('#partner-list .partner.hover-highlight').forEach(el => el.classList.remove('hover-highlight'));
+        if (cy) {{
+            cy.batch(() => {{
+                cy.elements('.hover-highlight').removeClass('hover-highlight');
+            }});
+        }}
+        document.querySelectorAll('.hover-highlight').forEach(el => el.classList.remove('hover-highlight'));
     }});
+
 
 
     document.getElementById('empty-msg').style.display = 'flex';
@@ -1691,10 +1710,11 @@ function renderEgoNetwork(geneName) {{
     const filterNotice = geneFilterMode !== 'all' && document.getElementById('gene-filter') ? ` (filtered by ${{document.getElementById('gene-filter').selectedOptions[0].text}})` : '';
     document.getElementById('gene-info').innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <h2 style="margin-bottom:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px;">
+            <h2 style="margin-bottom:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px; cursor:pointer;" data-gene="${{geneName}}" title="Focus gene: ${{dispGene}}">
                 <span style="overflow:hidden; text-overflow:ellipsis;">${{dispGene}}</span>
                 ${{getCiliaBadgeHtml(geneName)}}
             </h2>
+
             <a href="${{getUniProtUrl(geneName)}}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open ${{dispGene}} on UniProt">UniProt ↗</a>
         </div>
         <div class="meta" style="margin-top:4px;">
@@ -1996,7 +2016,26 @@ function showAllClusters(isFilterUpdate) {{
             const cid = parseInt(this.dataset.clusterId);
             handleClusterClick(cid);
         }});
+        el.addEventListener('mouseenter', function() {{
+            const cid = parseInt(this.dataset.clusterId);
+            if (cy) {{
+                cy.batch(() => {{
+                    cy.elements('.hover-highlight').removeClass('hover-highlight');
+                    const nodes = cy.nodes().filter(n => n.data('clusterId') === cid);
+                    nodes.addClass('hover-highlight');
+                    nodes.connectedEdges().addClass('hover-highlight');
+                }});
+            }}
+        }});
+        el.addEventListener('mouseleave', function() {{
+            if (cy) {{
+                cy.batch(() => {{
+                    cy.elements('.hover-highlight').removeClass('hover-highlight');
+                }});
+            }}
+        }});
     }});
+
 
     // 2. Build graph
     cy.elements().remove();
@@ -2498,10 +2537,12 @@ searchInput.addEventListener('blur', () => {{
 }});
 
 // ---- Event delegation for sidebar hover and clicks ----
+// ---- Event delegation for sidebar hover and clicks ----
 let currentHoveredGene = null;
 
-document.getElementById('partner-list').addEventListener('mouseover', function(e) {{
-    const row = e.target.closest('.partner[data-gene]');
+const sidebarEl = document.getElementById('sidebar');
+sidebarEl.addEventListener('mouseover', function(e) {{
+    const row = e.target.closest('[data-gene]');
     const gene = row ? row.dataset.gene : null;
     if (gene === currentHoveredGene) return;
     currentHoveredGene = gene;
@@ -2520,7 +2561,7 @@ document.getElementById('partner-list').addEventListener('mouseover', function(e
     }}
 }});
 
-document.getElementById('partner-list').addEventListener('mouseleave', function() {{
+sidebarEl.addEventListener('mouseleave', function() {{
     currentHoveredGene = null;
     if (cy) {{
         cy.batch(() => {{
@@ -2533,6 +2574,7 @@ document.getElementById('partner-list').addEventListener('click', function(e) {{
     const row = e.target.closest('.partner[data-gene]');
     if (row && row.dataset.gene) renderNetwork(row.dataset.gene);
 }});
+
 
 
 document.getElementById('suggestions').addEventListener('mousedown', function(e) {{
