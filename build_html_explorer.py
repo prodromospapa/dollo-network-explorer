@@ -577,6 +577,7 @@ body {{
     transition: background 0.12s, border-left 0.12s;
     gap: 6px;
     min-width: 0;
+}}
 #partner-list .partner:hover,
 #partner-list .partner.hover-highlight {{
     background: #1e3258 !important;
