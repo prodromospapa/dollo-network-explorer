@@ -760,9 +760,6 @@ body {
                       <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.34"/>
                       <stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/>
                     </radialGradient>
-                    <filter id="badge-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.78"/>
-                    </filter>
                   </defs>
 
                   <!-- CiliaCarta circle (larger, drawn first) -->
@@ -795,10 +792,9 @@ body {
 
                   <!-- CENTER: Shared intersection (323 genes) -->
                   <g transform="translate(322, 155)" text-anchor="middle">
-                    <rect x="-50" y="-30" width="100" height="60" rx="9" fill="#070d1e" fill-opacity="0.96" stroke="#34d399" stroke-width="1.6" filter="url(#badge-shadow)"/>
-                    <text y="-6" fill="#ffffff" font-size="22" font-weight="900" letter-spacing="0.5">323</text>
-                    <text y="10" fill="#6ee7b7" font-size="11" font-weight="800">Shared Core</text>
-                    <text y="22" fill="#34d399" font-size="9" opacity="0.9">SCGSv2 ∩ CiliaCarta</text>
+                    <text y="-10" fill="#6ee7b7" font-size="28" font-weight="900">323</text>
+                    <text y="14" fill="#34d399" font-size="12" font-weight="700">Shared Core</text>
+                    <text y="28" fill="#a7f3d0" font-size="10" opacity="0.9">SCGSv2 ∩ CiliaCarta</text>
                     <title>Shared Core (323 genes): Supported by both SYSCILIA v2 (curated gold standard) and CiliaCarta (Bayesian evidence). Highest-confidence ciliary components (e.g. IFT88, BBS1, CEP290, IFT172, NPHP4).</title>
                   </g>
 
