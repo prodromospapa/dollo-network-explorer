@@ -234,15 +234,34 @@ def main():
     # Build the HTML
     print("Generating HTML...")
 
-    output_path = args.output or str(website_dir / "index.html")
+    output_path = Path(args.output or str(website_dir / "index.html"))
+    genes_dir = output_path.parent / "genes"
+    genes_dir.mkdir(exist_ok=True)
+
+    print("Writing individual gene JSON files...")
+    # GM: name -> loss count, GENE_IDX: name -> numeric id
+    GM = {}
+    GENE_IDX = {}
+    
+    for i, name in enumerate(all_names):
+        GENE_IDX[name] = i
+        GM[name] = gene_data[name]["l"]
+        
+        gene_file = genes_dir / f"{i}.json"
+        if not gene_file.exists():
+            with open(gene_file, "w") as f:
+                json.dump(gene_data[name], f, separators=(",", ":"))
+            
+    print(f"Wrote gene files to {genes_dir}/")
 
     html = build_html(gene_data, all_names, args.top_k, cluster_data,
-                      gene_to_cluster, cluster_names, ciliary_sets, cilia_info)
+                      gene_to_cluster, cluster_names, ciliary_sets, cilia_info,
+                      GM, GENE_IDX)
 
     with open(output_path, "w") as f:
         f.write(html)
 
-    size_mb = Path(output_path).stat().st_size / (1024 * 1024)
+    size_mb = output_path.stat().st_size / (1024 * 1024)
     print(f"Written to {output_path} ({size_mb:.1f} MB)")
 
 def annotate_clusters_with_go(cluster_data, base_dir):
@@ -345,11 +364,17 @@ def annotate_clusters_with_go(cluster_data, base_dir):
 
 
 def build_html(gene_data, all_names, top_k, cluster_data=None, gene_to_cluster=None,
-               cluster_names=None, ciliary_sets=None, cilia_info=None):
-    """Build the complete self-contained HTML string."""
+               cluster_names=None, ciliary_sets=None, cilia_info=None,
+               GM=None, GENE_IDX=None):
+    """Build the HTML string.
 
-    data_json = json.dumps(gene_data, separators=(",", ":"))
+    The HTML is generated with minimal inline data. Full gene data is expected
+    to be present in the `genes/` directory and fetched lazily at runtime.
+    """
+
     names_json = json.dumps(all_names, separators=(",", ":"))
+    gm_json = json.dumps(GM, separators=(",", ":"))
+    gene_idx_json = json.dumps(GENE_IDX, separators=(",", ":"))
 
     # Cluster data for the all-clusters view
     if cluster_data:
@@ -363,7 +388,7 @@ def build_html(gene_data, all_names, top_k, cluster_data=None, gene_to_cluster=N
     ciliary_sets_json = json.dumps(ciliary_sets or {}, separators=(",", ":"))
     cilia_info_json = json.dumps(cilia_info or {}, separators=(",", ":"))
 
-    return f"""<!DOCTYPE html>
+    html_template = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1054,8 +1079,8 @@ body {{
         <input type="range" id="thresh" min="0.05" max="1.0" step="0.01" value="0.10">
         <label>Show Top: <span id="topn-val">25</span></label>
         <input type="range" id="topn" min="1" max="{top_k}" step="1" value="25">
-        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;" title="Ignore the Show Top cap and use every stored partner above Min Jaccard (up to {top_k} per gene)">
-            <input type="checkbox" id="toggle-topn-max"> Max
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#cbd5e1;" title="Show all stored partners above Min Jaccard. Each gene stores its top {top_k} partners by Jaccard score at build time — the full matrix has thousands more per gene but they are weaker hits.">
+            <input type="checkbox" id="toggle-topn-max"> All stored
         </label>
         <label style="margin-left:5px;">Layout:</label>
         <select id="layout-select" class="btn" style="padding:4px 8px;">
@@ -1320,8 +1345,14 @@ document.addEventListener('keydown', function(e) {{
         }}
     }}
 }});
-// ---- Embedded data ----
-const G = {data_json};
+// ---- Static data (kept inline) ----
+// G is an in-memory cache filled on demand: { geneName: {l, p:[...]} }
+const G = {{}};
+// GM: name → loss-count for every gene. Used for existence checks
+// and .l access in cluster views without needing full partner data.
+const GM = {gm_json};
+// GENE_IDX: name → numeric file id
+const GENE_IDX = {gene_idx_json};
 const NAMES = {names_json};
 const CLUSTERS = {clusters_json};
 const GENE_CL = {gene_cluster_json};
@@ -1360,7 +1391,7 @@ function getActiveGeneSet() {{
 
 function getClusterMembers(cid) {{
     const activeSet = getActiveGeneSet();
-    return (CLUSTERS[cid] || []).filter(name => G[name] && (!activeSet || activeSet.has(name)));
+    return (CLUSTERS[cid] || []).filter(name => GM[name] !== undefined && (!activeSet || activeSet.has(name)));
 }}
 
 function getVisibleClusterIds() {{
@@ -1617,7 +1648,7 @@ function initCy() {{
             return;
         }}
         const name = d.id;
-        if (name && G[name]) renderNetwork(name);
+        if (name && GM[name] !== undefined) renderNetwork(name);
     }});
 
     // Tooltip on hover
@@ -1725,6 +1756,30 @@ function addEdge(a, b, j, isHopperEdge) {{
     }});
 }}
 
+// ---- On-demand gene data fetching ----
+// fetchGeneData(name) → Promise<data>: fetches genes/{{id}}.json if not cached.
+function fetchGeneData(name) {{
+    if (G[name]) return Promise.resolve(G[name]);
+    const id = GENE_IDX[name];
+    if (id === undefined) return Promise.reject(new Error('Unknown gene: ' + name));
+    return fetch('genes/' + id + '.json')
+        .then(r => {{ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }})
+        .then(data => {{ G[name] = data; return data; }});
+}}
+
+// withGene(name, callback): fetch gene data if needed, then call callback(data).
+function withGene(name, callback) {{
+    if (G[name]) {{ callback(G[name]); return; }}
+    const info = document.getElementById('gene-info');
+    if (info) info.innerHTML = '<div style="color:#8892b0;padding:12px;">Loading ' +
+        name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '…</div>';
+    fetchGeneData(name)
+        .then(data => callback(data))
+        .catch(err => {{
+            if (info) info.innerHTML = '<div style="color:#ff6b6b;padding:12px;">Failed to load gene data: ' + err + '</div>';
+        }});
+}}
+
 // ---- Render Network ----
 function renderNetwork(geneName) {{
     if (!geneName || !G[geneName]) return;
@@ -1815,7 +1870,8 @@ function renderEgoNetwork(geneName) {{
 
     // Cross-link: add edges between any two partner nodes in the list if j >= thresh
     for (const p of filtered) {{
-        const pinfo = G[p.n];
+        // pinfo: use cached full data if available, else use GM for existence
+        const pinfo = G[p.n] || (GM[p.n] !== undefined ? {{ l: GM[p.n] }} : null);
         if (!pinfo) continue;
         for (const p2 of pinfo.p) {{
             if (p2.j >= thresh && graphGenes.has(p2.n)) {{
@@ -2001,7 +2057,7 @@ function showAllClusters(isFilterUpdate) {{
 
             for (const m of visibleMembers) {{
                 if (edgeCount >= MAX_EDGES_PER_CLUSTER) break;
-                const gi = G[m.n];
+                const gi = G[m.n] || (GM[m.n] !== undefined ? {{ l: GM[m.n] }} : null);
                 if (!gi) continue;
                 for (const p of gi.p) {{
                     if (edgeCount >= MAX_EDGES_PER_CLUSTER) break;
@@ -2250,7 +2306,7 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
     const thresh = parseFloat(document.getElementById('thresh').value);
     const topn = getTopN();
     const activeSet = getActiveGeneSet();
-    const allMembers = (CLUSTERS[cid] || []).filter(n => G[n]);
+    const allMembers = (CLUSTERS[cid] || []).filter(n => GM[n] !== undefined);
     const color = clusterColors[cid] || 'hsl(200, 65%, 55%)';
     const cname = CLUSTER_NAMES[cid] || `Cluster ${{cid}}`;
 
@@ -2275,7 +2331,7 @@ function showSingleCluster(cid, highlightGene, isFilterUpdate) {{
 
         const sortedCil = cilMembers.map(n => ({{
             n,
-            l: G[n].l,
+            l: GM[n],
             isCil: true,
             isHopper: false
         }})).sort((a, b) => b.l - a.l);
@@ -2703,6 +2759,7 @@ function startExplorer() {{
     }}
 }}
 
+// Start the explorer directly — gene data is fetched on demand
 if (document.readyState === 'loading') {{
     document.addEventListener('DOMContentLoaded', startExplorer);
 }} else {{
@@ -2711,10 +2768,24 @@ if (document.readyState === 'loading') {{
 
 
 
+
 </script>
+<!-- Loading overlay — hidden once graph_data.json is fetched -->
+<div id="loading-overlay" style="
+    position:fixed;inset:0;background:#0a0e17;
+    display:flex;align-items:center;justify-content:center;
+    z-index:9999;flex-direction:column;gap:16px;">
+  <div style="width:48px;height:48px;border:4px solid #2a3050;border-top-color:#5a8eff;
+              border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <p style="color:#8892b0;font-size:14px;">Loading network data…</p>
+</div>
+<style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
 </body>
 </html>
 """
+
+    return html_template
+
 
 if __name__ == "__main__":
     main()
