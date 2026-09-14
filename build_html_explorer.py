@@ -1774,7 +1774,10 @@ function fetchGeneData(name) {{
 
 // withGene(name, callback): fetch gene data if needed, then call callback(data).
 function withGene(name, callback) {{
+    if (G[name]) {{ callback(G[name]); return; }}
     const info = document.getElementById('gene-info');
+    if (info) info.innerHTML = '<div style="color:#8892b0;padding:12px;">Loading ' +
+        name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '…</div>';
     if (!G[name] && info) {{
         info.innerHTML = '<div style="color:#8892b0;padding:12px;">Loading ' +
             name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '…</div>';
@@ -1894,6 +1897,7 @@ function renderEgoNetwork(geneName) {{
     for (const p of filtered) {{
         // pinfo: use cached full data if available, else use GM for existence
         const pinfo = G[p.n] || (GM[p.n] !== undefined ? {{ l: GM[p.n] }} : null);
+        if (!pinfo) continue;
         if (!pinfo || !pinfo.p) continue;
         for (const p2 of pinfo.p) {{
             if (p2.j >= thresh && graphGenes.has(p2.n)) {{
