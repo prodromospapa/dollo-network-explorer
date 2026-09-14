@@ -184,6 +184,53 @@ body {
     overflow: hidden;
     flex-shrink: 0;
 }
+#sidebar-search-wrap {
+    position: relative;
+    padding: 7px 10px;
+    border-bottom: 1px solid #2a3050;
+    background: #111827;
+    flex-shrink: 0;
+}
+#sidebar-search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4a5568;
+    font-size: 13px;
+    pointer-events: none;
+    line-height: 1;
+}
+#sidebar-search {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0d1526;
+    border: 1px solid #2a3050;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 13px;
+    padding: 5px 24px 5px 26px;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+}
+#sidebar-search:focus { border-color: #38bdf8; }
+#sidebar-search::placeholder { color: #4a5568; }
+#sidebar-search-clear {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #4a5568;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    display: none;
+}
+#sidebar-search-clear:hover { color: #e2e8f0; }
 #gene-info {
     padding: 12px;
     border-bottom: 1px solid #2a3050;
@@ -726,6 +773,11 @@ body {
             <div class="empty-state" style="height:auto;min-height:50px;font-size:12px;">
                 Select a gene to see its top partners
             </div>
+        </div>
+        <div id="sidebar-search-wrap">
+            <span id="sidebar-search-icon">🔍</span>
+            <input id="sidebar-search" type="search" placeholder="Filter list…" autocomplete="off" spellcheck="false">
+            <button id="sidebar-search-clear" title="Clear filter">×</button>
         </div>
         <div id="partner-list"></div>
     </div>
@@ -1313,6 +1365,7 @@ function renderNetwork(geneName) {
     currentClusterHighlightGene = null;
     selectedGene = geneName;
     searchInput.value = geneName;
+    if (window.clearSidebarSearch) clearSidebarSearch();
 
     renderEgoNetwork(geneName);
 }
@@ -1538,6 +1591,7 @@ function showAllClusters(isFilterUpdate) {
     currentClusterHighlightGene = null;
     selectedGene = null;
     searchInput.value = '';
+    if (!isFilterUpdate && window.clearSidebarSearch) clearSidebarSearch();
     if (!isFilterUpdate) lastClickedClusterId = null;
 
     const thresh = parseFloat(document.getElementById('thresh').value);
@@ -2208,6 +2262,48 @@ document.getElementById('partner-list').addEventListener('click', function(e) {
 });
 
 
+// ---- Sidebar search / filter ----
+(function() {
+    const sSearch = document.getElementById('sidebar-search');
+    const ssClear = document.getElementById('sidebar-search-clear');
+
+    function applySidebarFilter() {
+        const q = sSearch.value.trim().toLowerCase();
+        ssClear.style.display = q ? 'block' : 'none';
+
+        // Partner rows (.partner[data-gene])
+        const partnerRows = document.querySelectorAll('#partner-list .partner[data-gene]');
+        if (partnerRows.length) {
+            partnerRows.forEach(function(row) {
+                const name = (row.dataset.gene || '').toLowerCase();
+                row.style.display = (!q || name.includes(q)) ? '' : 'none';
+            });
+            return;
+        }
+
+        // Cluster rows (.cluster-entry[data-cluster-id])
+        document.querySelectorAll('#partner-list .cluster-entry').forEach(function(row) {
+            const cid = row.dataset.clusterId || '';
+            const cname = (row.querySelector('.cname') ? row.querySelector('.cname').textContent : '').toLowerCase();
+            const match = !q || ('c' + cid).includes(q) || cname.includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    }
+
+    sSearch.addEventListener('input', applySidebarFilter);
+
+    ssClear.addEventListener('click', function() {
+        sSearch.value = '';
+        applySidebarFilter();
+        sSearch.focus();
+    });
+
+    // Expose helper so renderNetwork / showAllClusters can reset the filter
+    window.clearSidebarSearch = function() {
+        sSearch.value = '';
+        ssClear.style.display = 'none';
+    };
+})();
 
 document.getElementById('suggestions').addEventListener('mousedown', function(e) {
     // mousedown instead of click so it fires before the blur hides the dropdown

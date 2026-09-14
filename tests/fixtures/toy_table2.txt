@@ -1,0 +1,5 @@
+family	A	B	C	D
+seedgene	1	1	0	0
+concordant_gene	1	1	0	0
+partial_gene	1	1	1	0
+discordant_gene	0	1	1	1

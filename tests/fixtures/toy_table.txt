@@ -1,0 +1,6 @@
+family	A	B	C	D
+gene_universal	1	1	1	1
+gene_lostinCD	1	1	0	0
+gene_lostinD	1	1	1	0
+gene_lostinAB_and_D	0	0	1	0
+gene_absent	0	0	0	0

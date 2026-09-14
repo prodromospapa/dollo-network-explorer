@@ -1,0 +1,29 @@
+# ── Large data / results (not tracked in git) ───────────────────────────────
+results/
+cache/
+
+# ── Third-party binary tools ─────────────────────────────────────────────────
+tools/
+
+# ── GO annotation data (large files) ─────────────────────────────────────────
+data/
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Editors / OS ─────────────────────────────────────────────────────────────
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
