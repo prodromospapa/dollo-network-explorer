@@ -1774,7 +1774,6 @@ function fetchGeneData(name) {{
 
 // withGene(name, callback): fetch gene data if needed, then call callback(data).
 function withGene(name, callback) {{
-    if (G[name]) {{ callback(G[name]); return; }}
     const info = document.getElementById('gene-info');
     if (info) info.innerHTML = '<div style="color:#8892b0;padding:12px;">Loading ' +
         name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '…</div>';
