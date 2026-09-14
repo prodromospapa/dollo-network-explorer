@@ -1708,8 +1708,6 @@ function initCy() {{
 
 // ---- Add gene node to graph ----
 function addGeneNode(name, isFocus, isHopper) {{
-    if (!G[name] || graphGenes.has(name)) return;
-    const info = G[name];
     if (GM[name] === undefined || graphGenes.has(name)) return;
     const losses = GM[name];
     graphGenes.add(name);
