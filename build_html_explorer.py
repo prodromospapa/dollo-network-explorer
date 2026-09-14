@@ -1708,8 +1708,8 @@ function initCy() {{
 
 // ---- Add gene node to graph ----
 function addGeneNode(name, isFocus, isHopper) {{
-    if (!G[name] || graphGenes.has(name)) return;
-    const info = G[name];
+    if (GM[name] === undefined || graphGenes.has(name)) return;
+    const losses = GM[name];
     graphGenes.add(name);
 
     const shortLabel = name.length > 14 ? name.slice(0, 12) + '…' : name;
@@ -1726,9 +1726,9 @@ function addGeneNode(name, isFocus, isHopper) {{
             id: name,
             label: isFocus ? name : shortLabel,
             fullName: name,
-            losses: info.l,
-            size: lossSize(info.l) * (isFocus ? 1.35 : 1.0),
-            color: isHopper ? '#475569' : lossColor(info.l),
+            losses: losses,
+            size: lossSize(losses) * (isFocus ? 1.35 : 1.0),
+            color: isHopper ? '#475569' : lossColor(losses),
             isHopper: !!isHopper,
         }},
         classes: classes.join(' ')
