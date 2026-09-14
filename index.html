@@ -1380,14 +1380,29 @@ function fetchGeneData(name) {
 }
 
 // withGene(name, callback): fetch gene data if needed, then call callback(data).
-// Shows a brief spinner on the cy canvas while loading.
 function withGene(name, callback) {
-    if (G[name]) { callback(G[name]); return; }
-    // Show loading indicator in sidebar
     const info = document.getElementById('gene-info');
-    if (info) info.innerHTML = '<div style="color:#8892b0;padding:12px;">Loading ' +
-        name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '…</div>';
+    if (!G[name] && info) {
+        info.innerHTML = '<div style="color:#8892b0;padding:12px;">Loading ' +
+            name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '…</div>';
+    }
     fetchGeneData(name)
+        .then(data => {
+            // Also fetch the partners we're about to render so we get cross-links
+            const thresh = document.getElementById('thresh') ? parseFloat(document.getElementById('thresh').value) : 0.2;
+            let topn = 25;
+            if (document.getElementById('toggle-topn-max') && document.getElementById('toggle-topn-max').checked) {
+                topn = Infinity;
+            } else if (document.getElementById('topn')) {
+                topn = parseInt(document.getElementById('topn').value);
+            }
+            const activeSet = getActiveGeneSet();
+            const qualifying = data.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n)));
+            const filtered = qualifying.slice(0, topn);
+            
+            const fetches = filtered.map(p => fetchGeneData(p.n).catch(e => null));
+            return Promise.all(fetches).then(() => data);
+        })
         .then(data => callback(data))
         .catch(err => {
             if (info) info.innerHTML = '<div style="color:#ff6b6b;padding:12px;">Failed to load gene data: ' + err + '</div>';
@@ -1487,7 +1502,7 @@ function renderEgoNetwork(geneName) {
     for (const p of filtered) {
         // pinfo: use cached full data if available, else use GM for existence
         const pinfo = G[p.n] || (GM[p.n] !== undefined ? { l: GM[p.n] } : null);
-        if (!pinfo) continue;
+        if (!pinfo || !pinfo.p) continue;
         for (const p2 of pinfo.p) {
             if (p2.j >= thresh && graphGenes.has(p2.n)) {
                 addEdge(p.n, p2.n, p2.j);
