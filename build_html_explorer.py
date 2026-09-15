@@ -1022,7 +1022,7 @@ body.light-theme .partner .rank {{
     <h1>Dollo Co-Loss Network Explorer</h1>
     <div class="view-toggle">
         <button id="btn-view-cy" class="view-btn active" onclick="switchView('gene')">🔬 Gene Focus (Cytoscape)</button>
-        <button id="btn-view-tree" class="view-btn" onclick="openTreeView()" title="Visualize gene presence across eukaryotic species tree">🌳 Tree View</button>
+        <button id="btn-view-tree" class="view-btn" onclick="switchView('tree')" title="Visualize gene presence across eukaryotic species tree">🌳 Tree View</button>
     </div>
     <button id="btn-all-clusters-head" class="btn-clusters-header" onclick="showAllClusters()">🗂️ All Clusters (Leiden)</button>
 
@@ -1062,6 +1062,7 @@ body.light-theme .partner .rank {{
 <div id="main">
     <div id="graph-wrapper">
         <div id="cy"></div>
+        <div id="tree-panel" style="display:none; position:absolute; inset:0; flex-direction:column; overflow:hidden;"></div>
         <div id="empty-msg" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#556; font-size:14px; pointer-events:none; display:none;">
             Search for a gene or pick a cluster from the sidebar
         </div>
