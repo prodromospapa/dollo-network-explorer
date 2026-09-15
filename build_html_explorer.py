@@ -21,6 +21,17 @@ import pandas as pd
 import igraph as ig
 
 
+def hsl_to_hex(h, s, l):
+    s /= 100.0
+    l /= 100.0
+    a = s * min(l, 1.0 - l)
+    def f(n):
+        k = (n + h / 30.0) % 12.0
+        color = l - a * max(min(k - 3.0, 9.0 - k, 1.0), -1.0)
+        return f"{int(round(255 * color)):02x}"
+    return f"#{f(0)}{f(8)}{f(4)}"
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build interactive Dual-Engine HTML network explorer")
     parser.add_argument("--top-k", type=int, default=100,
@@ -82,6 +93,14 @@ def main():
         cluster_names = annotate_clusters_with_go(cluster_data, base)
         print(f"  Annotated {len(cluster_names)} clusters with GO terms")
 
+    # Precompute cluster hex colors (Sigma.js requires HEX, not HSL!)
+    cluster_colors = {}
+    sorted_cids = sorted(cluster_data.keys(), key=lambda cid: len(cluster_data[cid]), reverse=True)
+    n_cl = max(1, len(sorted_cids))
+    for i, cid in enumerate(sorted_cids):
+        h = (i * 360.0 / n_cl + 15.0) % 360.0
+        cluster_colors[cid] = hsl_to_hex(h, 75, 60)
+
     # Load curated ciliary gene sets
     ciliary_sets, cilia_info = load_ciliary_annotations(base)
 
@@ -109,7 +128,7 @@ def main():
     # 4. Generate index.html
     print("4. Generating index.html...")
     output_path = Path(args.output or str(website_dir / "index.html"))
-    html = build_html(all_names, cluster_data, cluster_names, ciliary_sets, cilia_info)
+    html = build_html(all_names, cluster_data, cluster_names, cluster_colors, ciliary_sets, cilia_info)
 
     with open(output_path, "w") as f:
         f.write(html)
@@ -367,10 +386,11 @@ def annotate_clusters_with_go(cluster_data, base_dir):
     return cluster_names
 
 
-def build_html(all_names, cluster_data=None, cluster_names=None, ciliary_sets=None, cilia_info=None):
+def build_html(all_names, cluster_data=None, cluster_names=None, cluster_colors=None, ciliary_sets=None, cilia_info=None):
     names_json = json.dumps(all_names, separators=(",", ":"))
     clusters_json = json.dumps(cluster_data or {}, separators=(",", ":"))
     cluster_names_json = json.dumps(cluster_names or {}, separators=(",", ":"))
+    cluster_colors_json = json.dumps(cluster_colors or {}, separators=(",", ":"))
     ciliary_sets_json = json.dumps(ciliary_sets or {}, separators=(",", ":"))
     cilia_info_json = json.dumps(cilia_info or {}, separators=(",", ":"))
 
@@ -841,6 +861,7 @@ body {{
 const NAMES = {names_json};
 const CLUSTERS = {clusters_json};
 const CLUSTER_NAMES = {cluster_names_json};
+const CLUSTER_COLORS = {cluster_colors_json};
 const CILIARY_SETS = {ciliary_sets_json};
 const CILIA_INFO = {cilia_info_json};
 const ALL_CILIARY = new Set(CILIARY_SETS["all_ciliary"] || CILIARY_SETS["both"] || []);
@@ -857,13 +878,11 @@ for (const cid in CLUSTERS) {{
     }}
 }}
 
-// Cluster colors
-const clusterColors = {{}};
-const sortedClusterIds = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
-sortedClusterIds.forEach((cid, i) => {{
-    const h = (i * 360 / Math.max(1, sortedClusterIds.length) + 15) % 360;
-    clusterColors[cid] = `hsl(${{Math.round(h)}}, 65%, 55%)`;
-}});
+// Fallback cluster color helper (Hex format for WebGL)
+function getClusterColor(cid) {{
+    if (cid !== undefined && CLUSTER_COLORS[cid]) return CLUSTER_COLORS[cid];
+    return '#38bdf8';
+}}
 
 // ---- Global State ----
 let currentMode = 'whole'; // 'whole' | 'gene'
@@ -966,14 +985,19 @@ async function loadWholeGraph() {{
         sigmaGraph = new graphology.Graph();
         for (let i = 0; i < nNodes; i++) {{
             const name = NAMES[i];
-            const x = nodeView.getInt16(i * 8, true);
-            const y = nodeView.getInt16(i * 8 + 2, true);
+            const rawX = nodeView.getInt16(i * 8, true);
+            const rawY = nodeView.getInt16(i * 8 + 2, true);
             const losses = nodeView.getUint16(i * 8 + 4, true);
             const cid = nodeView.getUint16(i * 8 + 6, true);
             GM[name] = losses;
 
-            const color = clusterColors[cid] || '#38bdf8';
-            const size = Math.max(2.5, Math.min(14, 2.5 + Math.sqrt(losses) * 0.7));
+            // Map [-2000, 2000] into normalized [0.05, 0.95] space for Sigma WebGL camera
+            const x = ((rawX + 2000) / 4000) * 0.9 + 0.05;
+            const y = ((rawY + 2000) / 4000) * 0.9 + 0.05;
+
+            // Hex color guaranteed for WebGL shader
+            const color = getClusterColor(cid);
+            const size = Math.max(3.5, Math.min(16, 3.5 + Math.sqrt(losses) * 0.75));
 
             sigmaGraph.addNode(name, {{
                 x: x,
@@ -998,8 +1022,8 @@ async function loadWholeGraph() {{
             if (sigmaGraph.hasNode(u) && sigmaGraph.hasNode(v) && !sigmaGraph.hasEdge(u, v)) {{
                 sigmaGraph.addEdge(u, v, {{
                     weight: j,
-                    size: 0.4 + j * 1.5,
-                    color: 'rgba(90, 142, 255, 0.12)'
+                    size: 0.5 + j * 2.0,
+                    color: '#2a4365'
                 }});
             }}
         }}
@@ -1020,10 +1044,13 @@ async function loadWholeGraph() {{
             enableEdgeClickEvents: false,
             enableEdgeWheelEvents: false,
             enableEdgeHoverEvents: false,
-            labelRenderedSizeThreshold: 9,
+            labelRenderedSizeThreshold: 11,
             minCameraRatio: 0.02,
-            maxCameraRatio: 10
+            maxCameraRatio: 8
         }});
+
+        // Center camera precisely on the normalized [0, 1] graph
+        sigmaRenderer.getCamera().setState({{ x: 0.5, y: 0.5, ratio: 1.05 }});
 
         // WebGL Interactions
         sigmaRenderer.on('enterNode', ({{ node }}) => {{
@@ -1034,15 +1061,15 @@ async function loadWholeGraph() {{
                 if (neighbors.has(n)) {{
                     return {{ ...data, zIndex: 10, color: n === node ? '#ffffff' : data.baseColor }};
                 }}
-                return {{ ...data, zIndex: 0, color: 'rgba(40, 50, 80, 0.2)', label: '' }};
+                return {{ ...data, zIndex: 0, color: '#161f38', label: '' }};
             }});
 
             sigmaRenderer.setSetting('edgeReducer', (e, data) => {{
                 const [source, target] = sigmaGraph.extremities(e);
                 if (source === node || target === node) {{
-                    return {{ ...data, color: '#38bdf8', size: 1.5, zIndex: 5 }};
+                    return {{ ...data, color: '#38bdf8', size: 2.0, zIndex: 5 }};
                 }}
-                return {{ ...data, color: 'rgba(20, 30, 50, 0.03)', size: 0.2 }};
+                return {{ ...data, color: '#0f172a', size: 0.1 }};
             }});
 
             const d = sigmaGraph.getNodeAttributes(node);
@@ -1158,7 +1185,7 @@ function renderSidebar(name) {{
     const info = getGeneData(name) || {{ l: GM[name] || 0, p: [] }};
     const cid = GENE_CL[name];
     const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${{cid}}`) : null;
-    const color = cid !== undefined ? (clusterColors[cid] || '#38bdf8') : '#38bdf8';
+    const color = getClusterColor(cid);
 
     let clusterBadge = '';
     if (cid !== undefined) {{
@@ -1283,7 +1310,7 @@ function renderEgoNetwork(geneName) {{
         data: {{
             id: geneName,
             label: geneName,
-            color: clusterColors[GENE_CL[geneName]] || '#38bdf8',
+            color: getClusterColor(GENE_CL[geneName]),
             size: 20
         }},
         classes: 'focus'
@@ -1296,7 +1323,7 @@ function renderEgoNetwork(geneName) {{
             data: {{
                 id: p.n,
                 label: p.n,
-                color: clusterColors[GENE_CL[p.n]] || '#5a8eff',
+                color: getClusterColor(GENE_CL[p.n]),
                 size: Math.max(10, Math.min(22, 10 + Math.sqrt(p.l) * 0.8))
             }}
         }});
@@ -1353,7 +1380,7 @@ function showSingleCluster(cid, highlightGene) {{
     currentClusterId = cid;
 
     const members = CLUSTERS[cid];
-    const color = clusterColors[cid] || '#38bdf8';
+    const color = getClusterColor(cid);
     const cname = CLUSTER_NAMES[cid] || `Cluster ${{cid}}`;
     const thresh = parseFloat(document.getElementById('thresh').value);
     const topn = parseInt(document.getElementById('topn').value);
@@ -1427,7 +1454,7 @@ function showSingleCluster(cid, highlightGene) {{
 
 function showAllClusters() {{
     if (currentMode === 'whole' && sigmaRenderer) {{
-        sigmaRenderer.getCamera().animate({{ x: 0, y: 0, ratio: 1.0 }}, {{ duration: 500 }});
+        sigmaRenderer.getCamera().animate({{ x: 0.5, y: 0.5, ratio: 1.05 }}, {{ duration: 500 }});
         return;
     }}
     switchView('whole');
