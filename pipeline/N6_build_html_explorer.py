@@ -686,6 +686,10 @@ body {{
 }}
 .partner:hover {{ background: #1a2a4a; }}
 .partner.active {{ background: #243560; }}
+.partner.active-partner {{
+    background: rgba(56, 189, 248, 0.22) !important;
+    border-left: 3px solid #38bdf8;
+}}
 .partner .rank {{
     width: 26px;
     color: #556;
@@ -899,6 +903,7 @@ body {{
             <h2>Select a Gene</h2>
             <div class="meta">Search above or click any node in the network to inspect co-loss partners.</div>
         </div>
+        <div id="cluster-gene-focus-banner" style="display:none; margin:0 12px 10px 12px; padding:8px 10px; background:rgba(26, 38, 66, 0.95); border:1px solid #38bdf8; border-radius:6px;"></div>
         <div id="partner-list"></div>
     </div>
 </div>
@@ -937,9 +942,10 @@ function getClusterColor(cid) {{
 }}
 
 // ---- Global State ----
-let currentMode = 'whole'; // 'whole' | 'gene' | 'all_clusters'
+let currentMode = 'whole'; // 'whole' | 'gene' | 'all_clusters' | 'single_cluster'
 let selectedGene = null;
 let currentClusterId = null;
+let clusterFocusedGene = null;
 let geneFilterMode = 'all';
 
 let sigmaGraph = null;
@@ -1013,6 +1019,15 @@ function switchView(mode) {{
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
         if (selectedGene) renderEgoNetwork(selectedGene);
+        updateStatus();
+    }} else if (mode === 'single_cluster') {{
+        if (btnWhole) btnWhole.classList.remove('active');
+        if (btnCy) btnCy.classList.add('active');
+        if (btnClusters) btnClusters.classList.remove('active');
+        if (hud) hud.style.display = 'none';
+        if (sigmaEl) sigmaEl.style.display = 'none';
+        if (cyEl) cyEl.style.display = 'block';
+        if (cy) cy.resize();
         updateStatus();
     }} else if (mode === 'all_clusters') {{
         if (btnWhole) btnWhole.classList.remove('active');
@@ -1249,13 +1264,19 @@ function getGeneData(name) {{
 // ---- Selection & Navigation ----
 function selectGene(name) {{
     if (!name || (GM[name] === undefined && GENE_IDX[name] === undefined)) return;
+    const previousGene = selectedGene;
     selectedGene = name;
     document.getElementById('search').value = name;
     renderSidebar(name);
 
     if (currentMode === 'whole' && sigmaRenderer && sigmaGraph && sigmaGraph.hasNode(name)) {{
-        const nodeAttrs = sigmaGraph.getNodeAttributes(name);
-        sigmaRenderer.getCamera().animate({{ x: nodeAttrs.x, y: nodeAttrs.y, ratio: 0.15 }}, {{ duration: 500 }});
+        if (previousGene === name) {{
+            switchView('gene');
+            renderEgoNetwork(name);
+        }} else {{
+            const nodeAttrs = sigmaGraph.getNodeAttributes(name);
+            sigmaRenderer.getCamera().animate({{ x: nodeAttrs.x, y: nodeAttrs.y, ratio: 0.15 }}, {{ duration: 500 }});
+        }}
     }} else {{
         switchView('gene');
         renderEgoNetwork(name);
@@ -1429,12 +1450,41 @@ function initCy() {{
                 }}
             }},
             {{
+                selector: 'node.highlighted',
+                style: {{
+                    'border-color': '#38bdf8',
+                    'border-width': 2.5,
+                    'z-index': 9
+                }}
+            }},
+            {{
+                selector: 'node.dimmed',
+                style: {{
+                    'opacity': 0.22
+                }}
+            }},
+            {{
                 selector: 'edge',
                 style: {{
                     'width': 'data(width)',
                     'line-color': 'data(color)',
                     'opacity': 0.35,
                     'curve-style': 'haystack'
+                }}
+            }},
+            {{
+                selector: 'edge.highlighted',
+                style: {{
+                    'line-color': '#38bdf8',
+                    'opacity': 0.9,
+                    'width': 2.5,
+                    'z-index': 8
+                }}
+            }},
+            {{
+                selector: 'edge.dimmed',
+                style: {{
+                    'opacity': 0.05
                 }}
             }}
         ],
@@ -1445,24 +1495,155 @@ function initCy() {{
     }});
 
     cy.on('tap', 'node', function(evt) {{
-        const d = evt.target.data();
+        const node = evt.target;
+        const d = node.data();
         if (d.isLabel && d.clusterId !== undefined) {{
             zoomToCluster(d.clusterId);
-        }} else if (d.id) {{
-            selectGene(d.id);
+            return;
         }}
+        const geneId = d.id;
+        if (!geneId) return;
+
+        // Check if currently viewing a Leiden cluster
+        if (currentMode === 'single_cluster' || currentMode === 'all_clusters') {{
+            if (clusterFocusedGene === geneId) {{
+                // SECOND CLICK: go to individual interactors!
+                unfocusClusterGene();
+                selectGene(geneId);
+            }} else {{
+                // FIRST CLICK: zoom in to gene in leiden cluster!
+                focusGeneInCluster(node, geneId, d.clusterId || currentClusterId);
+            }}
+            return;
+        }}
+
+        // In individual ego network mode:
+        selectGene(geneId);
     }});
 
     cy.on('dbltap', 'node', function(evt) {{
         const d = evt.target.data();
-        if (d.clusterId !== undefined) {{
+        if (d.isLabel && d.clusterId !== undefined) {{
             showSingleCluster(d.clusterId);
+        }} else if (d.id) {{
+            // Double tap directly navigates to individual interactors
+            unfocusClusterGene();
+            selectGene(d.id);
+        }}
+    }});
+
+    cy.on('tap', function(evt) {{
+        if (evt.target === cy) {{
+            if ((currentMode === 'single_cluster' || currentMode === 'all_clusters') && clusterFocusedGene) {{
+                unfocusClusterGene();
+                if (currentMode === 'single_cluster') {{
+                    cy.animate({{ fit: {{ padding: 60 }} }}, {{ duration: 350 }});
+                }}
+            }}
         }}
     }});
 }}
 
+function focusGeneInCluster(node, geneId, clusterId) {{
+    clusterFocusedGene = geneId;
+
+    // Highlight node and connected cluster elements
+    cy.elements().removeClass('focus highlighted dimmed');
+    node.addClass('focus');
+
+    const connEdges = node.connectedEdges();
+    const neighbors = connEdges.connectedNodes();
+    connEdges.addClass('highlighted');
+    neighbors.addClass('highlighted');
+
+    const others = cy.elements().difference(node.union(connEdges).union(neighbors));
+    others.addClass('dimmed');
+
+    // Zoom in smoothly to gene within cluster
+    if (currentMode === 'single_cluster') {{
+        const neighborhood = node.closedNeighborhood();
+        if (neighborhood.nodes().length > 1) {{
+            cy.animate({{
+                fit: {{ eles: neighborhood, padding: 100 }}
+            }}, {{ duration: 400 }});
+        }} else {{
+            cy.animate({{
+                center: {{ eles: node }},
+                zoom: Math.max(cy.zoom() * 1.5, 1.8)
+            }}, {{ duration: 400 }});
+        }}
+    }} else if (currentMode === 'all_clusters') {{
+        cy.animate({{
+            center: {{ eles: node }},
+            zoom: 2.2
+        }}, {{ duration: 400 }});
+    }}
+
+    // Highlight row in sidebar and scroll into view
+    document.querySelectorAll('.partner').forEach(el => {{
+        if (el.getAttribute('data-gene') === geneId) {{
+            el.classList.add('active-partner');
+            el.scrollIntoView({{ block: 'nearest', behavior: 'smooth' }});
+        }} else {{
+            el.classList.remove('active-partner');
+        }}
+    }});
+
+    // Banner prompt in sidebar
+    const banner = document.getElementById('cluster-gene-focus-banner');
+    if (banner) {{
+        banner.style.display = 'block';
+        banner.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                <div>
+                    <strong style="color:#38bdf8; font-size:13px;">${{geneId}}</strong>
+                    <span style="color:#94a3b8; font-size:11px; margin-left:4px;">${{GM[geneId] || 0}} losses</span>
+                    ${{ALL_CILIARY.has(geneId) ? '<span class="cilia-badge" style="margin-left:4px;">CILIA</span>' : ''}}
+                </div>
+                <button class="btn btn-accent" style="padding:2px 8px; font-size:11px;" onclick="unfocusClusterGene(); selectGene('${{geneId}}');">
+                    Open Interactors →
+                </button>
+            </div>
+            <div style="font-size:10.5px; color:#94a3b8; margin-top:3px;">
+                🔍 Focused in cluster • <strong>Click node again</strong> to view individual interactors
+            </div>
+        `;
+    }}
+
+    // Update bottom status
+    const cid = clusterId !== undefined ? clusterId : currentClusterId;
+    const statusEl = document.getElementById('graph-status');
+    if (statusEl) {{
+        statusEl.innerHTML = `Mode: Leiden C${{cid}} • Focused: <strong>${{geneId}}</strong> <span style="color:#38bdf8; margin-left:8px;">(Click again or double-click to view individual interactors →)</span>`;
+    }}
+}}
+
+function unfocusClusterGene() {{
+    clusterFocusedGene = null;
+    if (cy) cy.elements().removeClass('focus highlighted dimmed');
+    const banner = document.getElementById('cluster-gene-focus-banner');
+    if (banner) banner.style.display = 'none';
+    document.querySelectorAll('.partner').forEach(el => el.classList.remove('active-partner'));
+    updateStatus();
+}}
+
+function handleClusterMemberClick(geneId) {{
+    if (clusterFocusedGene === geneId) {{
+        unfocusClusterGene();
+        selectGene(geneId);
+    }} else {{
+        const node = cy.$id(geneId);
+        if (node.length > 0) {{
+            focusGeneInCluster(node, geneId, currentClusterId);
+        }} else {{
+            selectGene(geneId);
+        }}
+    }}
+}}
+
 function renderEgoNetwork(geneName) {{
     if (!cy || !geneName) return;
+    unfocusClusterGene();
     const info = getGeneData(geneName);
     if (!info) return;
 
@@ -1609,7 +1790,9 @@ function runLayout(randomize) {{
 
 function showSingleCluster(cid, highlightGene) {{
     if (!CLUSTERS[cid]) return;
-    switchView('gene');
+    currentClusterId = cid;
+    clusterFocusedGene = null;
+    switchView('single_cluster');
     currentClusterId = cid;
 
     const members = CLUSTERS[cid];
@@ -1675,7 +1858,7 @@ function showSingleCluster(cid, highlightGene) {{
     shown.forEach((m, i) => {{
         const isCil = ALL_CILIARY.has(m);
         sideHtml += `
-        <div class="partner" onclick="selectGene('${{m}}')">
+        <div class="partner ${{m === highlightGene ? 'active-partner' : ''}}" data-gene="${{m}}" onclick="handleClusterMemberClick('${{m}}')">
             <span class="rank">#${{i + 1}}</span>
             <span class="pname in-graph">${{m}}</span>
             ${{isCil ? getCiliaBadgeHtml(m) : ''}}
@@ -1685,9 +1868,20 @@ function showSingleCluster(cid, highlightGene) {{
     }});
     document.getElementById('partner-list').innerHTML = sideHtml;
     updateStatus();
+
+    if (highlightGene) {{
+        setTimeout(() => {{
+            const targetNode = cy.$id(highlightGene);
+            if (targetNode.length > 0) {{
+                focusGeneInCluster(targetNode, highlightGene, cid);
+            }}
+        }}, 650);
+    }}
 }}
 
 function showAllClusters() {{
+    currentClusterId = null;
+    unfocusClusterGene();
     switchView('all_clusters');
     selectedGene = null;
     document.getElementById('search').value = '';
@@ -1734,7 +1928,6 @@ function showAllClusters() {{
             group: 'nodes',
             data: {{
                 id: '__clabel_' + cid,
-                label: 'C' + cid + ': ' + shortName + '\n(' + members.length + ' genes)',
                 label: 'C' + cid + ': ' + shortName + String.fromCharCode(10) + '(' + members.length + ' genes)',
                 size: 1,
                 color: 'transparent',
@@ -1763,6 +1956,8 @@ function updateStatus() {{
         status.textContent = 'Mode: Whole Network (WebGL) • 11,236 genes • 73,467 edges';
     }} else if (currentMode === 'all_clusters') {{
         status.textContent = 'Mode: Leiden Clusters (Cytoscape) • 80 clusters • ' + cy.nodes().length + ' nodes';
+    }} else if (currentMode === 'single_cluster') {{
+        status.textContent = `Mode: Leiden Cluster C${{currentClusterId}} • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges (click gene to focus, 2nd click opens interactors)`;
     }} else if (cy) {{
         status.textContent = `Mode: Cytoscape Focus • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges`;
     }}
