@@ -402,9 +402,6 @@ def build_html(all_names, cluster_data=None, cluster_names=None, cluster_colors=
 <title>Gene Loss-Concordance Network Explorer</title>
 <!-- Cytoscape for Focused Gene & Pathway Views -->
 <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
-<!-- Graphology & Sigma.js for 60 FPS WebGL Whole Graph View -->
-<script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sigma@2.4.0/build/sigma.min.js"></script>
 <style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
 body {{
@@ -571,33 +568,12 @@ body {{
     background: #0a0e17;
     overflow: hidden;
 }}
-#sigma-container {{
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}}
 #cy {{
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    display: none;
-}}
-#webgl-hud {{
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #e2e8f0;
-    pointer-events: none;
-    backdrop-filter: blur(4px);
-    z-index: 5;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    display: block;
 }}
 #tooltip {{
     position: absolute;
@@ -928,14 +904,6 @@ body.light-theme #suggestions div {{
 body.light-theme #suggestions div:hover {{
     background: #f1f5f9;
 }}
-body.light-theme #webgl-hud {{
-    background: rgba(255, 255, 255, 0.92);
-    border-color: rgba(2, 132, 199, 0.3);
-    color: #0f172a;
-}}
-body.light-theme #webgl-hud span {{
-    color: #64748b !important;
-}}
 body.light-theme #gene-info h2 {{
     color: #0369a1;
 }}
@@ -1053,8 +1021,7 @@ body.light-theme .partner .rank {{
 <div id="header">
     <h1>Dollo Co-Loss Network Explorer</h1>
     <div class="view-toggle">
-        <button id="btn-view-whole" class="view-btn active" onclick="switchView('whole')">🌐 Whole Network (WebGL)</button>
-        <button id="btn-view-cy" class="view-btn" onclick="switchView('gene')">🔬 Gene Focus (Cytoscape)</button>
+        <button id="btn-view-cy" class="view-btn active" onclick="switchView('gene')">🔬 Gene Focus (Cytoscape)</button>
         <button id="btn-view-tree" class="view-btn" onclick="openTreeView()" title="Visualize gene presence across eukaryotic species tree">🌳 Tree View</button>
     </div>
     <button id="btn-all-clusters-head" class="btn-clusters-header" onclick="showAllClusters()">🗂️ All Clusters (Leiden)</button>
@@ -1094,12 +1061,7 @@ body.light-theme .partner .rank {{
 
 <div id="main">
     <div id="graph-wrapper">
-        <div id="sigma-container"></div>
         <div id="cy"></div>
-        <div id="webgl-hud">
-            <strong>WebGL View:</strong> 11,236 genes • 73,467 co-loss edges<br>
-            <span style="color:#8892b0; font-size:11px;">Drag to pan • Scroll to zoom • Click node to focus</span>
-        </div>
         <div id="empty-msg" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#556; font-size:14px; pointer-events:none; display:none;">
             Search for a gene or pick a cluster from the sidebar
         </div>
@@ -1138,11 +1100,11 @@ body.light-theme .partner .rank {{
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
                 Taxonomy:
                 <select id="tree-tax-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
-                    <option value="detailed">Clade (Reference)</option>
-                    <option value="tcs">TCS Major Clades (31)</option>
+                    <option value="kingdom" selected>Kingdom (UniProt)</option>
+                    <option value="phylum">Phylum (UniProt)</option>
                     <option value="supergroup">Supergroup</option>
-                    <option value="kingdom">Kingdom</option>
-                    <option value="phylum">Phylum</option>
+                    <option value="tcs">TCS Major Clades (31)</option>
+                    <option value="detailed">Detailed (Phylum)</option>
                 </select>
             </label>
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
@@ -1218,14 +1180,14 @@ for (const cid in CLUSTERS) {{
     }}
 }}
 
-// Fallback cluster color helper (Hex format for WebGL)
+// Cluster color helper (returns Hex color for cluster ID)
 function getClusterColor(cid) {{
     if (cid !== undefined && CLUSTER_COLORS[cid]) return CLUSTER_COLORS[cid];
     return '#38bdf8';
 }}
 
 // ---- Global State ----
-let currentMode = 'whole'; // 'whole' | 'gene' | 'all_clusters' | 'single_cluster'
+let currentMode = 'gene'; // 'gene' | 'all_clusters' | 'single_cluster'
 let selectedGene = null;
 let currentClusterId = null;
 let clusterFocusedGene = null;
@@ -1291,12 +1253,9 @@ function toggleSiteTheme() {{
 // Initialize site theme immediately
 applySiteTheme(SITE_THEME);
 
-let sigmaGraph = null;
-let sigmaRenderer = null;
 let cy = null;
 
 // Binary buffers
-let WHOLE_LOADED = false;
 let PARTNERS_LOADED = false;
 let GM = {{}}; // loss counts
 let PARTNER_OFFSETS = null;
@@ -1304,15 +1263,6 @@ let PARTNER_LOSSES = null;
 let PARTNER_DATA = null;
 const G_CACHE = {{}};
 let CLUSTER_CENTROIDS = {{}};
-
-function isWebGLAvailable() {{
-    try {{
-        const canvas = document.createElement('canvas');
-        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-    }} catch (e) {{
-        return false;
-    }}
-}}
 
 function getUniProtUrl(gene) {{
     if (!gene) return 'https://www.uniprot.org';
@@ -1337,213 +1287,29 @@ function getActiveGeneSet() {{
 // ---- View Switching ----
 function switchView(mode) {{
     currentMode = mode;
-    const btnWhole = document.getElementById('btn-view-whole');
     const btnCy = document.getElementById('btn-view-cy');
     const btnClusters = document.getElementById('btn-all-clusters-head');
-    const hud = document.getElementById('webgl-hud');
     const cyEl = document.getElementById('cy');
-    const sigmaEl = document.getElementById('sigma-container');
 
-    if (mode === 'whole') {{
-        if (btnWhole) btnWhole.classList.add('active');
-        if (btnCy) btnCy.classList.remove('active');
-        if (btnClusters) btnClusters.classList.remove('active');
-        if (hud) hud.style.display = 'block';
-        if (sigmaEl) sigmaEl.style.display = 'block';
-        if (cyEl) cyEl.style.display = 'none';
-        if (sigmaRenderer) sigmaRenderer.refresh();
-        updateStatus();
-    }} else if (mode === 'gene') {{
-        if (btnWhole) btnWhole.classList.remove('active');
+    if (mode === 'gene') {{
         if (btnCy) btnCy.classList.add('active');
         if (btnClusters) btnClusters.classList.remove('active');
-        if (hud) hud.style.display = 'none';
-        if (sigmaEl) sigmaEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
         if (selectedGene) renderEgoNetwork(selectedGene);
         updateStatus();
     }} else if (mode === 'single_cluster') {{
-        if (btnWhole) btnWhole.classList.remove('active');
         if (btnCy) btnCy.classList.add('active');
         if (btnClusters) btnClusters.classList.remove('active');
-        if (hud) hud.style.display = 'none';
-        if (sigmaEl) sigmaEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
         updateStatus();
     }} else if (mode === 'all_clusters') {{
-        if (btnWhole) btnWhole.classList.remove('active');
         if (btnCy) btnCy.classList.remove('active');
         if (btnClusters) btnClusters.classList.add('active');
-        if (hud) hud.style.display = 'none';
-        if (sigmaEl) sigmaEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
         updateStatus();
-    }}
-}}
-
-// ---- Binary Loaders ----
-async function loadWholeGraph() {{
-    try {{
-        const resp = await fetch('network_whole.bin');
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const buf = await resp.arrayBuffer();
-
-        const header = new DataView(buf, 0, 12);
-        const magic = String.fromCharCode(header.getUint8(0), header.getUint8(1), header.getUint8(2), header.getUint8(3));
-        if (magic !== 'DLW1') throw new Error('Invalid whole graph magic: ' + magic);
-
-        const nNodes = header.getUint32(4, true);
-        const nEdges = header.getUint32(8, true);
-
-        const nodeBlockOffset = 12;
-        const edgeBlockOffset = 12 + nNodes * 8;
-
-        const nodeView = new DataView(buf, nodeBlockOffset, nNodes * 8);
-        const edgeView = new DataView(buf, edgeBlockOffset, nEdges * 6);
-
-        // Build Graphology graph
-        sigmaGraph = new graphology.Graph();
-        for (let i = 0; i < nNodes; i++) {{
-            const name = NAMES[i];
-            const rawX = nodeView.getInt16(i * 8, true);
-            const rawY = nodeView.getInt16(i * 8 + 2, true);
-            const losses = nodeView.getUint16(i * 8 + 4, true);
-            const cid = nodeView.getUint16(i * 8 + 6, true);
-            GM[name] = losses;
-
-            // Map [-2000, 2000] into normalized [0.05, 0.95] space for Sigma WebGL camera
-            const x = ((rawX + 2000) / 4000) * 0.9 + 0.05;
-            const y = ((rawY + 2000) / 4000) * 0.9 + 0.05;
-
-            const color = getClusterColor(cid);
-            const size = Math.max(3.5, Math.min(16, 3.5 + Math.sqrt(losses) * 0.75));
-
-            sigmaGraph.addNode(name, {{
-                x: x,
-                y: y,
-                size: size,
-                label: name,
-                color: color,
-                baseColor: color,
-                losses: losses,
-                clusterId: cid
-            }});
-        }}
-
-        for (let i = 0; i < nEdges; i++) {{
-            const uIdx = edgeView.getUint16(i * 6, true);
-            const vIdx = edgeView.getUint16(i * 6 + 2, true);
-            const jRaw = edgeView.getUint16(i * 6 + 4, true);
-            const u = NAMES[uIdx];
-            const v = NAMES[vIdx];
-            const j = jRaw / 65535.0;
-
-            if (sigmaGraph.hasNode(u) && sigmaGraph.hasNode(v) && !sigmaGraph.hasEdge(u, v)) {{
-                sigmaGraph.addEdge(u, v, {{
-                    weight: j,
-                    size: 0.5 + j * 2.0,
-                    color: '#2a4365'
-                }});
-            }}
-        }}
-
-        // Compute centroids for clusters
-        CLUSTER_CENTROIDS = {{}};
-        for (const cid in CLUSTERS) {{
-            let sx = 0, sy = 0, cnt = 0;
-            for (const g of CLUSTERS[cid]) {{
-                if (sigmaGraph.hasNode(g)) {{
-                    const a = sigmaGraph.getNodeAttributes(g);
-                    sx += a.x; sy += a.y; cnt++;
-                }}
-            }}
-            if (cnt > 0) CLUSTER_CENTROIDS[cid] = {{ x: sx / cnt, y: sy / cnt, count: cnt }};
-        }}
-
-        if (!isWebGLAvailable()) {{
-            console.warn('WebGL is unavailable in this browser environment. Defaulting to Cytoscape.');
-            const hud = document.getElementById('webgl-hud');
-            if (hud) hud.innerHTML = '<strong>Note:</strong> WebGL acceleration disabled. Use Gene Focus for full exploration.';
-            switchView('gene');
-            WHOLE_LOADED = true;
-            return;
-        }}
-
-        // Initialize Sigma.js with crisp white labels and high contrast
-        const container = document.getElementById('sigma-container');
-        sigmaRenderer = new Sigma(sigmaGraph, container, {{
-            renderEdgeLabels: false,
-            enableEdgeClickEvents: false,
-            enableEdgeWheelEvents: false,
-            enableEdgeHoverEvents: false,
-            labelColor: {{ color: '#ffffff' }},
-            labelFont: 'Inter, system-ui, -apple-system, sans-serif',
-            labelSize: 12,
-            labelWeight: '600',
-            labelRenderedSizeThreshold: 5,
-            minCameraRatio: 0.02,
-            maxCameraRatio: 8
-        }});
-
-        // Center camera precisely on the normalized [0, 1] graph
-        sigmaRenderer.getCamera().setState({{ x: 0.5, y: 0.5, ratio: 1.05 }});
-
-        // WebGL Interactions
-        sigmaRenderer.on('enterNode', ({{ node }}) => {{
-            const neighbors = new Set(sigmaGraph.neighbors(node));
-            neighbors.add(node);
-
-            sigmaRenderer.setSetting('nodeReducer', (n, data) => {{
-                if (n === node) {{
-                    return {{ ...data, zIndex: 30, color: '#ffffff', size: Math.max(data.size * 1.5, 12), label: data.label }};
-                }}
-                if (neighbors.has(n)) {{
-                    return {{ ...data, zIndex: 20, color: '#38bdf8', size: Math.max(data.size, 8), label: data.label }};
-                }}
-                return {{ ...data, zIndex: 0, color: '#111827', label: '' }};
-            }});
-
-            sigmaRenderer.setSetting('edgeReducer', (e, data) => {{
-                const [source, target] = sigmaGraph.extremities(e);
-                if (source === node || target === node) {{
-                    return {{ ...data, color: '#38bdf8', size: 2.0, zIndex: 5 }};
-                }}
-                return {{ ...data, color: '#0f172a', size: 0.1 }};
-            }});
-
-            const d = sigmaGraph.getNodeAttributes(node);
-            const tooltip = document.getElementById('tooltip');
-            tooltip.innerHTML = `<strong>${{d.label}}</strong>${{getCiliaBadgeHtml(d.label)}}<br>Losses: ${{d.losses}}<br><span style="color:${{d.baseColor}};">●</span> Cluster C${{d.clusterId}}: ${{CLUSTER_NAMES[d.clusterId] || ''}}`;
-            tooltip.style.display = 'block';
-        }});
-
-        sigmaRenderer.on('leaveNode', () => {{
-            sigmaRenderer.setSetting('nodeReducer', null);
-            sigmaRenderer.setSetting('edgeReducer', null);
-            document.getElementById('tooltip').style.display = 'none';
-        }});
-
-        sigmaRenderer.getMouseCaptor().on('mousemove', (e) => {{
-            const tooltip = document.getElementById('tooltip');
-            if (tooltip.style.display === 'block') {{
-                tooltip.style.left = (e.clientX + 14) + 'px';
-                tooltip.style.top = (e.clientY + 14) + 'px';
-            }}
-        }});
-
-        sigmaRenderer.on('clickNode', ({{ node }}) => {{
-            selectGene(node);
-        }});
-
-        WHOLE_LOADED = true;
-        updateStatus();
-    }} catch (err) {{
-        console.error('Failed to load network_whole.bin:', err);
-        document.getElementById('graph-status').textContent = 'Error loading whole graph: ' + err.message;
-        switchView('gene');
     }}
 }}
 
@@ -1607,23 +1373,11 @@ function getGeneData(name) {{
 // ---- Selection & Navigation ----
 function selectGene(name) {{
     if (!name || (GM[name] === undefined && GENE_IDX[name] === undefined)) return;
-    const previousGene = selectedGene;
     selectedGene = name;
     document.getElementById('search').value = name;
     renderSidebar(name);
-
-    if (currentMode === 'whole' && sigmaRenderer && sigmaGraph && sigmaGraph.hasNode(name)) {{
-        if (previousGene === name) {{
-            switchView('gene');
-            renderEgoNetwork(name);
-        }} else {{
-            const nodeAttrs = sigmaGraph.getNodeAttributes(name);
-            sigmaRenderer.getCamera().animate({{ x: nodeAttrs.x, y: nodeAttrs.y, ratio: 0.15 }}, {{ duration: 500 }});
-        }}
-    }} else {{
-        switchView('gene');
-        renderEgoNetwork(name);
-    }}
+    switchView('gene');
+    renderEgoNetwork(name);
 }}
 
 function renderClusterDirectory() {{
@@ -1660,12 +1414,6 @@ function zoomToCluster(cid) {{
         if (cnodes.length > 0) {{
             cy.animate({{ fit: {{ eles: cnodes, padding: 60 }} }}, {{ duration: 400 }});
         }}
-    }} else if (currentMode === 'whole' && sigmaRenderer && CLUSTER_CENTROIDS[cid]) {{
-        sigmaRenderer.getCamera().animate({{
-            x: CLUSTER_CENTROIDS[cid].x,
-            y: CLUSTER_CENTROIDS[cid].y,
-            ratio: 0.25
-        }}, {{ duration: 500 }});
     }} else {{
         showSingleCluster(cid);
     }}
@@ -2295,9 +2043,7 @@ function showAllClusters() {{
 function updateStatus() {{
     const status = document.getElementById('graph-status');
     if (!status) return;
-    if (currentMode === 'whole') {{
-        status.textContent = 'Mode: Whole Network (WebGL) • 11,236 genes • 73,467 edges';
-    }} else if (currentMode === 'all_clusters') {{
+    if (currentMode === 'all_clusters') {{
         status.textContent = 'Mode: Leiden Clusters (Cytoscape) • 80 clusters • ' + cy.nodes().length + ' nodes';
     }} else if (currentMode === 'single_cluster') {{
         status.textContent = `Mode: Leiden Cluster C${{currentClusterId}} • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges (click gene to focus, 2nd click opens interactors)`;
@@ -2380,7 +2126,7 @@ let TREE_LAYOUT = null;
 let TREE_PRESENCE_BUFFER = null;
 let TREE_GENE_IDX = {{}};
 let TREE_SELECTED_GENES = ['SCAPER', 'TTC5', 'CNOT11'];
-let TREE_TAX_LEVEL = 'detailed';
+let TREE_TAX_LEVEL = 'kingdom';
 let TREE_BRANCH_MODE = 'genes';
 let TREE_BRANCH_LEN_MODE = 'cladogram'; // default: ignore branch lengths (like in iTOL)
 const TREE_PALETTE = ['#d62728', '#1f77b4', '#2ca02c', '#d95f02', '#9467bd', '#17becf', '#e377c2', '#8c564b', '#bcbd22', '#17becf'];
@@ -2407,6 +2153,8 @@ function closeTreeView() {{
 
 function setTreeTaxLevel(lvl) {{
     TREE_TAX_LEVEL = lvl;
+    const sel = document.getElementById('tree-tax-select');
+    if (sel && sel.value !== lvl) sel.value = lvl;
     renderCircularTree();
 }}
 
@@ -2750,6 +2498,10 @@ function renderCircularTree() {{
 
         svgParts.push(`<path d="M ${{xS}} ${{yS}} A ${{R_CLADE_ARC}} ${{R_CLADE_ARC}} 0 0 0 ${{xE}} ${{yE}}" fill="none" stroke="${{col}}" stroke-width="5.5" stroke-linecap="round" />`);
 
+        // Skip label for tiny single-species sectors to avoid crowded/isolated labels
+        const blockSize = (eIdx - sIdx) + 1;
+        if (blockSize < 2) return;
+
         const midAng = (a1 + a2) / 2.0;
         const rLabel = R_CLADE_ARC + 14;
         const [lx, ly] = pt(rLabel, midAng);
@@ -2990,9 +2742,6 @@ function exportTreeSvg() {{
 
 document.getElementById('toggle-labels').addEventListener('change', function() {{
     const show = this.checked;
-    if (sigmaRenderer) {{
-        sigmaRenderer.setSetting('renderLabels', show);
-    }}
     if (cy) {{
         cy.batch(() => {{
             if (show) cy.nodes().removeClass('hide-label');
@@ -3031,7 +2780,6 @@ document.getElementById('gene-filter').addEventListener('change', function() {{
 window.addEventListener('DOMContentLoaded', () => {{
     applySiteTheme(SITE_THEME);
     initCy();
-    loadWholeGraph();
     loadPartnersGraph();
     renderClusterDirectory();
 }});
