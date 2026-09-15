@@ -1285,11 +1285,30 @@ function getActiveGeneSet() {{
 }}
 
 // ---- View Switching ----
+function updateControlsForMode(isLeiden) {{
+    // Grey out Jaccard & Top-N controls when in Leiden cluster mode (they don't apply)
+    const ids = ['thresh', 'topn', 'toggle-topn-max'];
+    ids.forEach(id => {{
+        const el = document.getElementById(id);
+        if (el) el.disabled = isLeiden;
+    }});
+    const labels = document.querySelectorAll('.controls label');
+    labels.forEach(lbl => {{
+        // only dim the Jaccard and Top-N label groups
+        const text = lbl.textContent.trim();
+        if (text.startsWith('Jaccard') || text.startsWith('Show Top') || text.startsWith('Max')) {{
+            lbl.style.opacity = isLeiden ? '0.35' : '1';
+        }}
+    }});
+}}
+
 function switchView(mode) {{
     currentMode = mode;
     const btnCy = document.getElementById('btn-view-cy');
     const btnClusters = document.getElementById('btn-all-clusters-head');
     const cyEl = document.getElementById('cy');
+    const isLeiden = (mode === 'single_cluster' || mode === 'all_clusters');
+    updateControlsForMode(isLeiden);
 
     if (mode === 'gene') {{
         if (btnCy) btnCy.classList.add('active');
@@ -1889,18 +1908,15 @@ function showSingleCluster(cid, highlightGene) {{
     const members = CLUSTERS[cid];
     const color = getClusterColor(cid);
     const cname = CLUSTER_NAMES[cid] || `Cluster ${{cid}}`;
-    const thresh = parseFloat(document.getElementById('thresh').value);
-    const topn = parseInt(document.getElementById('topn').value);
 
     const activeSet = getActiveGeneSet();
-    const qualifying = members.filter(n => GM[n] !== undefined && (!activeSet || activeSet.has(n)));
-    const shown = qualifying.slice(0, topn * 2);
+    const shown = members.filter(n => GM[n] !== undefined && (!activeSet || activeSet.has(n)));
     const shownSet = new Set(shown);
 
     document.getElementById('gene-info').innerHTML = `
         <a class="back-to-clusters" onclick="showAllClusters();">← All Leiden Clusters</a>
         <h2 style="color:${{color}};">C${{cid}}: ${{cname}}</h2>
-        <div class="meta">${{shown.length}} of ${{members.length}} cluster genes shown</div>
+        <div class="meta">${{shown.length}} genes • Jaccard &amp; Top-N filters inactive for clusters</div>
     `;
 
     const elements = [];
@@ -1918,19 +1934,19 @@ function showSingleCluster(cid, highlightGene) {{
         }});
     }});
 
-    // Add intra-cluster edges
+    // Add all intra-cluster edges (no Jaccard threshold — show full community structure)
     shown.forEach(name => {{
         const d = getGeneData(name);
         if (!d) return;
         for (const p of d.p) {{
-            if (p.j >= thresh && shownSet.has(p.n) && name < p.n) {{
+            if (p.j > 0 && shownSet.has(p.n) && name < p.n) {{
                 elements.push({{
                     group: 'edges',
                     data: {{
                         id: `${{name}}--${{p.n}}`,
                         source: name,
                         target: p.n,
-                        width: 0.4 + p.j * 2,
+                        width: 0.4 + p.j * 2.5,
                         color: color
                     }}
                 }});
@@ -1944,7 +1960,7 @@ function showSingleCluster(cid, highlightGene) {{
     }});
     runLayout(true);
 
-    // Populate sidebar with cluster members
+    // Populate sidebar with all cluster members
     let sideHtml = '';
     shown.forEach((m, i) => {{
         const isCil = ALL_CILIARY.has(m);
@@ -1977,7 +1993,6 @@ function showAllClusters() {{
     selectedGene = null;
     document.getElementById('search').value = '';
 
-    const thresh = parseFloat(document.getElementById('thresh').value);
     const MAX_NODES = 20;
     const sortedCids = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
     const cols = 9;
@@ -1996,6 +2011,7 @@ function showAllClusters() {{
         const vis = sorted.slice(0, MAX_NODES);
         const nVis = vis.length;
         const radius = Math.max(45, Math.min(150, Math.sqrt(nVis) * 28));
+        const visSet = new Set(vis.map(m => m.n));
 
         vis.forEach((m, mi) => {{
             const angle = (2 * Math.PI * mi) / nVis;
@@ -2012,6 +2028,26 @@ function showAllClusters() {{
                 }},
                 position: {{ x: cx + radius * Math.cos(angle), y: cy_pos + radius * Math.sin(angle) }}
             }});
+        }});
+
+        // Add intra-cluster edges to make community structure visible
+        vis.forEach(m => {{
+            const d = getGeneData(m.n);
+            if (!d) return;
+            for (const p of d.p) {{
+                if (p.j > 0 && visSet.has(p.n) && m.n < p.n) {{
+                    elements.push({{
+                        group: 'edges',
+                        data: {{
+                            id: `${{m.n}}--${{p.n}}`,
+                            source: m.n,
+                            target: p.n,
+                            width: 0.3 + p.j * 1.5,
+                            color: color
+                        }}
+                    }});
+                }}
+            }}
         }});
 
         const shortName = cname.length > 22 ? cname.slice(0, 20) + '…' : cname;
