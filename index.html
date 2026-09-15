@@ -53,130 +53,121 @@ body {
     background: transparent;
     color: #8892b0;
     cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
+    transition: all 0.15s ease;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
 }
+.view-btn:hover {
+    color: #e2e8f0;
+}
 .view-btn.active {
-    background: #1a3a6a;
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.btn-clusters-header {
+    background: #1e293b;
+    border: 1px solid #38bdf8;
     color: #38bdf8;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-clusters-header:hover, .btn-clusters-header.active {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
 }
 .search-box {
     position: relative;
-    flex: 0 0 240px;
+    width: 250px;
 }
 .search-box input {
     width: 100%;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border: 1px solid #3a4570;
     border-radius: 6px;
     background: #0d1220;
     color: #e0e6f0;
-    font-size: 13px;
+    font-size: 12px;
     outline: none;
 }
 .search-box input:focus { border-color: #5a8eff; }
-.search-box input::placeholder { color: #556; }
 #suggestions {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: #1a2040;
-    border: 1px solid #3a4570;
-    border-top: none;
+    background: #151d30;
+    border: 1px solid #2a3558;
     border-radius: 0 0 6px 6px;
     max-height: 250px;
     overflow-y: auto;
-    display: none;
     z-index: 100;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 #suggestions div {
-    padding: 6px 12px;
+    padding: 6px 10px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
-#suggestions div:hover, #suggestions div.active {
-    background: #2a3a6a;
-}
+#suggestions div:hover { background: #1f2b48; }
 .controls {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    font-size: 12px;
+    color: #8892b0;
+    margin-left: auto;
     flex-wrap: wrap;
 }
-.controls label {
-    font-size: 12px;
-    color: #8892b0;
-}
-.controls input[type="range"] {
-    width: 100px;
-    accent-color: #5a8eff;
+.controls label { display: flex; align-items: center; gap: 4px; }
+.controls input[type="range"] { width: 80px; accent-color: #5a8eff; }
+.controls select {
+    background: #0d1220;
+    border: 1px solid #3a4570;
+    color: #e0e6f0;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 11px;
 }
 .btn {
-    padding: 5px 12px;
+    padding: 4px 10px;
     border: 1px solid #3a4570;
-    border-radius: 5px;
-    background: #1a2040;
-    color: #a0b0d0;
+    border-radius: 4px;
+    background: #1a2540;
+    color: #c0d0e8;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
+    font-weight: 500;
     transition: all 0.15s;
 }
-.btn:hover { background: #2a3a6a; color: #fff; }
+.btn:hover { background: #253555; color: #fff; }
 .btn-accent {
-    background: #1a3a6a;
-    border-color: #3a6aaa;
-    color: #7eb8ff;
+    background: #1e3a5f;
+    border-color: #38bdf8;
+    color: #38bdf8;
 }
-.btn-accent:hover { background: #2a4a8a; }
-.btn-clusters-header {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-    border: 1px solid #38bdf8;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 12px;
-    padding: 6px 13px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
-    white-space: nowrap;
-    cursor: pointer;
-}
-.cluster-entry {
-    display: flex;
-    align-items: center;
-    padding: 7px 12px;
-    border-bottom: 1px solid #1a2040;
-    cursor: pointer;
-    transition: background 0.1s;
-    gap: 8px;
-}
-.cluster-entry:hover { background: #1a2a4a; }
-.cluster-entry .swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    flex-shrink: 0;
-    border: 1px solid rgba(255,255,255,0.15);
-}
-.cluster-entry .cname {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 500;
-    color: #e0e6f0;
-}
-.cluster-entry .csize {
-    font-size: 11px;
-    color: #8892b0;
-    flex-shrink: 0;
+.btn-accent:hover {
+    background: #38bdf8;
+    color: #0b1120;
 }
 #main {
-    display: flex;
     flex: 1;
-    overflow: hidden;
+    display: flex;
     position: relative;
+    overflow: hidden;
 }
 #graph-wrapper {
     flex: 1;
@@ -196,6 +187,35 @@ body {
     width: 100%;
     height: 100%;
     display: none;
+}
+#webgl-hud {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #e2e8f0;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    z-index: 5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+#tooltip {
+    position: absolute;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #38bdf8;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    color: #f8fafc;
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    line-height: 1.4;
 }
 #sidebar {
     width: 370px;
@@ -236,20 +256,23 @@ body {
     display: none;
 }
 #gene-info {
-    padding: 14px 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid #2a3050;
     background: #151d30;
     flex-shrink: 0;
 }
 #gene-info h2 {
-    font-size: 17px;
+    font-size: 16px;
     color: #7eb8ff;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 #gene-info .meta {
-    font-size: 12px;
+    font-size: 11.5px;
     color: #8892b0;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 #partner-list {
     flex: 1;
@@ -260,7 +283,7 @@ body {
     align-items: center;
     padding: 6px 12px;
     border-bottom: 1px solid #1a2040;
-    font-size: 13px;
+    font-size: 12.5px;
     cursor: pointer;
     transition: background 0.1s;
     gap: 8px;
@@ -268,7 +291,7 @@ body {
 .partner:hover { background: #1a2a4a; }
 .partner.active { background: #243560; }
 .partner .rank {
-    width: 28px;
+    width: 26px;
     color: #556;
     font-size: 11px;
     font-tabular-nums: tabular-nums;
@@ -276,10 +299,13 @@ body {
 .partner .pname {
     flex: 1;
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .partner .pname.in-graph { color: #7eb8ff; }
 .partner .bar-wrap {
-    width: 60px;
+    width: 50px;
     height: 6px;
     background: #1a2040;
     border-radius: 3px;
@@ -291,16 +317,49 @@ body {
     border-radius: 3px;
 }
 .partner .pjaccard {
-    width: 44px;
+    width: 38px;
     text-align: right;
-    font-size: 12px;
+    font-size: 11.5px;
     color: #8892b0;
 }
 .partner .ploss {
-    width: 32px;
+    width: 30px;
     text-align: right;
     font-size: 11px;
     color: #556;
+}
+.cluster-entry {
+    display: flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-bottom: 1px solid #1a2040;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    gap: 8px;
+}
+.cluster-entry:hover { background: #1a2a4a; }
+.cluster-entry.active { background: #243560; border-left: 3px solid #38bdf8; }
+.cluster-entry .swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.cluster-entry .cname {
+    flex: 1;
+    min-width: 0;
+    font-weight: 500;
+    color: #e0e6f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cluster-entry .csize {
+    font-size: 11px;
+    color: #8892b0;
+    flex-shrink: 0;
 }
 .cilia-badge {
     font-size: 9px;
@@ -330,6 +389,21 @@ body {
     border-color: #38bdf8;
     background: #1e293b;
 }
+.back-to-clusters {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #38bdf8;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+.back-to-clusters:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+}
 #status-bar {
     background: #0d1220;
     border-top: 1px solid #2a3050;
@@ -353,36 +427,13 @@ body {
 .spinner {
     width: 10px;
     height: 10px;
-    border: 2px solid #3a5080;
-    border-top-color: #7eb8ff;
+    border: 2px solid #38bdf8;
+    border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-#tooltip {
-    position: absolute;
-    background: rgba(13, 18, 32, 0.95);
-    border: 1px solid #3a4570;
-    border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 12px;
-    pointer-events: none;
-    display: none;
-    z-index: 200;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-}
-#webgl-hud {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: rgba(13, 18, 32, 0.85);
-    border: 1px solid #2a3558;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #cbd5e1;
-    pointer-events: none;
-    z-index: 10;
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 </style>
 </head>
@@ -390,36 +441,30 @@ body {
 
 <div id="header">
     <h1>Dollo Co-Loss Network Explorer</h1>
-
     <div class="view-toggle">
-        <button id="btn-view-whole" class="view-btn active" onclick="switchView('whole')" title="View all 11,236 genes and 73,467 edges with 60 FPS WebGL">🌐 Whole Network (WebGL)</button>
-        <button id="btn-view-cy" class="view-btn" onclick="switchView('gene')" title="Interactive single-gene ego network & pathways">🔬 Gene Focus (Cytoscape)</button>
+        <button id="btn-view-whole" class="view-btn active" onclick="switchView('whole')">🌐 Whole Network (WebGL)</button>
+        <button id="btn-view-cy" class="view-btn" onclick="switchView('gene')">🔬 Gene Focus (Cytoscape)</button>
     </div>
-
-    <button id="btn-all-clusters-head" class="btn-clusters-header" onclick="showAllClusters()">🔬 All Clusters (Leiden)</button>
+    <button id="btn-all-clusters-head" class="btn-clusters-header" onclick="showAllClusters()">🗂️ All Clusters (Leiden)</button>
 
     <div class="search-box">
-        <input type="text" id="search" placeholder="Search gene (e.g. SCAPER, CEP290)..." autocomplete="off" spellcheck="false">
+        <input type="text" id="search" placeholder="Search gene (e.g. SCAPER, CEP290)…" autocomplete="off">
         <div id="suggestions"></div>
     </div>
 
-    <div class="controls" id="explorer-controls">
-        <label>Jaccard ≥ <span id="thresh-val">0.20</span></label>
-        <input type="range" id="thresh" min="0.05" max="0.80" step="0.01" value="0.20">
+    <div class="controls">
+        <label>Jaccard &ge; <span id="thresh-val">0.20</span></label>
+        <input type="range" id="thresh" min="0.10" max="0.70" step="0.02" value="0.20">
 
         <label>Show Top <span id="topn-val">25</span></label>
         <input type="range" id="topn" min="5" max="100" step="5" value="25">
-        <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px;">
-            <input type="checkbox" id="toggle-topn-max"> Max
-        </label>
+        <label><input type="checkbox" id="toggle-topn-max"> Max</label>
 
-        <label style="margin-left:4px;">Filter:</label>
-        <select id="gene-filter" style="padding:4px 8px; border:1px solid #3a4570; border-radius:5px; background:#0d1220; color:#e0e6f0; font-size:12px;">
+        <label>Filter:</label>
+        <select id="gene-filter">
             <option value="all">All Genes</option>
-            <option value="all_ciliary">Curated Ciliary (Union)</option>
-            <option value="syscilia_v2">SYSCILIA Gold Standard v2</option>
-            <option value="ciliacarta">CiliaCarta (935 genes)</option>
-            <option value="shared_core">Shared Core (SCGSv2 ∩ CiliaCarta)</option>
+            <option value="all_ciliary">Curated Ciliary Genes</option>
+            <option value="syscilia">SYSCILIA Gold Standard</option>
         </select>
 
         <label style="margin-left:4px;">Labels:</label>
@@ -444,7 +489,7 @@ body {
     <div id="sidebar">
         <div id="sidebar-search-wrap">
             <span style="position:absolute; left:18px; top:50%; transform:translateY(-50%); color:#4a5568; font-size:12px;">🔍</span>
-            <input type="text" id="sidebar-search" placeholder="Filter sidebar genes..." autocomplete="off">
+            <input type="text" id="sidebar-search" placeholder="Filter sidebar genes / clusters..." autocomplete="off">
             <span id="sidebar-search-clear">✕</span>
         </div>
         <div id="gene-info">
@@ -489,7 +534,7 @@ function getClusterColor(cid) {
 }
 
 // ---- Global State ----
-let currentMode = 'whole'; // 'whole' | 'gene'
+let currentMode = 'whole'; // 'whole' | 'gene' | 'all_clusters'
 let selectedGene = null;
 let currentClusterId = null;
 let geneFilterMode = 'all';
@@ -506,6 +551,7 @@ let PARTNER_OFFSETS = null;
 let PARTNER_LOSSES = null;
 let PARTNER_DATA = null;
 const G_CACHE = {};
+let CLUSTER_CENTROIDS = {};
 
 function isWebGLAvailable() {
     try {
@@ -527,7 +573,8 @@ function getCiliaBadgeHtml(geneName) {
     const info = CILIA_INFO[geneName];
     let title = 'Curated ciliary component';
     if (info && info.v2) title += ` (SYSCILIA ${info.v2})`;
-    if (info && info.loc) title += `\nLocalization: ${info.loc}`;
+    if (info && info.loc) title += `
+Localization: ${info.loc}`;
     return `<span class="cilia-badge" title="${title.replace(/"/g, '&quot;')}">cilia</span>`;
 }
 
@@ -541,6 +588,7 @@ function switchView(mode) {
     currentMode = mode;
     const btnWhole = document.getElementById('btn-view-whole');
     const btnCy = document.getElementById('btn-view-cy');
+    const btnClusters = document.getElementById('btn-all-clusters-head');
     const hud = document.getElementById('webgl-hud');
     const cyEl = document.getElementById('cy');
     const sigmaEl = document.getElementById('sigma-container');
@@ -548,19 +596,30 @@ function switchView(mode) {
     if (mode === 'whole') {
         if (btnWhole) btnWhole.classList.add('active');
         if (btnCy) btnCy.classList.remove('active');
+        if (btnClusters) btnClusters.classList.remove('active');
         if (hud) hud.style.display = 'block';
         if (sigmaEl) sigmaEl.style.display = 'block';
         if (cyEl) cyEl.style.display = 'none';
         if (sigmaRenderer) sigmaRenderer.refresh();
         updateStatus();
-    } else {
+    } else if (mode === 'gene') {
         if (btnWhole) btnWhole.classList.remove('active');
         if (btnCy) btnCy.classList.add('active');
+        if (btnClusters) btnClusters.classList.remove('active');
         if (hud) hud.style.display = 'none';
         if (sigmaEl) sigmaEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
         if (selectedGene) renderEgoNetwork(selectedGene);
+        updateStatus();
+    } else if (mode === 'all_clusters') {
+        if (btnWhole) btnWhole.classList.remove('active');
+        if (btnCy) btnCy.classList.remove('active');
+        if (btnClusters) btnClusters.classList.add('active');
+        if (hud) hud.style.display = 'none';
+        if (sigmaEl) sigmaEl.style.display = 'none';
+        if (cyEl) cyEl.style.display = 'block';
+        if (cy) cy.resize();
         updateStatus();
     }
 }
@@ -599,7 +658,6 @@ async function loadWholeGraph() {
             const x = ((rawX + 2000) / 4000) * 0.9 + 0.05;
             const y = ((rawY + 2000) / 4000) * 0.9 + 0.05;
 
-            // Hex color guaranteed for WebGL shader
             const color = getClusterColor(cid);
             const size = Math.max(3.5, Math.min(16, 3.5 + Math.sqrt(losses) * 0.75));
 
@@ -632,6 +690,19 @@ async function loadWholeGraph() {
             }
         }
 
+        // Compute centroids for clusters
+        CLUSTER_CENTROIDS = {};
+        for (const cid in CLUSTERS) {
+            let sx = 0, sy = 0, cnt = 0;
+            for (const g of CLUSTERS[cid]) {
+                if (sigmaGraph.hasNode(g)) {
+                    const a = sigmaGraph.getNodeAttributes(g);
+                    sx += a.x; sy += a.y; cnt++;
+                }
+            }
+            if (cnt > 0) CLUSTER_CENTROIDS[cid] = { x: sx / cnt, y: sy / cnt, count: cnt };
+        }
+
         if (!isWebGLAvailable()) {
             console.warn('WebGL is unavailable in this browser environment. Defaulting to Cytoscape.');
             const hud = document.getElementById('webgl-hud');
@@ -641,14 +712,18 @@ async function loadWholeGraph() {
             return;
         }
 
-        // Initialize Sigma.js
+        // Initialize Sigma.js with crisp white labels and high contrast
         const container = document.getElementById('sigma-container');
         sigmaRenderer = new Sigma(sigmaGraph, container, {
             renderEdgeLabels: false,
             enableEdgeClickEvents: false,
             enableEdgeWheelEvents: false,
             enableEdgeHoverEvents: false,
-            labelRenderedSizeThreshold: 11,
+            labelColor: { color: '#ffffff' },
+            labelFont: 'Inter, system-ui, -apple-system, sans-serif',
+            labelSize: 12,
+            labelWeight: '600',
+            labelRenderedSizeThreshold: 5,
             minCameraRatio: 0.02,
             maxCameraRatio: 8
         });
@@ -662,10 +737,13 @@ async function loadWholeGraph() {
             neighbors.add(node);
 
             sigmaRenderer.setSetting('nodeReducer', (n, data) => {
-                if (neighbors.has(n)) {
-                    return { ...data, zIndex: 10, color: n === node ? '#ffffff' : data.baseColor };
+                if (n === node) {
+                    return { ...data, zIndex: 30, color: '#ffffff', size: Math.max(data.size * 1.5, 12), label: data.label };
                 }
-                return { ...data, zIndex: 0, color: '#161f38', label: '' };
+                if (neighbors.has(n)) {
+                    return { ...data, zIndex: 20, color: '#38bdf8', size: Math.max(data.size, 8), label: data.label };
+                }
+                return { ...data, zIndex: 0, color: '#111827', label: '' };
             });
 
             sigmaRenderer.setSetting('edgeReducer', (e, data) => {
@@ -678,7 +756,7 @@ async function loadWholeGraph() {
 
             const d = sigmaGraph.getNodeAttributes(node);
             const tooltip = document.getElementById('tooltip');
-            tooltip.innerHTML = `<strong>${d.label}</strong>${getCiliaBadgeHtml(d.label)}<br>Losses: ${d.losses}<br>Cluster C${d.clusterId}: ${CLUSTER_NAMES[d.clusterId] || ''}`;
+            tooltip.innerHTML = `<strong>${d.label}</strong>${getCiliaBadgeHtml(d.label)}<br>Losses: ${d.losses}<br><span style="color:${d.baseColor};">●</span> Cluster C${d.clusterId}: ${CLUSTER_NAMES[d.clusterId] || ''}`;
             tooltip.style.display = 'block';
         });
 
@@ -755,16 +833,13 @@ function getGeneData(name) {
     for (let i = 0; i < count; i++) {
         const pIdx = PARTNER_DATA[pos++];
         const jRaw = PARTNER_DATA[pos++];
-        const pName = NAMES[pIdx];
-        if (pName) {
-            partners.push({
-                n: pName,
-                j: jRaw / 65535.0,
-                l: PARTNER_LOSSES[pIdx]
-            });
-        }
+        partners.push({
+            n: NAMES[pIdx],
+            j: jRaw / 65535.0,
+            l: GM[NAMES[pIdx]] || 0
+        });
     }
-    const res = { l: PARTNER_LOSSES[idx], p: partners };
+    const res = { l: GM[name] || 0, p: partners };
     G_CACHE[name] = res;
     return res;
 }
@@ -782,6 +857,51 @@ function selectGene(name) {
     } else {
         switchView('gene');
         renderEgoNetwork(name);
+    }
+}
+
+function renderClusterDirectory() {
+    const sortedCids = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
+    document.getElementById('gene-info').innerHTML = `
+        <h2>🔬 Leiden Modules <span style="font-size:11px;color:#8892b0;font-weight:400;">(80 clusters)</span></h2>
+        <div class="meta">Click a cluster to zoom in • Click "View Cluster →" to explore all members</div>
+    `;
+
+    let html = '';
+    sortedCids.forEach(cid => {
+        const members = CLUSTERS[cid];
+        const color = getClusterColor(cid);
+        const cname = CLUSTER_NAMES[cid] || ('Cluster ' + cid);
+        const cilCount = members.filter(m => ALL_CILIARY.has(m)).length;
+
+        html += `
+        <div class="cluster-entry" data-cluster-id="${cid}" onclick="zoomToCluster(${cid})" ondblclick="showSingleCluster(${cid})" title="C${cid}: ${cname}">
+            <span class="swatch" style="background:${color};"></span>
+            <div class="cname">
+                <strong style="color:#7eb8ff;">C${cid}:</strong> ${cname}
+            </div>
+            ${cilCount > 0 ? `<span class="cilia-badge">${cilCount} cil</span>` : ''}
+            <span class="csize">${members.length} genes</span>
+            <button class="btn btn-accent" style="padding:2px 7px; font-size:10.5px; white-space:nowrap; margin-left:4px;" onclick="event.stopPropagation(); showSingleCluster(${cid});">View →</button>
+        </div>`;
+    });
+    document.getElementById('partner-list').innerHTML = html;
+}
+
+function zoomToCluster(cid) {
+    if (currentMode === 'all_clusters' && cy) {
+        const cnodes = cy.nodes().filter(n => n.data('clusterId') === cid);
+        if (cnodes.length > 0) {
+            cy.animate({ fit: { eles: cnodes, padding: 60 } }, { duration: 400 });
+        }
+    } else if (currentMode === 'whole' && sigmaRenderer && CLUSTER_CENTROIDS[cid]) {
+        sigmaRenderer.getCamera().animate({
+            x: CLUSTER_CENTROIDS[cid].x,
+            y: CLUSTER_CENTROIDS[cid].y,
+            ratio: 0.25
+        }, { duration: 500 });
+    } else {
+        showSingleCluster(cid);
     }
 }
 
@@ -803,13 +923,15 @@ function renderSidebar(name) {
         </div>`;
     }
 
+    const ciliaBadge = getCiliaBadgeHtml(name);
+    const uniprotUrl = getUniProtUrl(name);
+
     document.getElementById('gene-info').innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <h2 style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${name} ${getCiliaBadgeHtml(name)}
-            </h2>
-            <a href="${getUniProtUrl(name)}" target="_blank" rel="noopener noreferrer" class="gene-ext-link">UniProt ↗</a>
-        </div>
+        <a class="back-to-clusters" onclick="renderClusterDirectory();">← All Leiden Clusters</a>
+        <h2>
+            <span style="overflow:hidden; text-overflow:ellipsis;">${name} ${ciliaBadge}</span>
+            <a href="${uniprotUrl}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open in UniProt">UniProt ↗</a>
+        </h2>
         <div class="meta">
             Independent loss events: <strong>${info.l}</strong>
         </div>
@@ -817,29 +939,36 @@ function renderSidebar(name) {
     `;
 
     const thresh = parseFloat(document.getElementById('thresh').value);
+    let topn = parseInt(document.getElementById('topn').value);
+    if (document.getElementById('toggle-topn-max').checked) topn = Infinity;
     const activeSet = getActiveGeneSet();
-    const qualifying = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n)));
 
-    let sideHtml = '';
-    qualifying.forEach((p, i) => {
+    const qualifying = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n))).slice(0, topn);
+
+    let html = '';
+    qualifying.forEach((p, idx) => {
         const isCil = ALL_CILIARY.has(p.n);
-        const pct = Math.round(p.j * 100);
-        sideHtml += `
+        const pLoss = GM[p.n] !== undefined ? GM[p.n] : (p.l || 0);
+        html += `
         <div class="partner" onclick="selectGene('${p.n}')">
-            <span class="rank">#${i + 1}</span>
+            <span class="rank">#${idx + 1}</span>
             <span class="pname in-graph">${p.n}</span>
             ${isCil ? getCiliaBadgeHtml(p.n) : ''}
-            <div class="bar-wrap"><div class="bar" style="width:${pct}%;"></div></div>
+            <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%;"></div></div>
             <span class="pjaccard">${p.j.toFixed(2)}</span>
-            <span class="ploss">${p.l}L</span>
-            <a href="${getUniProtUrl(p.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" onclick="event.stopPropagation();">↗</a>
+            <span class="ploss">${pLoss}L</span>
+            <a href="${getUniProtUrl(p.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" onclick="event.stopPropagation();" title="UniProt">↗</a>
         </div>`;
     });
 
-    document.getElementById('partner-list').innerHTML = sideHtml || '<div style="padding:16px; color:#556; text-align:center;">No partners above current threshold.</div>';
+    if (qualifying.length === 0) {
+        html = '<div style="padding:16px; color:#556; text-align:center;">No partners meeting current filter criteria.</div>';
+    }
+
+    document.getElementById('partner-list').innerHTML = html;
 }
 
-// ---- Cytoscape Engine ----
+// ---- Cytoscape Graph Rendering ----
 function initCy() {
     cy = cytoscape({
         container: document.getElementById('cy'),
@@ -851,13 +980,15 @@ function initCy() {
                     'background-color': 'data(color)',
                     'width': 'data(size)',
                     'height': 'data(size)',
-                    'color': '#cbd5e1',
+                    'color': '#f8fafc',
                     'font-size': 10,
+                    'font-weight': 600,
                     'text-valign': 'center',
                     'text-halign': 'right',
                     'text-margin-x': 4,
                     'text-outline-color': '#0a0e17',
-                    'text-outline-width': 2
+                    'text-outline-width': 2,
+                    'min-zoomed-font-size': 5
                 }
             },
             {
@@ -869,6 +1000,30 @@ function initCy() {
                     'font-weight': 700,
                     'color': '#ffffff',
                     'z-index': 10
+                }
+            },
+            {
+                selector: 'node.cluster-label',
+                style: {
+                    'background-opacity': 0,
+                    'border-width': 0,
+                    'font-size': 13,
+                    'font-weight': 'bold',
+                    'color': '#ffffff',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'text-wrap': 'wrap',
+                    'text-max-width': '160px',
+                    'text-outline-color': '#0a0e17',
+                    'text-outline-width': 2,
+                    'min-zoomed-font-size': 4,
+                    'z-index': 20
+                }
+            },
+            {
+                selector: 'node.hide-label',
+                style: {
+                    'text-opacity': 0
                 }
             },
             {
@@ -889,7 +1044,18 @@ function initCy() {
 
     cy.on('tap', 'node', function(evt) {
         const d = evt.target.data();
-        if (d.id) selectGene(d.id);
+        if (d.isLabel && d.clusterId !== undefined) {
+            zoomToCluster(d.clusterId);
+        } else if (d.id) {
+            selectGene(d.id);
+        }
+    });
+
+    cy.on('dbltap', 'node', function(evt) {
+        const d = evt.target.data();
+        if (d.clusterId !== undefined) {
+            showSingleCluster(d.clusterId);
+        }
     });
 }
 
@@ -931,25 +1097,26 @@ function renderEgoNetwork(geneName) {
                 size: Math.max(10, Math.min(22, 10 + Math.sqrt(p.l) * 0.8))
             }
         });
-        // Star edge from focus
+
+        // Primary edges
         elements.push({
             group: 'edges',
             data: {
                 id: `${geneName}--${p.n}`,
                 source: geneName,
                 target: p.n,
-                width: 0.5 + p.j * 2.5,
-                color: '#5a8eff'
+                width: 0.8 + p.j * 2.5,
+                color: '#38bdf8'
             }
         });
     });
 
-    // Instant cross-links between displayed partners (< 0.1 ms)
+    // Intra-partner edges
     qualifying.forEach(p => {
         const pData = getGeneData(p.n);
         if (!pData) return;
         for (const pp of pData.p) {
-            if (pp.j >= thresh && displayedSet.has(pp.n) && pp.n !== geneName && p.n < pp.n) {
+            if (pp.j >= thresh && displayedSet.has(pp.n) && p.n < pp.n && pp.n !== geneName) {
                 elements.push({
                     group: 'edges',
                     data: {
@@ -995,6 +1162,7 @@ function showSingleCluster(cid, highlightGene) {
     const shownSet = new Set(shown);
 
     document.getElementById('gene-info').innerHTML = `
+        <a class="back-to-clusters" onclick="showAllClusters();">← All Leiden Clusters</a>
         <h2 style="color:${color};">C${cid}: ${cname}</h2>
         <div class="meta">${shown.length} of ${members.length} cluster genes shown</div>
     `;
@@ -1007,7 +1175,8 @@ function showSingleCluster(cid, highlightGene) {
                 id: name,
                 label: name,
                 color: color,
-                size: Math.max(8, Math.min(20, 8 + Math.sqrt(GM[name] || 0) * 0.8))
+                size: Math.max(8, Math.min(20, 8 + Math.sqrt(GM[name] || 0) * 0.8)),
+                clusterId: cid
             },
             classes: name === highlightGene ? 'focus' : ''
         });
@@ -1057,11 +1226,71 @@ function showSingleCluster(cid, highlightGene) {
 }
 
 function showAllClusters() {
-    if (currentMode === 'whole' && sigmaRenderer) {
-        sigmaRenderer.getCamera().animate({ x: 0.5, y: 0.5, ratio: 1.05 }, { duration: 500 });
-        return;
-    }
-    switchView('whole');
+    switchView('all_clusters');
+    selectedGene = null;
+    document.getElementById('search').value = '';
+
+    const thresh = parseFloat(document.getElementById('thresh').value);
+    const MAX_NODES = 20;
+    const sortedCids = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
+    const cols = 9;
+    const spacing = 520;
+
+    const elements = [];
+
+    sortedCids.forEach((cid, idx) => {
+        const members = CLUSTERS[cid];
+        const color = getClusterColor(cid);
+        const cname = CLUSTER_NAMES[cid] || ('Cluster ' + cid);
+        const cx = (idx % cols) * spacing;
+        const cy_pos = Math.floor(idx / cols) * spacing;
+
+        const sorted = members.filter(n => GM[n] !== undefined).map(n => ({ n, l: GM[n] })).sort((a, b) => b.l - a.l);
+        const vis = sorted.slice(0, MAX_NODES);
+        const nVis = vis.length;
+        const radius = Math.max(45, Math.min(150, Math.sqrt(nVis) * 28));
+
+        vis.forEach((m, mi) => {
+            const angle = (2 * Math.PI * mi) / nVis;
+            elements.push({
+                group: 'nodes',
+                data: {
+                    id: m.n,
+                    label: m.n.length > 12 ? m.n.slice(0, 10) + '…' : m.n,
+                    fullName: m.n,
+                    losses: m.l,
+                    size: Math.max(6, Math.min(18, 6 + Math.sqrt(m.l) * 0.7)),
+                    color: color,
+                    clusterId: cid
+                },
+                position: { x: cx + radius * Math.cos(angle), y: cy_pos + radius * Math.sin(angle) }
+            });
+        });
+
+        const shortName = cname.length > 22 ? cname.slice(0, 20) + '…' : cname;
+        elements.push({
+            group: 'nodes',
+            data: {
+                id: '__clabel_' + cid,
+                label: 'C' + cid + ': ' + shortName + String.fromCharCode(10) + '(' + members.length + ' genes)',
+                size: 1,
+                color: 'transparent',
+                clusterId: cid,
+                isLabel: true
+            },
+            position: { x: cx, y: cy_pos },
+            classes: 'cluster-label'
+        });
+    });
+
+    cy.batch(() => {
+        cy.elements().remove();
+        cy.add(elements);
+    });
+    cy.fit(undefined, 40);
+
+    renderClusterDirectory();
+    updateStatus();
 }
 
 function updateStatus() {
@@ -1069,8 +1298,10 @@ function updateStatus() {
     if (!status) return;
     if (currentMode === 'whole') {
         status.textContent = 'Mode: Whole Network (WebGL) • 11,236 genes • 73,467 edges';
+    } else if (currentMode === 'all_clusters') {
+        status.textContent = 'Mode: Leiden Clusters (Cytoscape) • 80 clusters • ' + cy.nodes().length + ' nodes';
     } else if (cy) {
-        status.textContent = `Mode: Cytoscape • ${cy.nodes().length} nodes • ${cy.edges().length} edges`;
+        status.textContent = `Mode: Cytoscape Focus • ${cy.nodes().length} nodes • ${cy.edges().length} edges`;
     }
 }
 
@@ -1100,6 +1331,56 @@ searchInput.addEventListener('keydown', function(e) {
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-box')) sugBox.style.display = 'none';
+});
+
+// Sidebar search & filter
+(function() {
+    const sSearch = document.getElementById('sidebar-search');
+    const ssClear = document.getElementById('sidebar-search-clear');
+
+    function applySidebarFilter() {
+        const q = sSearch.value.trim().toLowerCase();
+        ssClear.style.display = q ? 'block' : 'none';
+
+        // Partner rows
+        const partnerRows = document.querySelectorAll('#partner-list .partner');
+        if (partnerRows.length) {
+            partnerRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        }
+
+        // Cluster rows
+        const clusterRows = document.querySelectorAll('#partner-list .cluster-entry');
+        if (clusterRows.length) {
+            clusterRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        }
+    }
+
+    sSearch.addEventListener('input', applySidebarFilter);
+    ssClear.addEventListener('click', function() {
+        sSearch.value = '';
+        applySidebarFilter();
+        sSearch.focus();
+    });
+})();
+
+// Labels toggle
+document.getElementById('toggle-labels').addEventListener('change', function() {
+    const show = this.checked;
+    if (sigmaRenderer) {
+        sigmaRenderer.setSetting('renderLabels', show);
+    }
+    if (cy) {
+        cy.batch(() => {
+            if (show) cy.nodes().removeClass('hide-label');
+            else cy.nodes().addClass('hide-label');
+        });
+    }
 });
 
 // Sliders and filters
@@ -1133,6 +1414,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initCy();
     loadWholeGraph();
     loadPartnersGraph();
+    renderClusterDirectory();
 });
 
 </script>
