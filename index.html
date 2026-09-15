@@ -544,6 +544,13 @@ body {
                     <option value="taxonomy">Taxonomy Clade</option>
                 </select>
             </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Length:
+                <select id="tree-branch-len-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchLength(this.value)" title="Ignore branch lengths (cladogram like in iTOL) or use molecular clock branch lengths">
+                    <option value="cladogram" selected>Ignore (Cladogram)</option>
+                    <option value="phylogram">Use Branch Lengths</option>
+                </select>
+            </label>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes(['SCAPER', 'TTC5', 'CNOT11'])" title="Reset to reference genes">Reset Genes</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
@@ -1700,6 +1707,7 @@ let TREE_GENE_IDX = {};
 let TREE_SELECTED_GENES = ['SCAPER', 'TTC5', 'CNOT11'];
 let TREE_TAX_LEVEL = 'detailed';
 let TREE_BRANCH_MODE = 'genes';
+let TREE_BRANCH_LEN_MODE = 'cladogram'; // default: ignore branch lengths (like in iTOL)
 const TREE_PALETTE = ['#d62728', '#1f77b4', '#2ca02c', '#d95f02', '#9467bd', '#17becf', '#e377c2', '#8c564b', '#bcbd22', '#17becf'];
 
 let treeZoomScale = 1.0;
@@ -1728,6 +1736,11 @@ function setTreeTaxLevel(lvl) {
 
 function setTreeBranchMode(mode) {
     TREE_BRANCH_MODE = mode;
+    renderCircularTree();
+}
+
+function setTreeBranchLength(mode) {
+    TREE_BRANCH_LEN_MODE = mode;
     renderCircularTree();
 }
 
@@ -1974,9 +1987,9 @@ function renderCircularTree() {
     TREE_LAYOUT.nodes.forEach(node => {
         if (node.p === null || node.p === undefined) return;
         const parent = idToNode[node.p];
-        const rP = parent.r;
+        const rP = (TREE_BRANCH_LEN_MODE === 'phylogram' && parent.r_phylo !== undefined) ? parent.r_phylo : (parent.r_clad !== undefined ? parent.r_clad : parent.r);
         const aP = parent.a;
-        const rC = node.r;
+        const rC = (TREE_BRANCH_LEN_MODE === 'phylogram' && node.r_phylo !== undefined) ? node.r_phylo : (node.r_clad !== undefined ? node.r_clad : node.r);
         const aC = node.a;
         const col = nodeColors[node.id];
 
