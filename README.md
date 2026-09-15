@@ -317,29 +317,28 @@ The explorer is engineered to run completely within modern client web browsers h
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
 |  | Ultra-Light Compact Binary Buffers:                              |  |
-|  |  * network_whole.bin (518 KB raw, 233 KB gzipped):              |  |
-|  |      - 11,236 genes with precomputed 2D DrL coordinates         |  |
-|  |      - 73,467 co-loss edges (Jaccard >= 0.60)                   |  |
-|  |  * network_partners.bin (4.2 MB raw, 1.6 MB gzipped):           |  |
-|  |      - Indexed top-100 co-loss partner lists per gene           |  |
+|  * network_partners.bin (4.2 MB raw, 1.6 MB gzipped):           |  |
+|      - Indexed top-100 co-loss partner lists per gene           |  |
+|  * tree_layout.json & tree_presence.bin:                         |  |
+|      - 196 species cladogram/phylogram & gene presence matrix   |  |
 |  +-----------------------------------------------------------------+  |
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
-|  | Dual Graph Engines:                                             |  |
+|  | Interactive Views:                                                |  |
 |  |                                                                 |  |
-|  |  [Engine 1: Sigma.js (WebGL)]      [Engine 2: Cytoscape.js]     |  |
-|  |   - 60 FPS GPU Whole Network View   - Focused Ego Network        |  |
-|  |   - 11,236 nodes & 73,467 edges     - Dynamic Jaccard sliders    |  |
-|  |   - Interactive node highlighting   - Instant cross-link layout  |  |
-|  |   - Zero layout wait (precomputed)  - Single Cluster detail view |  |
+|  |  [Network View (Cytoscape)]       [Species Tree (Cladogram)]     |  |
+|  |   - Focused Ego Network          - 196 species eukaryotic tree   |  |
+|  |   - 80 Leiden community modules  - Concentric gene presence rings|  |
+|  |   - Dynamic Jaccard sliders      - Parsimony & taxonomy coloring |  |
+|  |   - Curated ciliary filters      - Inline SVG export             |  |
 |  +-----------------------------------------------------------------+  |
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
 |  | UI Controls & Navigation:                                       |  |
-|  |  * View toggle: [ 🌐 Whole Network (WebGL) | 🔬 Gene Focus ]     |  |
+|  |  * View toggle: [ 🌐 Network View | 🗂️ Leiden Modules | 🌳 Tree ]  |  |
 |  |  * Real-time search with autocomplete prefix matching           |  |
-|  |  * Interactive Jaccard threshold and Top-N sliders             |  |
-|  |  * Module direct card: "C6: Cilium / Axoneme [View Cluster ->]"  |  |
+|  |  * Interactive Jaccard threshold, Top-N, and Ciliary filters     |  |
+|  |  * Add to Tree direct action from sidebar and partner rows      |  |
 |  +-----------------------------------------------------------------+  |
 +-----------------------------------------------------------------------+
 ```
@@ -415,10 +414,10 @@ When a user searches for **SCAPER** in the explorer:
 | **Community Detection** | [`dollo/scripts_simple/leiden_cluster.py`](file:///home/prodromosp/scaper_new/dollo/scripts_simple/leiden_cluster.py) | Leiden community detection algorithm on Jaccard matrix |
 | **Cluster Table** | [`dollo/results/leiden_clusters.tsv`](file:///home/prodromosp/scaper_new/dollo/results/leiden_clusters.tsv) | Gene-to-cluster assignments with loss counts |
 | **Cluster Summary & GO** | [`dollo/results/leiden_summary.tsv`](file:///home/prodromosp/scaper_new/dollo/results/leiden_summary.tsv) | GO names, ciliary panel overlap, and top hub genes |
-| **HTML Generator** | [`build_html_explorer.py`](build_html_explorer.py) | Self-contained Dual-Engine (Sigma.js WebGL + Cytoscape) builder |
-| **Deployed HTML** | [`index.html`](index.html) | Client-side single-page application (306 KB) + binary data streams |
-| **Whole Graph Binary** | [`network_whole.bin`](network_whole.bin) | Precomputed 2D layout & 73k edges for WebGL whole-graph view (518 KB) |
+| **HTML Generator** | [`build_html_explorer.py`](build_html_explorer.py) | Self-contained single-page application builder |
+| **Deployed HTML** | [`index.html`](index.html) | Client-side single-page application (350 KB) + binary data streams |
 | **Partner Lists Binary** | [`network_partners.bin`](network_partners.bin) | Indexed co-loss partner lists for focused gene networks (4.2 MB) |
+| **Species Tree Assets** | [`tree_layout.json`](tree_layout.json), [`tree_presence.bin`](tree_presence.bin) | Circular phylogenetic cladogram/phylogram layout & binary presence matrix |
 | **Remote Repository** | [`prodromospapa/dollo-network-explorer`](https://github.com/prodromospapa/dollo-network-explorer) | GitHub repository configured for GitHub Pages |
 | **Live Web Explorer** | **[https://prodromospapa.github.io/dollo-network-explorer/](https://prodromospapa.github.io/dollo-network-explorer/)** | Live interactive application |
 

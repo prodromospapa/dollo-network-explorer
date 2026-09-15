@@ -543,37 +543,141 @@ body.light-theme .partner .rank {
     color: #94a3b8;
 }
 
-/* Tree Modal Specific Themes */
+#tree-panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+}
+#tree-header {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 10px;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+}
+.partner-tree-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #38bdf8;
+    opacity: 0.65;
+    transition: all 0.15s;
+    line-height: 1;
+    margin-right: 2px;
+}
+.partner-tree-btn:hover {
+    opacity: 1;
+    background: rgba(56, 189, 248, 0.2);
+    transform: scale(1.15);
+}
+.btn-tree-add {
+    background: #162035;
+    border: 1px solid #2d3e60;
+    color: #7dd3fc;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.btn-tree-add:hover {
+    background: #223554;
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+body.light-theme .partner-tree-btn {
+    color: #0284c7;
+}
+body.light-theme .btn-tree-add {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0369a1;
+}
+body.light-theme .btn-tree-add:hover {
+    background: #e2e8f0;
+    border-color: #0284c7;
+}
+#tree-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15,23,42,0.96);
+    border: 1px solid #38bdf8;
+    border-radius: 20px;
+    padding: 7px 18px;
+    color: #f8fafc;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 99999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+body.light-theme #tree-toast {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: #0284c7 !important;
+    color: #0f172a !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+}
+
+/* Tree Panel Specific Themes */
+#tree-panel.tree-theme-dark,
 #tree-modal.tree-theme-dark {
     background: #070b14 !important;
 }
+#tree-panel.tree-theme-dark #tree-header,
 #tree-modal.tree-theme-dark #tree-header {
     background: #0d1322 !important;
     border-bottom: 1px solid #1e293b !important;
 }
+#tree-panel.tree-theme-dark #tree-header span,
 #tree-modal.tree-theme-dark #tree-header span {
     color: #f8fafc !important;
 }
+#tree-panel.tree-theme-dark #tree-header label,
 #tree-modal.tree-theme-dark #tree-header label {
     color: #94a3b8 !important;
 }
+#tree-panel.tree-theme-dark #tree-header select,
+#tree-panel.tree-theme-dark #tree-header input,
 #tree-modal.tree-theme-dark #tree-header select,
 #tree-modal.tree-theme-dark #tree-header input {
     background: #161d31 !important;
     border-color: #334155 !important;
     color: #f8fafc !important;
 }
+#tree-panel.tree-theme-dark #tree-header .btn,
 #tree-modal.tree-theme-dark #tree-header .btn {
     background: #161d31 !important;
     border-color: #334155 !important;
     color: #f8fafc !important;
 }
+#tree-panel.tree-theme-dark #tree-header .btn:hover,
 #tree-modal.tree-theme-dark #tree-header .btn:hover {
     background: #1e293b !important;
 }
+#tree-panel.tree-theme-dark #tree-viewport,
 #tree-modal.tree-theme-dark #tree-viewport {
     background: #0a0e17 !important;
 }
+#tree-panel.tree-theme-dark #tree-tooltip,
 #tree-modal.tree-theme-dark #tree-tooltip {
     background: rgba(15,23,42,0.96) !important;
     border: 1px solid #38bdf8 !important;
@@ -581,37 +685,47 @@ body.light-theme .partner .rank {
     box-shadow: 0 6px 20px rgba(0,0,0,0.5) !important;
 }
 
+#tree-panel.tree-theme-light,
 #tree-modal.tree-theme-light {
     background: #f1f5f9 !important;
 }
+#tree-panel.tree-theme-light #tree-header,
 #tree-modal.tree-theme-light #tree-header {
     background: #ffffff !important;
     border-bottom: 1px solid #cbd5e1 !important;
 }
+#tree-panel.tree-theme-light #tree-header span,
 #tree-modal.tree-theme-light #tree-header span {
     color: #0f172a !important;
 }
+#tree-panel.tree-theme-light #tree-header label,
 #tree-modal.tree-theme-light #tree-header label {
     color: #475569 !important;
 }
+#tree-panel.tree-theme-light #tree-header select,
+#tree-panel.tree-theme-light #tree-header input,
 #tree-modal.tree-theme-light #tree-header select,
 #tree-modal.tree-theme-light #tree-header input {
     background: #f8fafc !important;
     border-color: #cbd5e1 !important;
     color: #0f172a !important;
 }
+#tree-panel.tree-theme-light #tree-header .btn,
 #tree-modal.tree-theme-light #tree-header .btn {
     background: #f1f5f9 !important;
     border-color: #cbd5e1 !important;
     color: #334155 !important;
 }
+#tree-panel.tree-theme-light #tree-header .btn:hover,
 #tree-modal.tree-theme-light #tree-header .btn:hover {
     background: #e2e8f0 !important;
     color: #0f172a !important;
 }
+#tree-panel.tree-theme-light #tree-viewport,
 #tree-modal.tree-theme-light #tree-viewport {
     background: #ffffff !important;
 }
+#tree-panel.tree-theme-light #tree-tooltip,
 #tree-modal.tree-theme-light #tree-tooltip {
     background: rgba(255,255,255,0.98) !important;
     border: 1px solid #0284c7 !important;
@@ -625,10 +739,10 @@ body.light-theme .partner .rank {
 <div id="header">
     <h1>Dollo Co-Loss Network Explorer</h1>
     <div class="view-toggle">
-        <button id="btn-view-cy" class="view-btn active" onclick="switchView('gene')">🔬 Gene Focus (Cytoscape)</button>
-        <button id="btn-view-tree" class="view-btn" onclick="openTreeView()" title="Visualize gene presence across eukaryotic species tree">🌳 Tree View</button>
+        <button id="btn-view-cy" class="view-btn active" onclick="switchView('network')">🌐 Network View</button>
+        <button id="btn-all-clusters-head" class="view-btn" onclick="switchView('all_clusters')">🗂️ Leiden Modules</button>
+        <button id="btn-view-tree" class="view-btn" onclick="switchView('tree')" title="Species tree and gene presence tracks">🌳 Species Tree</button>
     </div>
-    <button id="btn-all-clusters-head" class="btn-clusters-header" onclick="showAllClusters()">🗂️ All Clusters (Leiden)</button>
 
     <div class="search-box">
         <input type="text" id="search" placeholder="Search gene (e.g. SCAPER, CEP290)…" autocomplete="off">
@@ -653,8 +767,10 @@ body.light-theme .partner .rank {
         <label>Filter:</label>
         <select id="gene-filter">
             <option value="all">All Genes</option>
-            <option value="all_ciliary">Curated Ciliary Genes</option>
-            <option value="syscilia">SYSCILIA Gold Standard</option>
+            <option value="all_ciliary">All Union (SCGSv2 ∪ CiliaCarta)</option>
+            <option value="ciliacarta">CiliaCarta</option>
+            <option value="syscilia_v2">SYSCILIA v2</option>
+            <option value="shared_core">Merged / Core (SCGSv2 ∩ CiliaCarta)</option>
         </select>
 
         <label style="margin-left:4px;">Labels:</label>
@@ -666,6 +782,73 @@ body.light-theme .partner .rank {
 <div id="main">
     <div id="graph-wrapper">
         <div id="cy"></div>
+        <div id="tree-panel" class="tree-theme-dark" style="display:none; position:absolute; inset:0; flex-direction:column; overflow:hidden; z-index:10;">
+            <div id="tree-header">
+                <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
+                    <span style="font-size:13px; font-weight:700; color:#f8fafc; white-space:nowrap; display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                        🌳 Species Tree <span style="font-size:10.5px; color:#8892b0; font-weight:400;">(196)</span>
+                    </span>
+                    <div style="position:relative; width:150px; flex-shrink:0;">
+                        <input type="text" id="tree-gene-input" placeholder="+ Add gene…" autocomplete="off" style="width:100%; height:26px; background:#161d31; border:1px solid #2d3748; border-radius:4px; color:#e2e8f0; padding:0 8px; font-size:11px; outline:none;">
+                        <div id="tree-gene-suggestions" style="display:none; position:absolute; top:30px; left:0; right:0; background:#0f172a; border:1px solid #334155; border-radius:4px; max-height:220px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.6);"></div>
+                    </div>
+                    <div id="tree-chips-container" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; min-width:0;"></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                        Taxonomy:
+                        <select id="tree-tax-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
+                            <option value="kingdom" selected>Kingdom (UniProt)</option>
+                            <option value="phylum">Phylum (UniProt)</option>
+                            <option value="supergroup">Supergroup</option>
+                            <option value="tcs">TCS Major Clades (31)</option>
+                            <option value="detailed">Detailed (Phylum)</option>
+                        </select>
+                    </label>
+                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                        Branches:
+                        <select id="tree-branch-mode" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchMode(this.value)">
+                            <option value="genes">Gene Parsimony</option>
+                            <option value="taxonomy">Taxonomy Clade</option>
+                        </select>
+                    </label>
+                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                        Length:
+                        <select id="tree-branch-len-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchLength(this.value)" title="Ignore branch lengths (cladogram like in iTOL) or use molecular clock branch lengths">
+                            <option value="cladogram" selected>Ignore (Cladogram)</option>
+                            <option value="phylogram">Use Branch Lengths</option>
+                        </select>
+                    </label>
+                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                        Theme:
+                        <select id="tree-theme-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTheme(this.value)" title="Choose tree appearance mode">
+                            <option value="auto" selected>Auto (Site)</option>
+                            <option value="dark">🌙 Dark</option>
+                            <option value="light">☀️ Light</option>
+                        </select>
+                    </label>
+                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes([])" title="Clear all genes on tree">Clear Genes</button>
+                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
+                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
+                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">📥 SVG</button>
+                </div>
+            </div>
+            <div id="tree-viewport" style="flex:1; position:relative; overflow:hidden; background:#0a0e17; cursor:grab; user-select:none;">
+                <div id="tree-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,14,23,0.85); color:#cbd5e1; font-size:14px; font-weight:600; z-index:50;">
+                    <div class="spinner" style="margin-right:10px;"></div> Loading species tree and presence matrix…
+                </div>
+                <div id="tree-tooltip" style="position:absolute; display:none; pointer-events:none; background:rgba(15,23,42,0.96); border:1px solid #38bdf8; border-radius:6px; padding:8px 12px; color:#ffffff; font-size:11.5px; z-index:100; box-shadow:0 6px 20px rgba(0,0,0,0.5); max-width:320px; line-height:1.4;"></div>
+                <div id="tree-canvas-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; transform-origin:center center;">
+                    <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" style="max-width:100%; max-height:100%; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;"></svg>
+                </div>
+                <!-- Zoom HUD -->
+                <div style="position:absolute; right:16px; bottom:16px; display:flex; flex-direction:column; gap:4px; z-index:10;">
+                    <button class="btn" style="width:30px; height:30px; padding:0; font-size:16px; font-weight:700; background:#0f172a; border:1px solid #334155; color:#fff;" onclick="zoomTree(1.25)">+</button>
+                    <button class="btn" style="width:30px; height:30px; padding:0; font-size:16px; font-weight:700; background:#0f172a; border:1px solid #334155; color:#fff;" onclick="zoomTree(0.8)">−</button>
+                    <button class="btn" style="width:30px; height:30px; padding:0; font-size:11px; background:#0f172a; border:1px solid #334155; color:#fff;" onclick="resetTreeZoom()">Fit</button>
+                </div>
+            </div>
+        </div>
         <div id="empty-msg" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#556; font-size:14px; pointer-events:none; display:none;">
             Search for a gene or pick a cluster from the sidebar
         </div>
@@ -687,75 +870,7 @@ body.light-theme .partner .rank {
     </div>
 </div>
 
-<!-- Circular Phylogenetic Tree View Modal (TCS Cladogram) -->
-<div id="tree-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:#070b14; flex-direction:column;">
-    <div id="tree-header" style="height:48px; background:#0d1322; border-bottom:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; padding:0 14px; gap:10px; z-index:10; box-shadow:0 2px 10px rgba(0,0,0,0.5);">
-        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
-            <span style="font-size:13px; font-weight:700; color:#f8fafc; white-space:nowrap; display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                🌳 Species Tree <span style="font-size:10.5px; color:#8892b0; font-weight:400;">(196)</span>
-            </span>
-            <div style="position:relative; width:150px; flex-shrink:0;">
-                <input type="text" id="tree-gene-input" placeholder="+ Add gene…" autocomplete="off" style="width:100%; height:26px; background:#161d31; border:1px solid #2d3748; border-radius:4px; color:#e2e8f0; padding:0 8px; font-size:11px; outline:none;">
-                <div id="tree-gene-suggestions" style="display:none; position:absolute; top:30px; left:0; right:0; background:#0f172a; border:1px solid #334155; border-radius:4px; max-height:220px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.6);"></div>
-            </div>
-            <div id="tree-chips-container" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; min-width:0;"></div>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                Taxonomy:
-                <select id="tree-tax-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
-                    <option value="kingdom" selected>Kingdom (UniProt)</option>
-                    <option value="phylum">Phylum (UniProt)</option>
-                    <option value="supergroup">Supergroup</option>
-                    <option value="tcs">TCS Major Clades (31)</option>
-                    <option value="detailed">Detailed (Phylum)</option>
-                </select>
-            </label>
-            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                Branches:
-                <select id="tree-branch-mode" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchMode(this.value)">
-                    <option value="genes">Gene Parsimony</option>
-                    <option value="taxonomy">Taxonomy Clade</option>
-                </select>
-            </label>
-            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                Length:
-                <select id="tree-branch-len-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchLength(this.value)" title="Ignore branch lengths (cladogram like in iTOL) or use molecular clock branch lengths">
-                    <option value="cladogram" selected>Ignore (Cladogram)</option>
-                    <option value="phylogram">Use Branch Lengths</option>
-                </select>
-            </label>
-            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                Theme:
-                <select id="tree-theme-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTheme(this.value)" title="Choose tree appearance mode">
-                    <option value="auto" selected>Auto (Site)</option>
-                    <option value="dark">🌙 Dark</option>
-                    <option value="light">☀️ Light</option>
-                </select>
-            </label>
-            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes(['SCAPER', 'TTC5', 'CNOT11'])" title="Reset to reference genes">Reset Genes</button>
-            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
-            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
-            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">📥 SVG</button>
-            <button class="btn btn-accent" style="padding:4px 12px; font-size:11px; font-weight:700;" onclick="closeTreeView()">✕ Close</button>
-        </div>
-    </div>
-    <div id="tree-viewport" style="flex:1; position:relative; overflow:hidden; background:#0a0e17; cursor:grab; user-select:none;">
-        <div id="tree-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,14,23,0.85); color:#cbd5e1; font-size:14px; font-weight:600; z-index:50;">
-            <div class="spinner" style="margin-right:10px;"></div> Loading species tree and presence matrix…
-        </div>
-        <div id="tree-tooltip" style="position:absolute; display:none; pointer-events:none; background:rgba(15,23,42,0.96); border:1px solid #38bdf8; border-radius:6px; padding:8px 12px; color:#ffffff; font-size:11.5px; z-index:100; box-shadow:0 6px 20px rgba(0,0,0,0.5); max-width:320px; line-height:1.4;"></div>
-        <div id="tree-canvas-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; transform-origin:center center;">
-            <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" style="max-width:100%; max-height:100%; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;"></svg>
-        </div>
-        <!-- Zoom HUD -->
-        <div style="position:absolute; right:16px; bottom:16px; display:flex; flex-direction:column; gap:4px; z-index:10;">
-            <button class="btn" style="width:30px; height:30px; padding:0; font-size:16px; font-weight:700; background:#0f172a; border:1px solid #334155; color:#fff;" onclick="zoomTree(1.25)">+</button>
-            <button class="btn" style="width:30px; height:30px; padding:0; font-size:16px; font-weight:700; background:#0f172a; border:1px solid #334155; color:#fff;" onclick="zoomTree(0.8)">−</button>
-            <button class="btn" style="width:30px; height:30px; padding:0; font-size:11px; background:#0f172a; border:1px solid #334155; color:#fff;" onclick="resetTreeZoom()">Fit</button>
-        </div>
-    </div>
-</div>
+<div id="tree-toast" style="display:none;"></div>
 
 <div id="status-bar">
     <span id="graph-status">Loading network data…</span>
@@ -809,7 +924,7 @@ function getEffectiveTreeTheme() {
 }
 
 function updateTreeModalTheme() {
-    const modal = document.getElementById('tree-modal');
+    const modal = document.getElementById('tree-panel') || document.getElementById('tree-modal');
     if (!modal) return;
     const effTheme = getEffectiveTreeTheme();
     if (effTheme === 'light') {
@@ -827,6 +942,19 @@ function updateTreeModalTheme() {
         renderTreeChips();
         renderCircularTree();
     }
+}
+
+function showTreeToast(msg) {
+    const toast = document.getElementById('tree-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 260);
+    }, 2400);
 }
 
 function setTreeTheme(theme) {
@@ -879,8 +1007,7 @@ function getCiliaBadgeHtml(geneName) {
     const info = CILIA_INFO[geneName];
     let title = 'Curated ciliary component';
     if (info && info.v2) title += ` (SYSCILIA ${info.v2})`;
-    if (info && info.loc) title += `
-Localization: ${info.loc}`;
+    if (info && info.loc) title += `\nLocalization: ${info.loc}`;
     return `<span class="cilia-badge" title="${title.replace(/"/g, '&quot;')}">cilia</span>`;
 }
 
@@ -891,7 +1018,7 @@ function getActiveGeneSet() {
 
 // ---- View Switching ----
 function updateControlsForMode(isLeiden) {
-    // Grey out Jaccard & Top-N controls when in Leiden cluster mode (they don't apply)
+    // Grey out Jaccard & Top-N controls when in Leiden cluster or Tree mode (they don't apply)
     const ids = ['thresh', 'topn', 'toggle-topn-max'];
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -899,7 +1026,6 @@ function updateControlsForMode(isLeiden) {
     });
     const labels = document.querySelectorAll('.controls label');
     labels.forEach(lbl => {
-        // only dim the Jaccard and Top-N label groups
         const text = lbl.textContent.trim();
         if (text.startsWith('Jaccard') || text.startsWith('Show Top') || text.startsWith('Max')) {
             lbl.style.opacity = isLeiden ? '0.35' : '1';
@@ -909,30 +1035,44 @@ function updateControlsForMode(isLeiden) {
 
 function switchView(mode) {
     currentMode = mode;
-    const btnCy = document.getElementById('btn-view-cy');
+    const btnNet = document.getElementById('btn-view-cy');
     const btnClusters = document.getElementById('btn-all-clusters-head');
+    const btnTree = document.getElementById('btn-view-tree');
     const cyEl = document.getElementById('cy');
-    const isLeiden = (mode === 'single_cluster' || mode === 'all_clusters');
-    updateControlsForMode(isLeiden);
+    const treeEl = document.getElementById('tree-panel');
 
-    if (mode === 'gene') {
-        if (btnCy) btnCy.classList.add('active');
-        if (btnClusters) btnClusters.classList.remove('active');
+    const isLeiden = (mode === 'single_cluster' || mode === 'all_clusters');
+    updateControlsForMode(isLeiden || mode === 'tree');
+
+    if (btnNet) btnNet.classList.toggle('active', mode === 'gene' || mode === 'network');
+    if (btnClusters) btnClusters.classList.toggle('active', mode === 'all_clusters' || mode === 'single_cluster');
+    if (btnTree) btnTree.classList.toggle('active', mode === 'tree');
+
+    if (mode === 'gene' || mode === 'network') {
+        if (treeEl) treeEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
-        if (selectedGene) renderEgoNetwork(selectedGene);
+        if (selectedGene) {
+            renderEgoNetwork(selectedGene);
+        } else {
+            showAllClusters();
+        }
         updateStatus();
     } else if (mode === 'single_cluster') {
-        if (btnCy) btnCy.classList.add('active');
-        if (btnClusters) btnClusters.classList.remove('active');
+        if (treeEl) treeEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
         updateStatus();
     } else if (mode === 'all_clusters') {
-        if (btnCy) btnCy.classList.remove('active');
-        if (btnClusters) btnClusters.classList.add('active');
+        if (treeEl) treeEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
+        showAllClusters();
+    } else if (mode === 'tree') {
+        if (cyEl) cyEl.style.display = 'none';
+        if (treeEl) treeEl.style.display = 'flex';
+        initTreeView();
+        updateTreeModalTheme();
         updateStatus();
     }
 }
@@ -961,7 +1101,7 @@ async function loadPartnersGraph() {
         const pill = document.getElementById('loading-pill');
         if (pill) pill.style.display = 'none';
         updateStatus();
-        if (selectedGene && currentMode === 'gene') {
+        if (selectedGene && (currentMode === 'gene' || currentMode === 'network')) {
             renderEgoNetwork(selectedGene);
         }
     } catch (err) {
@@ -1000,8 +1140,12 @@ function selectGene(name) {
     selectedGene = name;
     document.getElementById('search').value = name;
     renderSidebar(name);
-    switchView('gene');
-    renderEgoNetwork(name);
+    if (currentMode === 'tree') {
+        addTreeGene(name);
+    } else {
+        switchView('network');
+        renderEgoNetwork(name);
+    }
 }
 
 function renderClusterDirectory() {
@@ -1068,7 +1212,10 @@ function renderSidebar(name) {
         <a class="back-to-clusters" onclick="renderClusterDirectory();">← All Leiden Clusters</a>
         <h2>
             <span style="overflow:hidden; text-overflow:ellipsis;">${name} ${ciliaBadge}</span>
-            <a href="${uniprotUrl}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open in UniProt">UniProt ↗</a>
+            <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                <button class="btn btn-tree-add" onclick="addTreeGene('${name}')" title="Add ${name} to Species Tree">🌳 Add to Tree</button>
+                <a href="${uniprotUrl}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open in UniProt">UniProt ↗</a>
+            </div>
         </h2>
         <div class="meta">
             Independent loss events: <strong>${info.l}</strong>
@@ -1095,6 +1242,7 @@ function renderSidebar(name) {
             <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%;"></div></div>
             <span class="pjaccard">${p.j.toFixed(2)}</span>
             <span class="ploss">${pLoss}L</span>
+            <button class="partner-tree-btn" onclick="event.stopPropagation(); addTreeGene('${p.n}');" title="Add ${p.n} to Species Tree">🌳</button>
             <a href="${getUniProtUrl(p.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" onclick="event.stopPropagation();" title="UniProt">↗</a>
         </div>`;
     });
@@ -1208,6 +1356,7 @@ function initCy() {
         hideEdgesOnViewport: true,
         pixelRatio: 1.0
     });
+    window.cyInstance = cy;
 
     cy.on('tap', 'node', function(evt) {
         const node = evt.target;
@@ -1257,6 +1406,38 @@ function initCy() {
             }
         }
     });
+
+    // Hover tooltip for Cytoscape nodes
+    const tipEl = document.getElementById('tooltip');
+    cy.on('mouseover', 'node', function(evt) {
+        const d = evt.target.data();
+        if (d.isLabel || !tipEl) return;
+        const cid = d.clusterId !== undefined ? d.clusterId : GENE_CL[d.id];
+        const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${cid}`) : '';
+        const color = getClusterColor(cid);
+        const losses = GM[d.id] !== undefined ? GM[d.id] : (d.losses || 0);
+        let tipHtml = `<strong>${d.id}</strong>${getCiliaBadgeHtml(d.id)}<br>Losses: ${losses}`;
+        if (cid !== undefined) {
+            tipHtml += `<br><span style="color:${color}; font-weight:700;">●</span> C${cid}: ${cname}`;
+        }
+        tipEl.innerHTML = tipHtml;
+        tipEl.style.display = 'block';
+    });
+    cy.on('mouseout', 'node', function() {
+        if (tipEl) tipEl.style.display = 'none';
+    });
+    cy.on('pan zoom', function() {
+        if (tipEl) tipEl.style.display = 'none';
+    });
+    const cyContainer = document.getElementById('cy');
+    if (cyContainer) {
+        cyContainer.addEventListener('mousemove', function(e) {
+            if (tipEl && tipEl.style.display === 'block') {
+                tipEl.style.left = (e.clientX + 14) + 'px';
+                tipEl.style.top = (e.clientY + 14) + 'px';
+            }
+        });
+    }
 }
 
 function focusGeneInCluster(node, geneId, clusterId) {
@@ -1522,6 +1703,7 @@ function showSingleCluster(cid, highlightGene) {
         <a class="back-to-clusters" onclick="showAllClusters();">← All Leiden Clusters</a>
         <h2 style="color:${color};">C${cid}: ${cname}</h2>
         <div class="meta">${shown.length} genes • Jaccard &amp; Top-N filters inactive for clusters</div>
+        <button class="btn btn-tree-add" style="margin-top:7px;" onclick="addClusterGenesToTree(${cid})" title="Add top members of this cluster to Species Tree">🌳 Add Cluster to Tree</button>
     `;
 
     const elements = [];
@@ -1575,6 +1757,7 @@ function showSingleCluster(cid, highlightGene) {
             <span class="pname in-graph">${m}</span>
             ${isCil ? getCiliaBadgeHtml(m) : ''}
             <span class="ploss">${GM[m] || 0}L</span>
+            <button class="partner-tree-btn" onclick="event.stopPropagation(); addTreeGene('${m}');" title="Add ${m} to Species Tree">🌳</button>
             <a href="${getUniProtUrl(m)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" onclick="event.stopPropagation();">↗</a>
         </div>`;
     });
@@ -1591,13 +1774,46 @@ function showSingleCluster(cid, highlightGene) {
     }
 }
 
+function addClusterGenesToTree(cid) {
+    if (!CLUSTERS[cid]) return;
+    const members = CLUSTERS[cid].filter(n => GM[n] !== undefined);
+    const topGenes = members.sort((a, b) => (GM[b] || 0) - (GM[a] || 0)).slice(0, 5);
+    let addedCount = 0;
+    topGenes.forEach(g => {
+        if (!TREE_SELECTED_GENES.includes(g)) {
+            TREE_SELECTED_GENES.push(g);
+            addedCount++;
+        }
+    });
+    renderTreeChips();
+    if (TREE_LAYOUT) renderCircularTree();
+    showTreeToast(`🌳 Added ${addedCount} genes from C${cid} to Species Tree (${TREE_SELECTED_GENES.length} on tree)`);
+}
+
 function showAllClusters() {
     currentClusterId = null;
     unfocusClusterGene();
-    switchView('all_clusters');
+    currentMode = 'all_clusters';
     selectedGene = null;
     document.getElementById('search').value = '';
 
+    const btnNet = document.getElementById('btn-view-cy');
+    const btnClusters = document.getElementById('btn-all-clusters-head');
+    const btnTree = document.getElementById('btn-view-tree');
+    const cyEl = document.getElementById('cy');
+    const treeEl = document.getElementById('tree-panel');
+
+    updateControlsForMode(true);
+
+    if (btnNet) btnNet.classList.remove('active');
+    if (btnClusters) btnClusters.classList.add('active');
+    if (btnTree) btnTree.classList.remove('active');
+
+    if (treeEl) treeEl.style.display = 'none';
+    if (cyEl) cyEl.style.display = 'block';
+    if (cy) cy.resize();
+
+    const activeSet = getActiveGeneSet();
     const MAX_NODES = 20;
     const sortedCids = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
     const cols = 9;
@@ -1612,10 +1828,10 @@ function showAllClusters() {
         const cx = (idx % cols) * spacing;
         const cy_pos = Math.floor(idx / cols) * spacing;
 
-        const sorted = members.filter(n => GM[n] !== undefined).map(n => ({ n, l: GM[n] })).sort((a, b) => b.l - a.l);
+        const sorted = members.filter(n => GM[n] !== undefined && (!activeSet || activeSet.has(n))).map(n => ({ n, l: GM[n] })).sort((a, b) => b.l - a.l);
         const vis = sorted.slice(0, MAX_NODES);
         const nVis = vis.length;
-        const radius = Math.max(45, Math.min(150, Math.sqrt(nVis) * 28));
+        const radius = Math.max(45, Math.min(150, Math.sqrt(Math.max(1, nVis)) * 28));
         const visSet = new Set(vis.map(m => m.n));
 
         vis.forEach((m, mi) => {
@@ -1684,12 +1900,19 @@ function showAllClusters() {
 function updateStatus() {
     const status = document.getElementById('graph-status');
     if (!status) return;
-    if (currentMode === 'all_clusters') {
-        status.textContent = 'Mode: Leiden Clusters (Cytoscape) • 80 clusters • ' + cy.nodes().length + ' nodes';
+    if (currentMode === 'tree') {
+        const geneCount = TREE_SELECTED_GENES.length;
+        status.innerHTML = `Mode: Species Tree • 196 species • ${geneCount} gene${geneCount === 1 ? '' : 's'} on tree (${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`;
+    } else if (currentMode === 'all_clusters') {
+        status.textContent = 'Mode: Leiden Modules • 80 clusters • ' + (cy ? cy.nodes().length : 0) + ' nodes';
     } else if (currentMode === 'single_cluster') {
-        status.textContent = `Mode: Leiden Cluster C${currentClusterId} • ${cy.nodes().length} nodes • ${cy.edges().length} edges (click gene to focus, 2nd click opens interactors)`;
+        status.textContent = `Mode: Leiden Cluster C${currentClusterId} • ${cy ? cy.nodes().length : 0} nodes • ${cy ? cy.edges().length : 0} edges (click gene to focus, 2nd click opens interactors)`;
+    } else if (cy && selectedGene) {
+        const cid = GENE_CL[selectedGene];
+        const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${cid}`) : '';
+        status.innerHTML = `Mode: Network View • Focus: <strong>${selectedGene}</strong> (Cluster C${cid}: ${cname}) • ${cy.nodes().length} nodes • ${cy.edges().length} edges`;
     } else if (cy) {
-        status.textContent = `Mode: Cytoscape Focus • ${cy.nodes().length} nodes • ${cy.edges().length} edges`;
+        status.textContent = `Mode: Network View • ${cy.nodes().length} nodes • ${cy.edges().length} edges`;
     }
 }
 
@@ -1766,7 +1989,7 @@ document.getElementById('layout-select').addEventListener('change', function() {
 let TREE_LAYOUT = null;
 let TREE_PRESENCE_BUFFER = null;
 let TREE_GENE_IDX = {};
-let TREE_SELECTED_GENES = ['SCAPER', 'TTC5', 'CNOT11'];
+let TREE_SELECTED_GENES = [];
 let TREE_TAX_LEVEL = 'kingdom';
 let TREE_BRANCH_MODE = 'genes';
 let TREE_BRANCH_LEN_MODE = 'cladogram'; // default: ignore branch lengths (like in iTOL)
@@ -1780,16 +2003,11 @@ let treePanStartX = 0;
 let treePanStartY = 0;
 
 function openTreeView() {
-    const modal = document.getElementById('tree-modal');
-    if (!modal) return;
-    updateTreeModalTheme();
-    modal.style.display = 'flex';
-    initTreeView();
+    switchView('tree');
 }
 
 function closeTreeView() {
-    const modal = document.getElementById('tree-modal');
-    if (modal) modal.style.display = 'none';
+    switchView('network');
 }
 
 function setTreeTaxLevel(lvl) {
@@ -1857,6 +2075,10 @@ function getTreeGenePresence(geneName) {
 function renderTreeChips() {
     const container = document.getElementById('tree-chips-container');
     if (!container) return;
+    if (TREE_SELECTED_GENES.length === 0) {
+        container.innerHTML = '<span style="font-size:11px; color:#64748b; font-style:italic;">No genes selected (add from sidebar or search above)</span>';
+        return;
+    }
     const isDark = getEffectiveTreeTheme() === 'dark';
     const chipBg = isDark ? '#161d31' : '#f1f5f9';
     const textCol = isDark ? '#f8fafc' : '#0f172a';
@@ -1864,7 +2086,7 @@ function renderTreeChips() {
     container.innerHTML = TREE_SELECTED_GENES.map((g, idx) => {
         const col = TREE_PALETTE[idx % TREE_PALETTE.length];
         return `
-            <div style="display:inline-flex; align-items:center; gap:5px; background:${chipBg}; border:1px solid ${col}; border-radius:14px; padding:2px 8px; font-size:11px; color:${textCol};">
+            <div class="tree-gene-chip" style="display:inline-flex; align-items:center; gap:5px; background:${chipBg}; border:1px solid ${col}; border-radius:14px; padding:2px 8px; font-size:11px; color:${textCol};">
                 <span style="width:8px; height:8px; border-radius:50%; background:${col};"></span>
                 <strong>${g}</strong>
                 <span style="cursor:pointer; color:${closeCol}; margin-left:3px; font-weight:700;" onclick="removeTreeGene('${g}')">&times;</span>
@@ -1876,43 +2098,52 @@ function renderTreeChips() {
 function addTreeGene(geneName) {
     const clean = geneName.trim().toUpperCase();
     if (!clean) return;
-    if (TREE_GENE_IDX[clean] === undefined) {
-        alert(`Gene "${clean}" not found in orthogroups dataset.`);
+    if (TREE_SELECTED_GENES.includes(clean)) {
+        showTreeToast(`${clean} is already on the tree`);
         return;
     }
-    if (TREE_SELECTED_GENES.includes(clean)) return;
+    if (TREE_LAYOUT && TREE_GENE_IDX[clean] === undefined) {
+        showTreeToast(`Gene "${clean}" not found in tree dataset`);
+        return;
+    }
     TREE_SELECTED_GENES.push(clean);
     renderTreeChips();
-    renderCircularTree();
+    if (TREE_LAYOUT) renderCircularTree();
+    showTreeToast(`🌳 Added ${clean} to Species Tree (${TREE_SELECTED_GENES.length} on tree)`);
 }
 
 function removeTreeGene(geneName) {
     TREE_SELECTED_GENES = TREE_SELECTED_GENES.filter(g => g !== geneName);
     renderTreeChips();
-    renderCircularTree();
+    if (TREE_LAYOUT) renderCircularTree();
+    showTreeToast(`Removed ${geneName} from tree`);
 }
 
 function resetTreeGenes(genes) {
-    TREE_SELECTED_GENES = [...genes];
+    TREE_SELECTED_GENES = [...(genes || [])];
     renderTreeChips();
-    renderCircularTree();
+    if (TREE_LAYOUT) renderCircularTree();
+    if (TREE_SELECTED_GENES.length === 0) {
+        showTreeToast('Cleared all genes on tree');
+    }
 }
 
 function loadCurrentNetworkGenesInTree() {
-    if (selectedGene && TREE_GENE_IDX[selectedGene] !== undefined) {
+    if (selectedGene && (TREE_GENE_IDX[selectedGene] !== undefined || !TREE_LAYOUT)) {
         const list = [selectedGene];
         const gData = getGeneData(selectedGene);
         if (gData && gData.p) {
             for (const partner of gData.p) {
-                if (TREE_GENE_IDX[partner.n] !== undefined && !list.includes(partner.n)) {
+                if (!list.includes(partner.n)) {
                     list.push(partner.n);
                     if (list.length >= 3) break;
                 }
             }
         }
         resetTreeGenes(list);
+        showTreeToast(`Loaded ${list.join(', ')} onto tree`);
     } else {
-        resetTreeGenes(['SCAPER', 'TTC5', 'CNOT11']);
+        showTreeToast('Select a gene in the network first to load it and its partners');
     }
 }
 
@@ -1921,16 +2152,15 @@ function blendTreeColors(presentIndices, isDark) {
         return isDark ? '#334155' : '#cbd5e1'; // Dark slate in dark mode, light grey in light mode
     }
     if (presentIndices.length === 1) return TREE_PALETTE[presentIndices[0] % TREE_PALETTE.length];
-    if (presentIndices.length === TREE_SELECTED_GENES.length) {
+    if (presentIndices.length === TREE_SELECTED_GENES.length && TREE_SELECTED_GENES.length > 1) {
         return isDark ? '#ffffff' : '#111827'; // Crisp white in dark mode, dark navy in light mode
     }
 
-    // Predefined combinations for standard 3 genes
-    if (TREE_SELECTED_GENES.length === 3) {
-        const s = new Set(presentIndices);
-        if (s.has(0) && s.has(1)) return '#a855f7'; // SCAPER + TTC5 (Purple)
-        if (s.has(0) && s.has(2)) return '#f97316'; // SCAPER + CNOT11 (Orange)
-        if (s.has(1) && s.has(2)) return '#06b6d4'; // TTC5 + CNOT11 (Cyan)
+    if (presentIndices.length === 2 && TREE_SELECTED_GENES.length >= 2) {
+        const i1 = presentIndices[0], i2 = presentIndices[1];
+        if ((i1 === 0 && i2 === 1) || (i1 === 1 && i2 === 0)) return '#a855f7';
+        if ((i1 === 0 && i2 === 2) || (i1 === 2 && i2 === 0)) return '#f97316';
+        if ((i1 === 1 && i2 === 2) || (i1 === 2 && i2 === 1)) return '#06b6d4';
     }
 
     // Subtractive / additive blend
@@ -1972,7 +2202,7 @@ function renderCircularTree() {
 
     const defaultNodeCol = isDark ? '#475569' : '#94a3b8';
 
-    if (TREE_BRANCH_MODE === 'taxonomy') {
+    if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {
         // Color branches by taxonomic clade of descendant leaves
         TREE_LAYOUT.nodes.forEach(node => {
             if (node.leaf) {
@@ -2018,9 +2248,11 @@ function renderCircularTree() {
     }
 
     const svgParts = [];
-    const titleText = TREE_BRANCH_MODE === 'taxonomy'
-        ? `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes (${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`
-        : `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes`;
+    const titleText = TREE_SELECTED_GENES.length > 0
+        ? (TREE_BRANCH_MODE === 'taxonomy'
+            ? `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes (${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`
+            : `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes`)
+        : `Eukaryotic Species Tree (196 species • ${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`;
     const titleColor = isDark ? '#f8fafc' : '#111827';
     svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="${titleColor}">${titleText}</text>`);
 
@@ -2165,7 +2397,7 @@ function renderCircularTree() {
     const legTextCol = isDark ? '#cbd5e1' : '#374151';
 
     svgParts.push('<g transform="translate(35, 45)">');
-    if (TREE_BRANCH_MODE === 'taxonomy') {
+    if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {
         svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${legTitleCol}">Taxonomy: ${TREE_TAX_LEVEL.toUpperCase()}</text>`);
         svgParts.push(`<text x="0" y="14" font-size="9" fill="${legSubCol}">(clade color coding)</text>`);
 
@@ -2204,7 +2436,9 @@ function renderCircularTree() {
             TREE_SELECTED_GENES.forEach((g, idx) => {
                 uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g + ' only');
             });
-            uniqueCols.set(allCol, 'all ' + TREE_SELECTED_GENES.length);
+            if (TREE_SELECTED_GENES.length > 1) {
+                uniqueCols.set(allCol, 'all ' + TREE_SELECTED_GENES.length);
+            }
         }
 
         let lI = 0;
@@ -2217,14 +2451,16 @@ function renderCircularTree() {
     }
     svgParts.push('</g>');
 
-    // 6. Bottom Track Labels
-    svgParts.push(`<g transform="translate(${CX - 40}, ${CY + R_TRACKS_START - 22})">`);
-    TREE_SELECTED_GENES.forEach((gName, i) => {
-        const col = TREE_PALETTE[i % TREE_PALETTE.length];
-        const y = i * 12;
-        svgParts.push(`<text x="0" y="${y}" font-size="9" font-weight="700" fill="${col}">${gName}</text>`);
-    });
-    svgParts.push('</g>');
+    // 6. Bottom Track Labels (only if genes are selected)
+    if (TREE_SELECTED_GENES.length > 0) {
+        svgParts.push(`<g transform="translate(${CX - 40}, ${CY + R_TRACKS_START - 22})">`);
+        TREE_SELECTED_GENES.forEach((gName, i) => {
+            const col = TREE_PALETTE[i % TREE_PALETTE.length];
+            const y = i * 12;
+            svgParts.push(`<text x="0" y="${y}" font-size="9" font-weight="700" fill="${col}">${gName}</text>`);
+        });
+        svgParts.push('</g>');
+    }
 
     svg.innerHTML = svgParts.join('');
     setupTreeTooltips();
@@ -2395,26 +2631,28 @@ document.getElementById('toggle-labels').addEventListener('change', function() {
 document.getElementById('thresh').addEventListener('input', function() {
     document.getElementById('thresh-val').textContent = parseFloat(this.value).toFixed(2);
     if (selectedGene) renderSidebar(selectedGene);
-    if (currentMode === 'gene' && selectedGene) renderEgoNetwork(selectedGene);
+    if ((currentMode === 'gene' || currentMode === 'network') && selectedGene) renderEgoNetwork(selectedGene);
 });
 
 document.getElementById('topn').addEventListener('input', function() {
     document.getElementById('topn-val').textContent = this.value;
     if (selectedGene) renderSidebar(selectedGene);
-    if (currentMode === 'gene' && selectedGene) renderEgoNetwork(selectedGene);
+    if ((currentMode === 'gene' || currentMode === 'network') && selectedGene) renderEgoNetwork(selectedGene);
 });
 
 document.getElementById('toggle-topn-max').addEventListener('change', function() {
     document.getElementById('topn').disabled = this.checked;
     document.getElementById('topn-val').textContent = this.checked ? 'Max' : document.getElementById('topn').value;
     if (selectedGene) renderSidebar(selectedGene);
-    if (currentMode === 'gene' && selectedGene) renderEgoNetwork(selectedGene);
+    if ((currentMode === 'gene' || currentMode === 'network') && selectedGene) renderEgoNetwork(selectedGene);
 });
 
 document.getElementById('gene-filter').addEventListener('change', function() {
     geneFilterMode = this.value;
     if (selectedGene) renderSidebar(selectedGene);
-    if (currentMode === 'gene' && selectedGene) renderEgoNetwork(selectedGene);
+    if ((currentMode === 'gene' || currentMode === 'network') && selectedGene) renderEgoNetwork(selectedGene);
+    if (currentMode === 'single_cluster') showSingleCluster(currentClusterId);
+    if (currentMode === 'all_clusters') showAllClusters();
 });
 
 // Init
@@ -2422,7 +2660,7 @@ window.addEventListener('DOMContentLoaded', () => {
     applySiteTheme(SITE_THEME);
     initCy();
     loadPartnersGraph();
-    renderClusterDirectory();
+    showAllClusters();
 });
 
 </script>
