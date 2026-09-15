@@ -832,8 +832,219 @@ body {{
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }}
-@keyframes spin {{
-    to {{ transform: rotate(360deg); }}
+/* Light Theme Overrides */
+body.light-theme {{
+    background: #f8fafc;
+    color: #0f172a;
+}}
+body.light-theme #header {{
+    background: #ffffff;
+    border-bottom: 1px solid #cbd5e1;
+}}
+body.light-theme #header h1 {{
+    color: #0f172a;
+}}
+body.light-theme .controls label {{
+    color: #475569;
+}}
+body.light-theme .controls select {{
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+}}
+body.light-theme .view-btn {{
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+}}
+body.light-theme .view-btn.active {{
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+}}
+body.light-theme .btn-clusters-header {{
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0284c7;
+}}
+body.light-theme .btn {{
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+}}
+body.light-theme .btn:hover {{
+    background: #e2e8f0;
+    color: #0f172a;
+}}
+body.light-theme .btn-accent {{
+    background: #e0f2fe;
+    border-color: #0284c7;
+    color: #0284c7;
+}}
+body.light-theme #graph-wrapper {{
+    background: #f8fafc;
+}}
+body.light-theme #sidebar {{
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    color: #0f172a;
+}}
+body.light-theme #sidebar-title,
+body.light-theme #sidebar-search-wrap {{
+    background: #ffffff;
+    border-bottom-color: #e2e8f0;
+}}
+body.light-theme #sidebar-search {{
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}}
+body.light-theme .cluster-card {{
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}}
+body.light-theme .cluster-card:hover {{
+    background: #f1f5f9;
+    border-color: #0284c7;
+}}
+body.light-theme #status-bar {{
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+}}
+body.light-theme #search {{
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}}
+body.light-theme #suggestions {{
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}}
+body.light-theme #suggestions div {{
+    color: #0f172a;
+}}
+body.light-theme #suggestions div:hover {{
+    background: #f1f5f9;
+}}
+body.light-theme #webgl-hud {{
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(2, 132, 199, 0.3);
+    color: #0f172a;
+}}
+body.light-theme #webgl-hud span {{
+    color: #64748b !important;
+}}
+body.light-theme #gene-info h2 {{
+    color: #0369a1;
+}}
+body.light-theme #gene-info .meta {{
+    color: #64748b;
+}}
+body.light-theme #cluster-gene-focus-banner {{
+    background: #f0f9ff !important;
+    border: 1px solid #0284c7 !important;
+    color: #0f172a !important;
+}}
+body.light-theme .partner {{
+    border-bottom: 1px solid #e2e8f0;
+    color: #0f172a;
+}}
+body.light-theme .partner:hover {{
+    background: #f1f5f9;
+}}
+body.light-theme .partner.active {{
+    background: #e0f2fe;
+}}
+body.light-theme .partner.active-partner {{
+    background: #e0f2fe !important;
+    border-left: 3px solid #0284c7;
+}}
+body.light-theme .partner .pname.in-graph {{
+    color: #0284c7;
+}}
+body.light-theme .partner .bar-wrap {{
+    background: #e2e8f0;
+}}
+body.light-theme .partner .rank {{
+    color: #94a3b8;
+}}
+
+/* Tree Modal Specific Themes */
+#tree-modal.tree-theme-dark {{
+    background: #070b14 !important;
+}}
+#tree-modal.tree-theme-dark #tree-header {{
+    background: #0d1322 !important;
+    border-bottom: 1px solid #1e293b !important;
+}}
+#tree-modal.tree-theme-dark #tree-header span {{
+    color: #f8fafc !important;
+}}
+#tree-modal.tree-theme-dark #tree-header label {{
+    color: #94a3b8 !important;
+}}
+#tree-modal.tree-theme-dark #tree-header select,
+#tree-modal.tree-theme-dark #tree-header input {{
+    background: #161d31 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}}
+#tree-modal.tree-theme-dark #tree-header .btn {{
+    background: #161d31 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}}
+#tree-modal.tree-theme-dark #tree-header .btn:hover {{
+    background: #1e293b !important;
+}}
+#tree-modal.tree-theme-dark #tree-viewport {{
+    background: #0a0e17 !important;
+}}
+#tree-modal.tree-theme-dark #tree-tooltip {{
+    background: rgba(15,23,42,0.96) !important;
+    border: 1px solid #38bdf8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5) !important;
+}}
+
+#tree-modal.tree-theme-light {{
+    background: #f1f5f9 !important;
+}}
+#tree-modal.tree-theme-light #tree-header {{
+    background: #ffffff !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+}}
+#tree-modal.tree-theme-light #tree-header span {{
+    color: #0f172a !important;
+}}
+#tree-modal.tree-theme-light #tree-header label {{
+    color: #475569 !important;
+}}
+#tree-modal.tree-theme-light #tree-header select,
+#tree-modal.tree-theme-light #tree-header input {{
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}}
+#tree-modal.tree-theme-light #tree-header .btn {{
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}}
+#tree-modal.tree-theme-light #tree-header .btn:hover {{
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}}
+#tree-modal.tree-theme-light #tree-viewport {{
+    background: #ffffff !important;
+}}
+#tree-modal.tree-theme-light #tree-tooltip {{
+    background: rgba(255,255,255,0.98) !important;
+    border: 1px solid #0284c7 !important;
+    color: #0f172a !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
 }}
 </style>
 </head>
@@ -877,6 +1088,7 @@ body {{
 
         <label style="margin-left:4px;">Labels:</label>
         <input type="checkbox" id="toggle-labels" checked>
+        <button id="btn-theme-toggle" class="btn" style="margin-left:6px;" onclick="toggleSiteTheme()" title="Toggle Dark/Light Site Theme">🌙 Dark</button>
     </div>
 </div>
 
@@ -912,15 +1124,15 @@ body {{
 <!-- Circular Phylogenetic Tree View Modal (TCS Cladogram) -->
 <div id="tree-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:#070b14; flex-direction:column;">
     <div id="tree-header" style="height:48px; background:#0d1322; border-bottom:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; padding:0 14px; gap:10px; z-index:10; box-shadow:0 2px 10px rgba(0,0,0,0.5);">
-        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-            <span style="font-size:13.5px; font-weight:700; color:#f8fafc; white-space:nowrap; display:flex; align-items:center; gap:6px;">
-                🌳 Species Tree <span style="font-size:11px; color:#8892b0; font-weight:400;">(196 Eukaryotes)</span>
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
+            <span style="font-size:13px; font-weight:700; color:#f8fafc; white-space:nowrap; display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                🌳 Species Tree <span style="font-size:10.5px; color:#8892b0; font-weight:400;">(196)</span>
             </span>
-            <div style="position:relative; width:220px; flex-shrink:0;">
-                <input type="text" id="tree-gene-input" placeholder="+ Add gene (e.g. SCAPER)…" autocomplete="off" style="width:100%; height:27px; background:#161d31; border:1px solid #2d3748; border-radius:4px; color:#e2e8f0; padding:0 8px; font-size:11.5px; outline:none;">
-                <div id="tree-gene-suggestions" style="display:none; position:absolute; top:31px; left:0; right:0; background:#0f172a; border:1px solid #334155; border-radius:4px; max-height:220px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.6);"></div>
+            <div style="position:relative; width:150px; flex-shrink:0;">
+                <input type="text" id="tree-gene-input" placeholder="+ Add gene…" autocomplete="off" style="width:100%; height:26px; background:#161d31; border:1px solid #2d3748; border-radius:4px; color:#e2e8f0; padding:0 8px; font-size:11px; outline:none;">
+                <div id="tree-gene-suggestions" style="display:none; position:absolute; top:30px; left:0; right:0; background:#0f172a; border:1px solid #334155; border-radius:4px; max-height:220px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.6);"></div>
             </div>
-            <div id="tree-chips-container" style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow-x:auto;"></div>
+            <div id="tree-chips-container" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; min-width:0;"></div>
         </div>
         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
@@ -947,6 +1159,14 @@ body {{
                     <option value="phylogram">Use Branch Lengths</option>
                 </select>
             </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Theme:
+                <select id="tree-theme-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTheme(this.value)" title="Choose tree appearance mode">
+                    <option value="auto" selected>Auto (Site)</option>
+                    <option value="dark">🌙 Dark</option>
+                    <option value="light">☀️ Light</option>
+                </select>
+            </label>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes(['SCAPER', 'TTC5', 'CNOT11'])" title="Reset to reference genes">Reset Genes</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
@@ -954,7 +1174,7 @@ body {{
             <button class="btn btn-accent" style="padding:4px 12px; font-size:11px; font-weight:700;" onclick="closeTreeView()">✕ Close</button>
         </div>
     </div>
-    <div id="tree-viewport" style="flex:1; position:relative; overflow:hidden; background:#ffffff; cursor:grab; user-select:none;">
+    <div id="tree-viewport" style="flex:1; position:relative; overflow:hidden; background:#0a0e17; cursor:grab; user-select:none;">
         <div id="tree-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,14,23,0.85); color:#cbd5e1; font-size:14px; font-weight:600; z-index:50;">
             <div class="spinner" style="margin-right:10px;"></div> Loading species tree and presence matrix…
         </div>
@@ -1010,6 +1230,66 @@ let selectedGene = null;
 let currentClusterId = null;
 let clusterFocusedGene = null;
 let geneFilterMode = 'all';
+
+// ---- Theme Management (Site & Tree) ----
+let SITE_THEME = localStorage.getItem('dollo_site_theme') || 'dark';
+let TREE_THEME = localStorage.getItem('dollo_tree_theme') || 'auto';
+
+function getEffectiveTreeTheme() {{
+    if (TREE_THEME === 'auto') {{
+        return SITE_THEME || 'dark';
+    }}
+    return TREE_THEME;
+}}
+
+function updateTreeModalTheme() {{
+    const modal = document.getElementById('tree-modal');
+    if (!modal) return;
+    const effTheme = getEffectiveTreeTheme();
+    if (effTheme === 'light') {{
+        modal.classList.add('tree-theme-light');
+        modal.classList.remove('tree-theme-dark');
+    }} else {{
+        modal.classList.add('tree-theme-dark');
+        modal.classList.remove('tree-theme-light');
+    }}
+    const sel = document.getElementById('tree-theme-select');
+    if (sel && sel.value !== TREE_THEME) {{
+        sel.value = TREE_THEME;
+    }}
+    if (modal.style.display !== 'none' && TREE_LAYOUT) {{
+        renderTreeChips();
+        renderCircularTree();
+    }}
+}}
+
+function setTreeTheme(theme) {{
+    TREE_THEME = theme;
+    localStorage.setItem('dollo_tree_theme', theme);
+    updateTreeModalTheme();
+}}
+
+function applySiteTheme(theme) {{
+    SITE_THEME = theme;
+    localStorage.setItem('dollo_site_theme', theme);
+    const btn = document.getElementById('btn-theme-toggle');
+    if (theme === 'light') {{
+        document.body.classList.add('light-theme');
+        if (btn) btn.innerHTML = '☀️ Light';
+    }} else {{
+        document.body.classList.remove('light-theme');
+        if (btn) btn.innerHTML = '🌙 Dark';
+    }}
+    updateTreeModalTheme();
+}}
+
+function toggleSiteTheme() {{
+    const newTheme = (SITE_THEME === 'dark') ? 'light' : 'dark';
+    applySiteTheme(newTheme);
+}}
+
+// Initialize site theme immediately
+applySiteTheme(SITE_THEME);
 
 let sigmaGraph = null;
 let sigmaRenderer = null;
@@ -2115,6 +2395,7 @@ let treePanStartY = 0;
 function openTreeView() {{
     const modal = document.getElementById('tree-modal');
     if (!modal) return;
+    updateTreeModalTheme();
     modal.style.display = 'flex';
     initTreeView();
 }}
@@ -2187,13 +2468,17 @@ function getTreeGenePresence(geneName) {{
 function renderTreeChips() {{
     const container = document.getElementById('tree-chips-container');
     if (!container) return;
+    const isDark = getEffectiveTreeTheme() === 'dark';
+    const chipBg = isDark ? '#161d31' : '#f1f5f9';
+    const textCol = isDark ? '#f8fafc' : '#0f172a';
+    const closeCol = isDark ? '#94a3b8' : '#64748b';
     container.innerHTML = TREE_SELECTED_GENES.map((g, idx) => {{
         const col = TREE_PALETTE[idx % TREE_PALETTE.length];
         return `
-            <div style="display:inline-flex; align-items:center; gap:5px; background:#161d31; border:1px solid ${{col}}; border-radius:14px; padding:2px 8px; font-size:11px; color:#f8fafc;">
+            <div style="display:inline-flex; align-items:center; gap:5px; background:${{chipBg}}; border:1px solid ${{col}}; border-radius:14px; padding:2px 8px; font-size:11px; color:${{textCol}};">
                 <span style="width:8px; height:8px; border-radius:50%; background:${{col}};"></span>
                 <strong>${{g}}</strong>
-                <span style="cursor:pointer; color:#94a3b8; margin-left:3px; font-weight:700;" onclick="removeTreeGene('${{g}}')">&times;</span>
+                <span style="cursor:pointer; color:${{closeCol}}; margin-left:3px; font-weight:700;" onclick="removeTreeGene('${{g}}')">&times;</span>
             </div>
         `;
     }}).join('');
@@ -2242,17 +2527,21 @@ function loadCurrentNetworkGenesInTree() {{
     }}
 }}
 
-function blendTreeColors(presentIndices) {{
-    if (!presentIndices || presentIndices.length === 0) return '#cbd5e1'; // none / light grey
+function blendTreeColors(presentIndices, isDark) {{
+    if (!presentIndices || presentIndices.length === 0) {{
+        return isDark ? '#334155' : '#cbd5e1'; // Dark slate in dark mode, light grey in light mode
+    }}
     if (presentIndices.length === 1) return TREE_PALETTE[presentIndices[0] % TREE_PALETTE.length];
-    if (presentIndices.length === TREE_SELECTED_GENES.length) return '#111827'; // all present / dark navy
+    if (presentIndices.length === TREE_SELECTED_GENES.length) {{
+        return isDark ? '#ffffff' : '#111827'; // Crisp white in dark mode, dark navy in light mode
+    }}
 
     // Predefined combinations for standard 3 genes
     if (TREE_SELECTED_GENES.length === 3) {{
         const s = new Set(presentIndices);
-        if (s.has(0) && s.has(1)) return '#9467bd'; // SCAPER + TTC5 (Purple)
-        if (s.has(0) && s.has(2)) return '#d95f02'; // SCAPER + CNOT11 (Orange)
-        if (s.has(1) && s.has(2)) return '#17becf'; // TTC5 + CNOT11 (Teal)
+        if (s.has(0) && s.has(1)) return '#a855f7'; // SCAPER + TTC5 (Purple)
+        if (s.has(0) && s.has(2)) return '#f97316'; // SCAPER + CNOT11 (Orange)
+        if (s.has(1) && s.has(2)) return '#06b6d4'; // TTC5 + CNOT11 (Cyan)
     }}
 
     // Subtractive / additive blend
@@ -2264,9 +2553,10 @@ function blendTreeColors(presentIndices) {{
         const cB = parseInt(hex.slice(5, 7), 16);
         r += cR; g += cG; b += cB;
     }});
-    r = Math.min(255, Math.floor((r / presentIndices.length) * 0.85));
-    g = Math.min(255, Math.floor((g / presentIndices.length) * 0.85));
-    b = Math.min(255, Math.floor((b / presentIndices.length) * 0.85));
+    const factor = isDark ? 1.05 : 0.85;
+    r = Math.min(255, Math.floor((r / presentIndices.length) * factor));
+    g = Math.min(255, Math.floor((g / presentIndices.length) * factor));
+    b = Math.min(255, Math.floor((b / presentIndices.length) * factor));
     return `rgb(${{r}},${{g}},${{b}})`;
 }}
 
@@ -2274,6 +2564,8 @@ function renderCircularTree() {{
     if (!TREE_LAYOUT) return;
     const svg = document.getElementById('tree-svg');
     if (!svg) return;
+
+    const isDark = getEffectiveTreeTheme() === 'dark';
 
     const SIZE = 1000;
     const CX = SIZE / 2;
@@ -2289,12 +2581,14 @@ function renderCircularTree() {{
     const idToNode = {{}};
     TREE_LAYOUT.nodes.forEach(n => {{ idToNode[n.id] = n; }});
 
+    const defaultNodeCol = isDark ? '#475569' : '#94a3b8';
+
     if (TREE_BRANCH_MODE === 'taxonomy') {{
         // Color branches by taxonomic clade of descendant leaves
         TREE_LAYOUT.nodes.forEach(node => {{
             if (node.leaf) {{
                 const lInfo = TREE_LAYOUT.leaf_taxonomies ? TREE_LAYOUT.leaf_taxonomies[node.leaf_idx] : null;
-                nodeColors[node.id] = lInfo ? (lInfo[TREE_TAX_LEVEL + '_color'] || '#94a3b8') : '#94a3b8';
+                nodeColors[node.id] = lInfo ? (lInfo[TREE_TAX_LEVEL + '_color'] || defaultNodeCol) : defaultNodeCol;
             }} else {{
                 const counts = {{}};
                 const colors = {{}};
@@ -2303,7 +2597,7 @@ function renderCircularTree() {{
                     if (!lInfo) return;
                     const c = lInfo[TREE_TAX_LEVEL];
                     counts[c] = (counts[c] || 0) + 1;
-                    colors[c] = lInfo[TREE_TAX_LEVEL + '_color'] || '#94a3b8';
+                    colors[c] = lInfo[TREE_TAX_LEVEL + '_color'] || defaultNodeCol;
                 }});
                 let maxCount = 0;
                 let domClade = null;
@@ -2316,7 +2610,7 @@ function renderCircularTree() {{
                 if (domClade && (maxCount / node.leaves.length >= 0.70)) {{
                     nodeColors[node.id] = colors[domClade];
                 }} else {{
-                    nodeColors[node.id] = '#94a3b8';
+                    nodeColors[node.id] = defaultNodeCol;
                 }}
             }}
         }});
@@ -2330,7 +2624,7 @@ function renderCircularTree() {{
                     presentIndices.push(gI);
                 }}
             }}
-            nodeColors[node.id] = blendTreeColors(presentIndices);
+            nodeColors[node.id] = blendTreeColors(presentIndices, isDark);
         }});
     }}
 
@@ -2338,7 +2632,8 @@ function renderCircularTree() {{
     const titleText = TREE_BRANCH_MODE === 'taxonomy'
         ? `${{TREE_SELECTED_GENES.join(', ')}} presence across eukaryotes (${{TREE_TAX_LEVEL.toUpperCase()}} taxonomy)`
         : `${{TREE_SELECTED_GENES.join(', ')}} presence across eukaryotes`;
-    svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">${{titleText}}</text>`);
+    const titleColor = isDark ? '#f8fafc' : '#111827';
+    svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="${{titleColor}}">${{titleText}}</text>`);
 
     // Dimensions
     const R_ROOT = TREE_LAYOUT.r_root;
@@ -2354,10 +2649,11 @@ function renderCircularTree() {{
     }}
 
     // 1. Clade Background Wedges
+    const wedgeOpacity = isDark ? '0.14' : '0.08';
     cladeBlocks.forEach(block => {{
         const sIdx = block.start_idx;
         const eIdx = block.end_idx;
-        const col = block.color || '#94a3b8';
+        const col = block.color || (isDark ? '#475569' : '#94a3b8');
         const dA = (SPAN / (nLeaves - 1)) * 0.48;
         const a1 = TREE_LAYOUT.leaf_angles[sIdx] + dA;
         const a2 = TREE_LAYOUT.leaf_angles[eIdx] - dA;
@@ -2375,10 +2671,11 @@ function renderCircularTree() {{
         const x4 = (CX + R_ROOT * Math.cos(rad2)).toFixed(2);
         const y4 = (CY + R_ROOT * Math.sin(rad2)).toFixed(2);
 
-        svgParts.push(`<path d="M ${{x1}} ${{y1}} L ${{x2}} ${{y2}} A ${{rMax}} ${{rMax}} 0 0 0 ${{x3}} ${{y3}} L ${{x4}} ${{y4}} Z" fill="${{col}}" fill-opacity="0.08" stroke="none" />`);
+        svgParts.push(`<path d="M ${{x1}} ${{y1}} L ${{x2}} ${{y2}} A ${{rMax}} ${{rMax}} 0 0 0 ${{x3}} ${{y3}} L ${{x4}} ${{y4}} Z" fill="${{col}}" fill-opacity="${{wedgeOpacity}}" stroke="none" />`);
     }});
 
     // 2. Tree Branches
+    const branchWidth = isDark ? '1.8' : '1.7';
     TREE_LAYOUT.nodes.forEach(node => {{
         if (node.p === null || node.p === undefined) return;
         const parent = idToNode[node.p];
@@ -2394,10 +2691,13 @@ function renderCircularTree() {{
 
         const sweep = aC < aP ? 0 : 1;
         const pathD = `M ${{xP.toFixed(2)}} ${{yP.toFixed(2)}} A ${{rP.toFixed(2)}} ${{rP.toFixed(2)}} 0 0 ${{sweep}} ${{xArc.toFixed(2)}} ${{yArc.toFixed(2)}} L ${{xC.toFixed(2)}} ${{yC.toFixed(2)}}`;
-        svgParts.push(`<path d="${{pathD}}" fill="none" stroke="${{col}}" stroke-width="1.8" stroke-linecap="round" />`);
+        svgParts.push(`<path d="${{pathD}}" fill="none" stroke="${{col}}" stroke-width="${{branchWidth}}" stroke-linecap="round" />`);
     }});
 
     // 3. Concentric Tracks
+    const absentFill = isDark ? '#151d30' : '#f8fafc';
+    const absentStroke = isDark ? '#263350' : '#e2e8f0';
+
     TREE_SELECTED_GENES.forEach((gName, gI) => {{
         const rInner = R_TRACKS_START + gI * (TRACK_WIDTH + 2);
         const rOuter = rInner + TRACK_WIDTH;
@@ -2413,8 +2713,8 @@ function renderCircularTree() {{
             const rad1 = (a1 * Math.PI) / 180.0;
             const rad2 = (a2 * Math.PI) / 180.0;
 
-            const fillCol = isPres ? col : '#f8fafc';
-            const strokeCol = isPres ? col : '#e2e8f0';
+            const fillCol = isPres ? col : absentFill;
+            const strokeCol = isPres ? col : absentStroke;
 
             const x1 = (CX + rInner * Math.cos(rad1)).toFixed(2);
             const y1 = (CY + rInner * Math.sin(rad1)).toFixed(2);
@@ -2435,7 +2735,7 @@ function renderCircularTree() {{
         const sIdx = block.start_idx;
         const eIdx = block.end_idx;
         const cname = block.clade;
-        const col = block.color || '#64748b';
+        const col = block.color || (isDark ? '#94a3b8' : '#64748b');
         const dA = (SPAN / (nLeaves - 1)) * 0.48;
 
         const a1 = TREE_LAYOUT.leaf_angles[sIdx] + dA;
@@ -2467,10 +2767,14 @@ function renderCircularTree() {{
     }});
 
     // 5. Dynamic Legend in Top-Left
+    const legTitleCol = isDark ? '#f8fafc' : '#111827';
+    const legSubCol = isDark ? '#94a3b8' : '#6b7280';
+    const legTextCol = isDark ? '#cbd5e1' : '#374151';
+
     svgParts.push('<g transform="translate(35, 45)">');
     if (TREE_BRANCH_MODE === 'taxonomy') {{
-        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="#111827">Taxonomy: ${{TREE_TAX_LEVEL.toUpperCase()}}</text>`);
-        svgParts.push('<text x="0" y="14" font-size="9" fill="#6b7280">(clade color coding)</text>');
+        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Taxonomy: ${{TREE_TAX_LEVEL.toUpperCase()}}</text>`);
+        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(clade color coding)</text>`);
 
         const seenClades = new Set();
         let lI = 0;
@@ -2479,7 +2783,7 @@ function renderCircularTree() {{
             seenClades.add(block.clade);
             const y = 30 + lI * 15;
             svgParts.push(`<rect x="0" y="${{y}}" width="18" height="8" rx="2" fill="${{block.color}}" />`);
-            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9" fill="#374151">${{block.clade}}</text>`);
+            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9" fill="${{legTextCol}}">${{block.clade}}</text>`);
             lI++;
         }});
         if (seenClades.size > 12) {{
@@ -2487,31 +2791,34 @@ function renderCircularTree() {{
             svgParts.push(`<text x="0" y="${{y + 7}}" font-size="8.5" fill="#94a3b8">+ ${{seenClades.size - 12}} more...</text>`);
         }}
     }} else {{
-        svgParts.push('<text x="0" y="0" font-size="11" font-weight="700" fill="#111827">branch colour = genes present</text>');
-        svgParts.push('<text x="0" y="14" font-size="9" fill="#6b7280">(mix of the gene colours)</text>');
+        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">branch colour = genes present</text>`);
+        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(mix of the gene colours)</text>`);
+
+        const noneCol = isDark ? '#334155' : '#cbd5e1';
+        const allCol = isDark ? '#ffffff' : '#111827';
 
         const uniqueCols = new Map();
-        uniqueCols.set('#cbd5e1', 'none');
+        uniqueCols.set(noneCol, 'none');
         if (TREE_SELECTED_GENES.length === 3) {{
             uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0] + ' only');
             uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1] + ' only');
             uniqueCols.set(TREE_PALETTE[2], TREE_SELECTED_GENES[2] + ' only');
-            uniqueCols.set('#9467bd', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[1]}}`);
-            uniqueCols.set('#d95f02', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[2]}}`);
-            uniqueCols.set('#17becf', `${{TREE_SELECTED_GENES[1]}} + ${{TREE_SELECTED_GENES[2]}}`);
-            uniqueCols.set('#111827', 'all three');
+            uniqueCols.set('#a855f7', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[1]}}`);
+            uniqueCols.set('#f97316', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[2]}}`);
+            uniqueCols.set('#06b6d4', `${{TREE_SELECTED_GENES[1]}} + ${{TREE_SELECTED_GENES[2]}}`);
+            uniqueCols.set(allCol, 'all three');
         }} else {{
             TREE_SELECTED_GENES.forEach((g, idx) => {{
                 uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g + ' only');
             }});
-            uniqueCols.set('#111827', 'all ' + TREE_SELECTED_GENES.length);
+            uniqueCols.set(allCol, 'all ' + TREE_SELECTED_GENES.length);
         }}
 
         let lI = 0;
         uniqueCols.forEach((label, col) => {{
             const y = 30 + lI * 16;
             svgParts.push(`<rect x="0" y="${{y}}" width="18" height="8" rx="2" fill="${{col}}" />`);
-            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9.5" fill="#374151">${{label}}</text>`);
+            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9.5" fill="${{legTextCol}}">${{label}}</text>`);
             lI++;
         }});
     }}
@@ -2620,6 +2927,7 @@ function setupTreeSearch() {{
 function setupTreeTooltips() {{
     const tooltip = document.getElementById('tree-tooltip');
     const tiles = document.querySelectorAll('.tree-tile');
+    const isDark = getEffectiveTreeTheme() === 'dark';
     tiles.forEach(tile => {{
         tile.addEventListener('mouseenter', (e) => {{
             const sp = tile.getAttribute('data-sp');
@@ -2627,21 +2935,28 @@ function setupTreeTooltips() {{
             const taxInfo = (TREE_LAYOUT.leaf_taxonomies && TREE_LAYOUT.leaf_taxonomies[leafIdx]) || {{}};
             const curVal = taxInfo[TREE_TAX_LEVEL] || taxInfo.clade || '';
 
-            let html = `<strong style="color:#f8fafc; font-size:12px;">${{taxInfo.sci_name || sp.replace(/_/g, ' ')}}</strong><br>`;
+            const titleCol = isDark ? '#f8fafc' : '#0f172a';
+            const subCol = isDark ? '#94a3b8' : '#64748b';
+            const taxCol = isDark ? '#38bdf8' : '#0284c7';
+            const borderCol = isDark ? '#334155' : '#e2e8f0';
+            const presCol = isDark ? '#4ade80' : '#16a34a';
+            const absCol = isDark ? '#94a3b8' : '#64748b';
+
+            let html = `<strong style="color:${{titleCol}}; font-size:12px;">${{taxInfo.sci_name || sp.replace(/_/g, ' ')}}</strong><br>`;
             if (curVal) {{
-                html += `<span style="color:#38bdf8; font-size:10.5px;">${{TREE_TAX_LEVEL.toUpperCase()}}: <strong>${{curVal}}</strong></span><br>`;
+                html += `<span style="color:${{taxCol}}; font-size:10.5px;">${{TREE_TAX_LEVEL.toUpperCase()}}: <strong>${{curVal}}</strong></span><br>`;
             }}
             if (taxInfo.supergroup && taxInfo.phylum) {{
-                html += `<span style="color:#94a3b8; font-size:10px;">${{taxInfo.supergroup}} &rarr; ${{taxInfo.kingdom}} &rarr; ${{taxInfo.phylum}}</span><br>`;
+                html += `<span style="color:${{subCol}}; font-size:10px;">${{taxInfo.supergroup}} &rarr; ${{taxInfo.kingdom}} &rarr; ${{taxInfo.phylum}}</span><br>`;
             }}
-            html += `<div style="margin-top:6px; border-top:1px solid #334155; padding-top:4px;">`;
+            html += `<div style="margin-top:6px; border-top:1px solid ${{borderCol}}; padding-top:4px;">`;
             TREE_SELECTED_GENES.forEach((gName, gI) => {{
                 const isP = getTreeGenePresence(gName)[leafIdx] === 1;
                 const col = TREE_PALETTE[gI % TREE_PALETTE.length];
                 html += `
                     <div style="display:flex; justify-content:space-between; gap:12px; font-size:10.5px;">
                         <span style="color:${{col}}; font-weight:600;">${{gName}}:</span>
-                        <span style="color:${{isP ? '#4ade80' : '#94a3b8'}}; font-weight:600;">${{isP ? '● Present (1)' : '○ Absent (0)'}}</span>
+                        <span style="color:${{isP ? presCol : absCol}}; font-weight:600;">${{isP ? '● Present (1)' : '○ Absent (0)'}}</span>
                     </div>
                 `;
             }});
@@ -2714,6 +3029,7 @@ document.getElementById('gene-filter').addEventListener('change', function() {{
 
 // Init
 window.addEventListener('DOMContentLoaded', () => {{
+    applySiteTheme(SITE_THEME);
     initCy();
     loadWholeGraph();
     loadPartnersGraph();
