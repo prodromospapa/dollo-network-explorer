@@ -313,31 +313,30 @@ The explorer is engineered to run completely within modern client web browsers h
 
 ```
 +-----------------------------------------------------------------------+
-|                           index.html (18.7 MB)                        |
+|                Dual-Engine Web Architecture (index.html: 306 KB)      |
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
-|  | Inlined Compressed JSON Data:                                   |  |
-|  |  * G: { gene -> { losses, partners: [{n, j, l}, ...] } }       |  |
-|  |  * CLUSTERS: { cid -> [genes...] }                              |  |
-|  |  * GENE_CL: { gene -> cid }                                     |  |
-|  |  * CLUSTER_NAMES: { cid -> "GO Term 1 / GO Term 2" }            |  |
+|  | Ultra-Light Compact Binary Buffers:                              |  |
+|  |  * network_whole.bin (518 KB raw, 233 KB gzipped):              |  |
+|  |      - 11,236 genes with precomputed 2D DrL coordinates         |  |
+|  |      - 73,467 co-loss edges (Jaccard >= 0.60)                   |  |
+|  |  * network_partners.bin (4.2 MB raw, 1.6 MB gzipped):           |  |
+|  |      - Indexed top-100 co-loss partner lists per gene           |  |
 |  +-----------------------------------------------------------------+  |
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
-|  | Cytoscape.js Graph Engine:                                      |  |
+|  | Dual Graph Engines:                                             |  |
 |  |                                                                 |  |
-|  |  [View 1: Ego Network]        [View 2: Multi-Hop Module]        |  |
-|  |   - Focus gene at center       - BFS expansion over hops        |  |
-|  |   - Direct top-N partners      - Entire connected pathway       |  |
-|  |                                                                 |  |
-|  |  [View 3: All Clusters (Leiden Macro Layout)]                   |  |
-|  |   - 2D grid-of-circles (80 modules arranged without overlap)    |  |
-|  |   - Top hub genes per module + intra-cluster edges              |  |
-|  |   - Interactive cluster hub labels (zoom to cluster on click)   |  |
+|  |  [Engine 1: Sigma.js (WebGL)]      [Engine 2: Cytoscape.js]     |  |
+|  |   - 60 FPS GPU Whole Network View   - Focused Ego Network        |  |
+|  |   - 11,236 nodes & 73,467 edges     - Dynamic Jaccard sliders    |  |
+|  |   - Interactive node highlighting   - Instant cross-link layout  |  |
+|  |   - Zero layout wait (precomputed)  - Single Cluster detail view |  |
 |  +-----------------------------------------------------------------+  |
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
 |  | UI Controls & Navigation:                                       |  |
+|  |  * View toggle: [ 🌐 Whole Network (WebGL) | 🔬 Gene Focus ]     |  |
 |  |  * Real-time search with autocomplete prefix matching           |  |
 |  |  * Interactive Jaccard threshold and Top-N sliders             |  |
 |  |  * Module direct card: "C6: Cilium / Axoneme [View Cluster ->]"  |  |
@@ -416,8 +415,10 @@ When a user searches for **SCAPER** in the explorer:
 | **Community Detection** | [`dollo/scripts_simple/leiden_cluster.py`](file:///home/prodromosp/scaper_new/dollo/scripts_simple/leiden_cluster.py) | Leiden community detection algorithm on Jaccard matrix |
 | **Cluster Table** | [`dollo/results/leiden_clusters.tsv`](file:///home/prodromosp/scaper_new/dollo/results/leiden_clusters.tsv) | Gene-to-cluster assignments with loss counts |
 | **Cluster Summary & GO** | [`dollo/results/leiden_summary.tsv`](file:///home/prodromosp/scaper_new/dollo/results/leiden_summary.tsv) | GO names, ciliary panel overlap, and top hub genes |
-| **HTML Generator** | [`dollo/website/build_html_explorer.py`](file:///home/prodromosp/scaper_new/dollo/website/build_html_explorer.py) | Self-contained Cytoscape.js web application builder |
-| **Deployed HTML** | [`dollo/website/index.html`](index.html) | Generated client-side single-page application (18.7 MB) |
+| **HTML Generator** | [`build_html_explorer.py`](build_html_explorer.py) | Self-contained Dual-Engine (Sigma.js WebGL + Cytoscape) builder |
+| **Deployed HTML** | [`index.html`](index.html) | Client-side single-page application (306 KB) + binary data streams |
+| **Whole Graph Binary** | [`network_whole.bin`](network_whole.bin) | Precomputed 2D layout & 73k edges for WebGL whole-graph view (518 KB) |
+| **Partner Lists Binary** | [`network_partners.bin`](network_partners.bin) | Indexed co-loss partner lists for focused gene networks (4.2 MB) |
 | **Remote Repository** | [`prodromospapa/dollo-network-explorer`](https://github.com/prodromospapa/dollo-network-explorer) | GitHub repository configured for GitHub Pages |
 | **Live Web Explorer** | **[https://prodromospapa.github.io/dollo-network-explorer/](https://prodromospapa.github.io/dollo-network-explorer/)** | Live interactive application |
 
