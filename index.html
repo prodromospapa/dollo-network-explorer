@@ -527,7 +527,24 @@ body {
             <div id="tree-chips-container" style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow-x:auto;"></div>
         </div>
         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes(['SCAPER', 'TTC5', 'CNOT11'])" title="Reset to reference genes">Reset (SCAPER/TTC5/CNOT11)</button>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Taxonomy:
+                <select id="tree-tax-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
+                    <option value="detailed">Clade (Reference)</option>
+                    <option value="tcs">TCS Major Clades (31)</option>
+                    <option value="supergroup">Supergroup</option>
+                    <option value="kingdom">Kingdom</option>
+                    <option value="phylum">Phylum</option>
+                </select>
+            </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Branches:
+                <select id="tree-branch-mode" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchMode(this.value)">
+                    <option value="genes">Gene Parsimony</option>
+                    <option value="taxonomy">Taxonomy Clade</option>
+                </select>
+            </label>
+            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes(['SCAPER', 'TTC5', 'CNOT11'])" title="Reset to reference genes">Reset Genes</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
             <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">📥 SVG</button>
@@ -1681,6 +1698,8 @@ let TREE_LAYOUT = null;
 let TREE_PRESENCE_BUFFER = null;
 let TREE_GENE_IDX = {};
 let TREE_SELECTED_GENES = ['SCAPER', 'TTC5', 'CNOT11'];
+let TREE_TAX_LEVEL = 'detailed';
+let TREE_BRANCH_MODE = 'genes';
 const TREE_PALETTE = ['#d62728', '#1f77b4', '#2ca02c', '#d95f02', '#9467bd', '#17becf', '#e377c2', '#8c564b', '#bcbd22', '#17becf'];
 
 let treeZoomScale = 1.0;
@@ -1700,6 +1719,16 @@ function openTreeView() {
 function closeTreeView() {
     const modal = document.getElementById('tree-modal');
     if (modal) modal.style.display = 'none';
+}
+
+function setTreeTaxLevel(lvl) {
+    TREE_TAX_LEVEL = lvl;
+    renderCircularTree();
+}
+
+function setTreeBranchMode(mode) {
+    TREE_BRANCH_MODE = mode;
+    renderCircularTree();
 }
 
 async function initTreeView() {
@@ -1845,25 +1874,62 @@ function renderCircularTree() {
     const nLeaves = TREE_LAYOUT.n_leaves;
 
     const presenceVectors = TREE_SELECTED_GENES.map(g => getTreeGenePresence(g));
+    const cladeBlocks = (TREE_LAYOUT.clade_levels && TREE_LAYOUT.clade_levels[TREE_TAX_LEVEL]) || TREE_LAYOUT.clade_blocks;
 
-    // Calculate node colors via Dollo parsimony
+    // Calculate node colors
     const nodeColors = {};
     const idToNode = {};
     TREE_LAYOUT.nodes.forEach(n => { idToNode[n.id] = n; });
 
-    TREE_LAYOUT.nodes.forEach(node => {
-        const presentIndices = [];
-        for (let gI = 0; gI < presenceVectors.length; gI++) {
-            const pVec = presenceVectors[gI];
-            if (node.leaves.some(lIdx => pVec[lIdx] === 1)) {
-                presentIndices.push(gI);
+    if (TREE_BRANCH_MODE === 'taxonomy') {
+        // Color branches by taxonomic clade of descendant leaves
+        TREE_LAYOUT.nodes.forEach(node => {
+            if (node.leaf) {
+                const lInfo = TREE_LAYOUT.leaf_taxonomies ? TREE_LAYOUT.leaf_taxonomies[node.leaf_idx] : null;
+                nodeColors[node.id] = lInfo ? (lInfo[TREE_TAX_LEVEL + '_color'] || '#94a3b8') : '#94a3b8';
+            } else {
+                const counts = {};
+                const colors = {};
+                node.leaves.forEach(lIdx => {
+                    const lInfo = TREE_LAYOUT.leaf_taxonomies ? TREE_LAYOUT.leaf_taxonomies[lIdx] : null;
+                    if (!lInfo) return;
+                    const c = lInfo[TREE_TAX_LEVEL];
+                    counts[c] = (counts[c] || 0) + 1;
+                    colors[c] = lInfo[TREE_TAX_LEVEL + '_color'] || '#94a3b8';
+                });
+                let maxCount = 0;
+                let domClade = null;
+                for (const [c, cnt] of Object.entries(counts)) {
+                    if (cnt > maxCount) {
+                        maxCount = cnt;
+                        domClade = c;
+                    }
+                }
+                if (domClade && (maxCount / node.leaves.length >= 0.70)) {
+                    nodeColors[node.id] = colors[domClade];
+                } else {
+                    nodeColors[node.id] = '#94a3b8';
+                }
             }
-        }
-        nodeColors[node.id] = blendTreeColors(presentIndices);
-    });
+        });
+    } else {
+        // Color branches by gene presence combinations (Dollo parsimony)
+        TREE_LAYOUT.nodes.forEach(node => {
+            const presentIndices = [];
+            for (let gI = 0; gI < presenceVectors.length; gI++) {
+                const pVec = presenceVectors[gI];
+                if (node.leaves.some(lIdx => pVec[lIdx] === 1)) {
+                    presentIndices.push(gI);
+                }
+            }
+            nodeColors[node.id] = blendTreeColors(presentIndices);
+        });
+    }
 
     const svgParts = [];
-    const titleText = TREE_SELECTED_GENES.join(', ') + ' presence vs eukaryotes';
+    const titleText = TREE_BRANCH_MODE === 'taxonomy'
+        ? `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes (${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`
+        : `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes`;
     svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">${titleText}</text>`);
 
     // Dimensions
@@ -1880,7 +1946,7 @@ function renderCircularTree() {
     }
 
     // 1. Clade Background Wedges
-    TREE_LAYOUT.clade_blocks.forEach(block => {
+    cladeBlocks.forEach(block => {
         const sIdx = block.start_idx;
         const eIdx = block.end_idx;
         const col = block.color || '#94a3b8';
@@ -1957,7 +2023,7 @@ function renderCircularTree() {
     });
 
     // 4. Clade Outer Arcs and Labels
-    TREE_LAYOUT.clade_blocks.forEach(block => {
+    cladeBlocks.forEach(block => {
         const sIdx = block.start_idx;
         const eIdx = block.end_idx;
         const cname = block.clade;
@@ -1988,39 +2054,59 @@ function renderCircularTree() {
             anchor = 'end';
         }
 
-        svgParts.push(`<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" transform="rotate(${rot.toFixed(1)}, ${lx.toFixed(2)}, ${ly.toFixed(2)})" font-size="8.5" font-weight="700" fill="${col}" text-anchor="${anchor}" alignment-baseline="middle">${cname}</text>`);
+        const fontSize = cladeBlocks.length > 40 ? 7.5 : 8.5;
+        svgParts.push(`<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" transform="rotate(${rot.toFixed(1)}, ${lx.toFixed(2)}, ${ly.toFixed(2)})" font-size="${fontSize}" font-weight="700" fill="${col}" text-anchor="${anchor}" alignment-baseline="middle">${cname}</text>`);
     });
 
     // 5. Dynamic Legend in Top-Left
     svgParts.push('<g transform="translate(35, 45)">');
-    svgParts.push('<text x="0" y="0" font-size="11" font-weight="700" fill="#111827">branch colour = genes present</text>');
-    svgParts.push('<text x="0" y="14" font-size="9" fill="#6b7280">(mix of the gene colours)</text>');
+    if (TREE_BRANCH_MODE === 'taxonomy') {
+        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="#111827">Taxonomy: ${TREE_TAX_LEVEL.toUpperCase()}</text>`);
+        svgParts.push('<text x="0" y="14" font-size="9" fill="#6b7280">(clade color coding)</text>');
 
-    // Collect all combinations that appear
-    const uniqueCols = new Map();
-    uniqueCols.set('#cbd5e1', 'none');
-    if (TREE_SELECTED_GENES.length === 3) {
-        uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0] + ' only');
-        uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1] + ' only');
-        uniqueCols.set(TREE_PALETTE[2], TREE_SELECTED_GENES[2] + ' only');
-        uniqueCols.set('#9467bd', `${TREE_SELECTED_GENES[0]} + ${TREE_SELECTED_GENES[1]}`);
-        uniqueCols.set('#d95f02', `${TREE_SELECTED_GENES[0]} + ${TREE_SELECTED_GENES[2]}`);
-        uniqueCols.set('#17becf', `${TREE_SELECTED_GENES[1]} + ${TREE_SELECTED_GENES[2]}`);
-        uniqueCols.set('#111827', 'all three');
-    } else {
-        TREE_SELECTED_GENES.forEach((g, idx) => {
-            uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g + ' only');
+        const seenClades = new Set();
+        let lI = 0;
+        cladeBlocks.forEach(block => {
+            if (seenClades.has(block.clade) || lI >= 12) return;
+            seenClades.add(block.clade);
+            const y = 30 + lI * 15;
+            svgParts.push(`<rect x="0" y="${y}" width="18" height="8" rx="2" fill="${block.color}" />`);
+            svgParts.push(`<text x="24" y="${y + 7}" font-size="9" fill="#374151">${block.clade}</text>`);
+            lI++;
         });
-        uniqueCols.set('#111827', 'all ' + TREE_SELECTED_GENES.length);
-    }
+        if (seenClades.size > 12) {
+            const y = 30 + lI * 15;
+            svgParts.push(`<text x="0" y="${y + 7}" font-size="8.5" fill="#94a3b8">+ ${seenClades.size - 12} more...</text>`);
+        }
+    } else {
+        svgParts.push('<text x="0" y="0" font-size="11" font-weight="700" fill="#111827">branch colour = genes present</text>');
+        svgParts.push('<text x="0" y="14" font-size="9" fill="#6b7280">(mix of the gene colours)</text>');
 
-    let lI = 0;
-    uniqueCols.forEach((label, col) => {
-        const y = 30 + lI * 16;
-        svgParts.push(`<rect x="0" y="${y}" width="18" height="8" rx="2" fill="${col}" />`);
-        svgParts.push(`<text x="24" y="${y + 7}" font-size="9.5" fill="#374151">${label}</text>`);
-        lI++;
-    });
+        const uniqueCols = new Map();
+        uniqueCols.set('#cbd5e1', 'none');
+        if (TREE_SELECTED_GENES.length === 3) {
+            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0] + ' only');
+            uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1] + ' only');
+            uniqueCols.set(TREE_PALETTE[2], TREE_SELECTED_GENES[2] + ' only');
+            uniqueCols.set('#9467bd', `${TREE_SELECTED_GENES[0]} + ${TREE_SELECTED_GENES[1]}`);
+            uniqueCols.set('#d95f02', `${TREE_SELECTED_GENES[0]} + ${TREE_SELECTED_GENES[2]}`);
+            uniqueCols.set('#17becf', `${TREE_SELECTED_GENES[1]} + ${TREE_SELECTED_GENES[2]}`);
+            uniqueCols.set('#111827', 'all three');
+        } else {
+            TREE_SELECTED_GENES.forEach((g, idx) => {
+                uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g + ' only');
+            });
+            uniqueCols.set('#111827', 'all ' + TREE_SELECTED_GENES.length);
+        }
+
+        let lI = 0;
+        uniqueCols.forEach((label, col) => {
+            const y = 30 + lI * 16;
+            svgParts.push(`<rect x="0" y="${y}" width="18" height="8" rx="2" fill="${col}" />`);
+            svgParts.push(`<text x="24" y="${y + 7}" font-size="9.5" fill="#374151">${label}</text>`);
+            lI++;
+        });
+    }
     svgParts.push('</g>');
 
     // 6. Bottom Track Labels
@@ -2048,7 +2134,7 @@ function setupTreePanZoom() {
     }, { passive: false });
 
     viewport.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) return;
         isTreePanning = true;
         treePanStartX = e.clientX - treePanX;
         treePanStartY = e.clientY - treePanY;
@@ -2129,14 +2215,29 @@ function setupTreeTooltips() {
     tiles.forEach(tile => {
         tile.addEventListener('mouseenter', (e) => {
             const sp = tile.getAttribute('data-sp');
-            const g = tile.getAttribute('data-gene');
-            const pres = tile.getAttribute('data-pres') === '1';
-            
-            let html = `<strong>${sp.replace(/_/g, ' ')}</strong><br>`;
-            TREE_SELECTED_GENES.forEach(gName => {
-                const isP = getTreeGenePresence(gName)[TREE_LAYOUT.leaf_species.indexOf(sp)] === 1;
-                html += `<span style="color:${isP ? '#38bdf8' : '#94a3b8'}">${gName}: ${isP ? 'Present (1)' : 'Absent (0)'}</span><br>`;
+            const leafIdx = TREE_LAYOUT.leaf_species.indexOf(sp);
+            const taxInfo = (TREE_LAYOUT.leaf_taxonomies && TREE_LAYOUT.leaf_taxonomies[leafIdx]) || {};
+            const curVal = taxInfo[TREE_TAX_LEVEL] || taxInfo.clade || '';
+
+            let html = `<strong style="color:#f8fafc; font-size:12px;">${taxInfo.sci_name || sp.replace(/_/g, ' ')}</strong><br>`;
+            if (curVal) {
+                html += `<span style="color:#38bdf8; font-size:10.5px;">${TREE_TAX_LEVEL.toUpperCase()}: <strong>${curVal}</strong></span><br>`;
+            }
+            if (taxInfo.supergroup && taxInfo.phylum) {
+                html += `<span style="color:#94a3b8; font-size:10px;">${taxInfo.supergroup} &rarr; ${taxInfo.kingdom} &rarr; ${taxInfo.phylum}</span><br>`;
+            }
+            html += `<div style="margin-top:6px; border-top:1px solid #334155; padding-top:4px;">`;
+            TREE_SELECTED_GENES.forEach((gName, gI) => {
+                const isP = getTreeGenePresence(gName)[leafIdx] === 1;
+                const col = TREE_PALETTE[gI % TREE_PALETTE.length];
+                html += `
+                    <div style="display:flex; justify-content:space-between; gap:12px; font-size:10.5px;">
+                        <span style="color:${col}; font-weight:600;">${gName}:</span>
+                        <span style="color:${isP ? '#4ade80' : '#94a3b8'}; font-weight:600;">${isP ? '● Present (1)' : '○ Absent (0)'}</span>
+                    </div>
+                `;
             });
+            html += `</div>`;
             tooltip.innerHTML = html;
             tooltip.style.display = 'block';
         });
