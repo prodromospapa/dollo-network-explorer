@@ -460,6 +460,13 @@ body {
         <input type="range" id="topn" min="5" max="100" step="5" value="25">
         <label><input type="checkbox" id="toggle-topn-max"> Max</label>
 
+        <label style="margin-left:4px;">Layout:</label>
+        <select id="layout-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
+            <option value="cose" selected>Force (Spread)</option>
+            <option value="concentric">Concentric (Radial)</option>
+            <option value="circle">Circle</option>
+        </select>
+
         <label>Filter:</label>
         <select id="gene-filter">
             <option value="all">All Genes</option>
@@ -1134,15 +1141,75 @@ function renderEgoNetwork(geneName) {
     cy.batch(() => {
         cy.elements().remove();
         cy.add(elements);
-        cy.layout({
-            name: 'concentric',
-            concentric: function(node) { return node.id() === geneName ? 2 : 1; },
-            levelWidth: function() { return 1; },
-            padding: 50
-        }).run();
     });
+    runLayout(true);
 
     updateStatus();
+}
+
+
+function runLayout(randomize) {
+    if (randomize === undefined) randomize = true;
+    if (!cy || cy.nodes().length === 0) return;
+
+    const layoutMode = document.getElementById('layout-select') ? document.getElementById('layout-select').value : 'cose';
+
+    let layoutConfig = {};
+    if (layoutMode === 'concentric') {
+        layoutConfig = {
+            name: 'concentric',
+            animate: true,
+            animationDuration: 500,
+            fit: randomize,
+            padding: 60,
+            concentric: function(node) {
+                if (node.data('id') === selectedGene) return 100;
+                return Math.round((node.data('losses') || 0) / 5) + 1;
+            },
+            levelWidth: function() { return 2; },
+            minNodeSpacing: 35,
+        };
+    } else if (layoutMode === 'circle') {
+        layoutConfig = {
+            name: 'circle',
+            animate: true,
+            animationDuration: 500,
+            fit: randomize,
+            padding: 60,
+            spacingFactor: 1.2,
+        };
+    } else {
+        // Force-directed (cose) - organic spread layout
+        layoutConfig = {
+            name: 'cose',
+            animate: true,
+            animationDuration: 600,
+            randomize: randomize,
+            componentSpacing: 80,
+            nodeRepulsion: function(node) { return 450000; },
+            nodeOverlap: 25,
+            idealEdgeLength: function(edge) { return 130; },
+            edgeElasticity: function(edge) { return 20; },
+            nestingFactor: 1.2,
+            gravity: 0.2,
+            numIter: randomize ? 1000 : 500,
+            initialTemp: randomize ? 1000 : 200,
+            coolingFactor: 0.95,
+            minTemp: 1.0,
+            fit: randomize,
+            padding: 60,
+        };
+    }
+
+    const layout = cy.layout(layoutConfig);
+    if (randomize) {
+        layout.promiseOn('layoutstop').then(() => {
+            cy.animate({
+                fit: { padding: 60 }
+            }, { duration: 300 });
+        });
+    }
+    layout.run();
 }
 
 function showSingleCluster(cid, highlightGene) {
@@ -1205,8 +1272,8 @@ function showSingleCluster(cid, highlightGene) {
     cy.batch(() => {
         cy.elements().remove();
         cy.add(elements);
-        cy.layout({ name: 'circle', padding: 40 }).run();
     });
+    runLayout(true);
 
     // Populate sidebar with cluster members
     let sideHtml = '';
@@ -1370,6 +1437,10 @@ document.addEventListener('click', (e) => {
 })();
 
 // Labels toggle
+document.getElementById('layout-select').addEventListener('change', function() {
+    runLayout(true);
+});
+
 document.getElementById('toggle-labels').addEventListener('change', function() {
     const show = this.checked;
     if (sigmaRenderer) {
