@@ -1241,6 +1241,8 @@ function switchView(mode) {
         if (treeEl) treeEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
         if (cy) cy.resize();
+        const sSearch = document.getElementById('sidebar-search');
+        if (sSearch) sSearch.placeholder = "Filter sidebar genes / clusters...";
         if (selectedGene) {
             renderEgoNetwork(selectedGene);
         } else {
@@ -1261,6 +1263,7 @@ function switchView(mode) {
         if (cyEl) cyEl.style.display = 'none';
         if (treeEl) treeEl.style.display = 'flex';
         initTreeView();
+        renderTreeSidebar();
         updateTreeModalTheme();
         updateStatus();
     }
@@ -1328,10 +1331,11 @@ function selectGene(name) {
     if (!name || (GM[name] === undefined && GENE_IDX[name] === undefined)) return;
     selectedGene = name;
     document.getElementById('search').value = name;
-    renderSidebar(name);
     if (currentMode === 'tree') {
         addTreeGene(name);
+        renderTreeSidebar();
     } else {
+        renderSidebar(name);
         switchView('network');
         renderEgoNetwork(name);
     }
@@ -1378,6 +1382,233 @@ function zoomToCluster(cid) {
     } else {
         showSingleCluster(cid);
     }
+}
+
+function getPairwiseJaccard(gA, gB) {
+    if (!gA || !gB) return 0;
+    if (gA === gB) return 1.0;
+    const dataA = getGeneData(gA);
+    if (dataA && dataA.p) {
+        const found = dataA.p.find(p => p.n === gB);
+        if (found) return found.j;
+    }
+    const dataB = getGeneData(gB);
+    if (dataB && dataB.p) {
+        const found = dataB.p.find(p => p.n === gA);
+        if (found) return found.j;
+    }
+    return 0.0;
+}
+
+function renderTreeSidebar() {
+    if (currentMode !== 'tree') return;
+    const isDark = (SITE_THEME !== 'light');
+    
+    const sSearch = document.getElementById('sidebar-search');
+    if (sSearch && document.activeElement !== sSearch) {
+        sSearch.placeholder = "Search & add genes to tree...";
+    }
+    
+    const banner = document.getElementById('cluster-gene-focus-banner');
+    if (banner) banner.style.display = 'none';
+
+    const geneInfoEl = document.getElementById('gene-info');
+    const n = TREE_SELECTED_GENES.length;
+    const countBadge = `<span style="font-size:11px; color:#38bdf8; font-weight:600; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:10px;">${n} Gene${n === 1 ? '' : 's'} on Tree</span>`;
+    
+    geneInfoEl.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+            <h2 style="margin:0; font-size:15px; color:${isDark ? '#f8fafc' : '#0f172a'};">🌳 Co-Loss Matrix</h2>
+            ${countBadge}
+        </div>
+        <div class="meta" style="font-size:11.5px; color:#8892b0; line-height:1.4;">
+            Pairwise Jaccard co-loss values between genes loaded on the tree.
+        </div>
+        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+            <button class="btn" style="font-size:11px; padding:3px 8px;" onclick="loadCurrentNetworkGenesInTree()" title="Load selected gene & top partners">+ Top Partners</button>
+            <button class="btn" style="font-size:11px; padding:3px 8px;" onclick="resetTreeGenes([])" title="Clear tree genes">Clear All</button>
+        </div>
+    `;
+
+    const partnerListEl = document.getElementById('partner-list');
+    if (!partnerListEl) return;
+
+    if (n === 0) {
+        partnerListEl.innerHTML = `
+            <div style="padding:24px 16px; text-align:center; color:#94a3b8; font-size:12.5px;">
+                <div style="font-size:28px; margin-bottom:10px;">🌳</div>
+                <strong style="color:${isDark ? '#e2e8f0' : '#1e293b'}; display:block; margin-bottom:6px;">No Genes on Tree</strong>
+                Use the search box above, the <strong>"+ Add gene…"</strong> input in the tree header, or click <strong>"+ Top Partners"</strong> to compare co-loss values.
+            </div>
+        `;
+        return;
+    }
+
+    if (n === 1) {
+        const g = TREE_SELECTED_GENES[0];
+        const col = TREE_PALETTE[0];
+        const losses = GM[g] !== undefined ? GM[g] : (getGeneData(g)?.l || 0);
+        const pVec = getTreeGenePresence(g);
+        let presCount = 0;
+        for (let i = 0; i < pVec.length; i++) if (pVec[i] === 1) presCount++;
+        const presPct = ((presCount / 196) * 100).toFixed(0);
+
+        const gData = getGeneData(g);
+        const topPartners = (gData && gData.p) ? gData.p.slice(0, 5) : [];
+
+        let partnersHtml = '';
+        if (topPartners.length > 0) {
+            partnersHtml = `
+                <div style="margin-top:16px;">
+                    <div style="font-size:11px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+                        Recommended Partners to Add:
+                    </div>
+                    ${topPartners.map(p => `
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:${isDark ? '#161d31' : '#f8fafc'}; border:1px solid ${isDark ? '#2a3558' : '#e2e8f0'}; border-radius:6px; margin-bottom:6px; font-size:12px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong style="color:${isDark ? '#7eb8ff' : '#0284c7'};">${p.n}</strong>
+                                <span style="font-size:10.5px; color:#8892b0;">J = ${p.j.toFixed(2)}</span>
+                            </div>
+                            <button class="btn" style="padding:2px 8px; font-size:10.5px;" onclick="addTreeGene('${p.n}')">+ Add to Tree</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        partnerListEl.innerHTML = `
+            <div style="padding:14px; font-size:12px;">
+                <div style="padding:10px 12px; background:${isDark ? '#161d31' : '#f1f5f9'}; border:1px solid ${col}; border-radius:8px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="width:10px; height:10px; border-radius:50%; background:${col};"></span>
+                            <strong style="font-size:14px; color:${isDark ? '#f8fafc' : '#0f172a'};">${g}</strong>
+                        </div>
+                        <span style="font-size:11px; color:#8892b0; cursor:pointer;" onclick="removeTreeGene('${g}')" title="Remove gene">✕</span>
+                    </div>
+                    <div style="margin-top:6px; font-size:11.5px; color:#94a3b8; display:flex; flex-direction:column; gap:3px;">
+                        <span>• <strong>${losses}</strong> Dollo loss events</span>
+                        <span>• Present in <strong>${presCount}/196</strong> species (${presPct}%)</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:14px; padding:10px; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); border-radius:6px; font-size:11.5px; color:${isDark ? '#93c5fd' : '#0369a1'}; line-height:1.4;">
+                    💡 <strong>Add at least 1 more gene</strong> to display the pairwise co-loss matrix. Use the search bar above or choose from recommended partners below.
+                </div>
+
+                ${partnersHtml}
+            </div>
+        `;
+        return;
+    }
+
+    // When n >= 2: Render full interactive Pairwise Matrix
+    let tableHeaders = `<th style="padding:6px; border-bottom:1px solid ${isDark ? '#2a3558' : '#e2e8f0'}; background:${isDark ? '#111827' : '#f8fafc'}; position:sticky; top:0; z-index:2;"></th>`;
+    TREE_SELECTED_GENES.forEach((g, j) => {
+        const col = TREE_PALETTE[j % TREE_PALETTE.length];
+        tableHeaders += `
+            <th style="padding:6px 4px; text-align:center; font-size:11px; border-bottom:1px solid ${isDark ? '#2a3558' : '#e2e8f0'}; background:${isDark ? '#111827' : '#f8fafc'}; position:sticky; top:0; z-index:2;" title="${g}">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:${col};"></span>
+                    <span style="color:${isDark ? '#f8fafc' : '#0f172a'}; font-weight:700; max-width:55px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g}</span>
+                </div>
+            </th>
+        `;
+    });
+
+    let tableRows = '';
+    TREE_SELECTED_GENES.forEach((gRow, i) => {
+        const colRow = TREE_PALETTE[i % TREE_PALETTE.length];
+        let rowCells = `
+            <td style="padding:6px 6px; font-size:11px; font-weight:700; border-right:1px solid ${isDark ? '#2a3558' : '#e2e8f0'}; background:${isDark ? '#111827' : '#f8fafc'}; white-space:nowrap;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:${colRow};"></span>
+                    <span style="color:${isDark ? '#f8fafc' : '#0f172a'}; max-width:65px; overflow:hidden; text-overflow:ellipsis;" title="${gRow}">${gRow}</span>
+                </div>
+            </td>
+        `;
+
+        TREE_SELECTED_GENES.forEach((gCol, j) => {
+            if (i === j) {
+                rowCells += `
+                    <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:600; color:#64748b; background:${isDark ? '#161e2e' : '#f1f5f9'}; border:1px solid ${isDark ? '#1e293b' : '#e2e8f0'};">
+                        1.00
+                    </td>
+                `;
+            } else {
+                const jaccard = getPairwiseJaccard(gRow, gCol);
+                const bg = jaccard <= 0.001 
+                    ? (isDark ? '#0c1220' : '#ffffff') 
+                    : getJaccardColor(jaccard);
+                const textCol = jaccard <= 0.001 
+                    ? '#64748b' 
+                    : '#ffffff';
+                const opacity = jaccard <= 0.001 ? '0.4' : '1';
+                
+                rowCells += `
+                    <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:700; color:${textCol}; background:${bg}; opacity:${opacity}; border:1px solid ${isDark ? '#1e293b' : '#e2e8f0'}; cursor:pointer; transition:transform 0.1s;" 
+                        title="${gRow} ↔ ${gCol}: Jaccard = ${jaccard.toFixed(3)} (Click to view interaction)"
+                        onclick="openEdgeAlignmentModal('${gRow}', '${gCol}', ${jaccard})">
+                        ${jaccard.toFixed(2)}
+                    </td>
+                `;
+            }
+        });
+
+        tableRows += `<tr>${rowCells}</tr>`;
+    });
+
+    let geneSummaryHtml = TREE_SELECTED_GENES.map((g, idx) => {
+        const col = TREE_PALETTE[idx % TREE_PALETTE.length];
+        const losses = GM[g] !== undefined ? GM[g] : (getGeneData(g)?.l || 0);
+        const pVec = getTreeGenePresence(g);
+        let presCount = 0;
+        for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
+        const presPct = ((presCount / 196) * 100).toFixed(0);
+
+        return `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; background:${isDark ? '#161d31' : '#f8fafc'}; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'}; border-radius:6px; margin-bottom:5px; font-size:11.5px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:${col}; flex-shrink:0;"></span>
+                    <strong style="color:${isDark ? '#f8fafc' : '#0f172a'}; overflow:hidden; text-overflow:ellipsis;">${g}</strong>
+                    <span style="color:#8892b0; font-size:10.5px;">(${losses}L, ${presCount}/196)</span>
+                </div>
+                <span style="cursor:pointer; color:#8892b0; font-weight:700; padding:0 4px;" onclick="removeTreeGene('${g}')" title="Remove gene">&times;</span>
+            </div>
+        `;
+    }).join('');
+
+    partnerListEl.innerHTML = `
+        <div style="padding:12px 10px;">
+            <div style="font-size:10.5px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Pairwise Co-Loss Matrix:</span>
+                <span style="font-weight:400; font-size:10px; color:#38bdf8;">Click cell for interface</span>
+            </div>
+            
+            <div style="overflow-x:auto; border:1px solid ${isDark ? '#2a3558' : '#cbd5e1'}; border-radius:6px; background:${isDark ? '#0b1120' : '#ffffff'}; margin-bottom:12px;">
+                <table style="width:100%; border-collapse:collapse; border-spacing:0;">
+                    <thead><tr>${tableHeaders}</tr></thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            </div>
+
+            <div style="margin-bottom:14px; padding:6px 10px; background:${isDark ? '#161d31' : '#f1f5f9'}; border-radius:6px; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'};">
+                <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
+                    <span>0.20 (Low)</span>
+                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">Co-Loss Scale (Jaccard)</span>
+                    <span>&ge;0.65 (Coupled)</span>
+                </div>
+                <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
+            </div>
+
+            <div style="font-size:10.5px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+                Genes on Tree (${n}):
+            </div>
+            <div>
+                ${geneSummaryHtml}
+            </div>
+        </div>
+    `;
 }
 
 function getJaccardColor(j) {
@@ -2289,6 +2520,40 @@ document.addEventListener('click', (e) => {
         const q = sSearch.value.trim().toLowerCase();
         ssClear.style.display = q ? 'block' : 'none';
 
+        if (currentMode === 'tree') {
+            const partnerListEl = document.getElementById('partner-list');
+            if (!q) {
+                renderTreeSidebar();
+                return;
+            }
+            const isDark = (SITE_THEME !== 'light');
+            const matches = NAMES.filter(name => name.toLowerCase().includes(q)).slice(0, 30);
+            if (matches.length === 0) {
+                partnerListEl.innerHTML = `<div style="padding:16px; text-align:center; color:#8892b0; font-size:12px;">No genes matching "${q}"</div>`;
+                return;
+            }
+            let html = `<div style="padding:8px 10px; font-size:11px; color:#8892b0; font-weight:600;">Matching Candidate Genes (${matches.length}):</div>`;
+            matches.forEach(m => {
+                const isOnTree = TREE_SELECTED_GENES.includes(m);
+                const losses = GM[m] !== undefined ? GM[m] : (getGeneData(m)?.l || 0);
+                const isCilia = ALL_CILIARY.has(m);
+                html += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-bottom:1px solid ${isDark ? '#1e293b' : '#f1f5f9'}; font-size:12px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <strong style="color:${isDark ? '#f8fafc' : '#0f172a'};">${m}</strong>
+                            ${isCilia ? '<span style="font-size:9.5px; background:rgba(56,189,248,0.2); color:#38bdf8; padding:1px 5px; border-radius:4px; font-weight:600;">CILIA</span>' : ''}
+                            <span style="font-size:10.5px; color:#8892b0;">${losses}L</span>
+                        </div>
+                        ${isOnTree 
+                            ? '<span style="font-size:11px; color:#10b981; font-weight:600;">✓ On Tree</span>' 
+                            : `<button class="btn" style="padding:2px 8px; font-size:10.5px;" onclick="addTreeGene('${m}')">+ Add</button>`}
+                    </div>
+                `;
+            });
+            partnerListEl.innerHTML = html;
+            return;
+        }
+
         // Partner rows
         const partnerRows = document.querySelectorAll('#partner-list .partner');
         if (partnerRows.length) {
@@ -2445,6 +2710,7 @@ function addTreeGene(geneName) {
     TREE_SELECTED_GENES.push(clean);
     renderTreeChips();
     if (TREE_LAYOUT) renderCircularTree();
+    if (currentMode === 'tree') renderTreeSidebar();
     showTreeToast(`🌳 Added ${clean} to Species Tree (${TREE_SELECTED_GENES.length} on tree)`);
 }
 
@@ -2452,6 +2718,7 @@ function removeTreeGene(geneName) {
     TREE_SELECTED_GENES = TREE_SELECTED_GENES.filter(g => g !== geneName);
     renderTreeChips();
     if (TREE_LAYOUT) renderCircularTree();
+    if (currentMode === 'tree') renderTreeSidebar();
     showTreeToast(`Removed ${geneName} from tree`);
 }
 
@@ -2459,6 +2726,7 @@ function resetTreeGenes(genes) {
     TREE_SELECTED_GENES = [...(genes || [])];
     renderTreeChips();
     if (TREE_LAYOUT) renderCircularTree();
+    if (currentMode === 'tree') renderTreeSidebar();
     if (TREE_SELECTED_GENES.length === 0) {
         showTreeToast('Cleared all genes on tree');
     }
@@ -3339,47 +3607,223 @@ async function generatePresentationSlideCanvas(options = {}) {
     const ccolor = cid !== undefined && cid !== null ? getClusterColor(cid) : '#38bdf8';
 
     if (isTree) {
-        // Species Tree Summary
-        ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        // ---- Species Tree Pairwise Co-Loss Matrix Slide Panel ----
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textPrimary;
-        ctx.fillText('Species Tree & Gene Status', sx + 25, sy + 38);
+        ctx.fillText('Pairwise Co-Loss Matrix', sx + 35, sy + 44);
 
         ctx.font = '13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textSecondary;
-        ctx.fillText(`Tracking ${TREE_SELECTED_GENES.length} gene${TREE_SELECTED_GENES.length === 1 ? '' : 's'} across 196 eukaryotic genomes`, sx + 25, sy + 62);
+        ctx.fillText('Jaccard similarity on independent Dollo loss branches (196 genomes)', sx + 35, sy + 70);
 
-        let chipY = sy + 88;
-        if (TREE_SELECTED_GENES.length === 0) {
-            ctx.font = 'italic 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const nGenes = TREE_SELECTED_GENES.length;
+        if (nGenes >= 2) {
+            const usableW = sw - 70;
+            const lblW = Math.min(180, Math.max(100, Math.floor(usableW * 0.20)));
+            const gridW = usableW - lblW;
+            const cellSize = Math.min(100, Math.max(42, Math.floor(gridW / nGenes)));
+            const actualGridW = cellSize * nGenes;
+            const gridStartX = sx + 35 + lblW + Math.floor((gridW - actualGridW) / 2);
+            const gridStartY = sy + 140 + cellSize;
+
+            // 1. Column Headers (Top)
+            TREE_SELECTED_GENES.forEach((gCol, j) => {
+                const colCenterX = gridStartX + j * cellSize + cellSize / 2;
+                const colDot = TREE_PALETTE[j % TREE_PALETTE.length];
+                
+                ctx.beginPath();
+                ctx.arc(colCenterX, gridStartY - 24, 5.5, 0, 2 * Math.PI);
+                ctx.fillStyle = colDot;
+                ctx.fill();
+
+                ctx.font = `bold ${cellSize < 65 ? 12 : 14}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.fillStyle = P.textPrimary;
+                ctx.textAlign = 'center';
+                ctx.fillText(gCol, colCenterX, gridStartY - 38);
+            });
+
+            // 2. Row Headers (Left) & Cells
+            TREE_SELECTED_GENES.forEach((gRow, i) => {
+                const rowCenterY = gridStartY + i * cellSize + cellSize / 2;
+                const rowDot = TREE_PALETTE[i % TREE_PALETTE.length];
+
+                ctx.beginPath();
+                ctx.arc(gridStartX - 18, rowCenterY, 5.5, 0, 2 * Math.PI);
+                ctx.fillStyle = rowDot;
+                ctx.fill();
+
+                ctx.font = `bold ${cellSize < 65 ? 12 : 14}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.fillStyle = P.textPrimary;
+                ctx.textAlign = 'right';
+                ctx.fillText(gRow, gridStartX - 30, rowCenterY + 4);
+
+                TREE_SELECTED_GENES.forEach((gCol, j) => {
+                    const cX = gridStartX + j * cellSize + 2;
+                    const cY = gridStartY + i * cellSize + 2;
+                    const cW = cellSize - 4;
+                    const cH = cellSize - 4;
+
+                    drawCanvasRoundedRect(ctx, cX, cY, cW, cH, 6);
+                    if (i === j) {
+                        ctx.fillStyle = isDark ? '#1a2438' : '#f1f5f9';
+                        ctx.fill();
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = P.tableRowBorder;
+                        ctx.stroke();
+
+                        ctx.font = `bold ${cellSize < 65 ? 13 : 15}px ui-monospace, monospace`;
+                        ctx.fillStyle = P.textMuted;
+                        ctx.textAlign = 'center';
+                        ctx.fillText('1.00', cX + cW / 2, cY + cH / 2 + 5);
+                    } else {
+                        const jaccard = getPairwiseJaccard(gRow, gCol);
+                        const cellColor = jaccard <= 0.001 
+                            ? (isDark ? '#0e1626' : '#ffffff') 
+                            : getJaccardColor(jaccard);
+                        ctx.fillStyle = cellColor;
+                        ctx.fill();
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = isDark ? '#1e293b' : '#e2e8f0';
+                        ctx.stroke();
+
+                        ctx.font = `bold ${cellSize < 65 ? 13 : 16}px ui-monospace, monospace`;
+                        ctx.fillStyle = jaccard <= 0.001 ? P.textMuted : '#ffffff';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(jaccard.toFixed(2), cX + cW / 2, cY + cH / 2 + 5);
+                    }
+                });
+            });
+            ctx.textAlign = 'left';
+
+            // 3. Jaccard Scale Legend Card below Grid
+            const legY = gridStartY + nGenes * cellSize + 32;
+            const legX = sx + 35;
+            const legW = sw - 70;
+            const legH = 48;
+            drawCanvasRoundedRect(ctx, legX, legY, legW, legH, 8);
+            ctx.fillStyle = P.legendBg;
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = P.legendBorder;
+            ctx.stroke();
+
+            const barW = 220;
+            const barX = legX + legW - barW - 24;
+            const barY = legY + 18;
+            const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+            grad.addColorStop(0.00, '#38bdf8');
+            grad.addColorStop(0.25, '#2dd4bf');
+            grad.addColorStop(0.50, '#34d399');
+            grad.addColorStop(0.75, '#fbbf24');
+            grad.addColorStop(1.00, '#f43f5e');
+
+            drawCanvasRoundedRect(ctx, barX, barY, barW, 10, 5);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textSecondary;
+            ctx.fillText('CO-LOSS SIMILARITY (JACCARD)', legX + 20, legY + 28);
+
+            ctx.font = '600 11px ui-monospace, monospace';
             ctx.fillStyle = P.textMuted;
-            ctx.fillText('No genes currently on tree (add from sidebar or search)', sx + 25, chipY + 10);
-        } else {
-            TREE_SELECTED_GENES.slice(0, 4).forEach((g, idx) => {
+            ctx.fillText('0.20', barX, barY + 22);
+            ctx.fillText('≥0.65', barX + barW - 28, barY + 22);
+
+            // 4. Gene Status Summary Table
+            const sumStartY = legY + legH + 28;
+            ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textPrimary;
+            ctx.fillText(`Genes on Tree (${nGenes})`, sx + 35, sumStartY);
+
+            const thY = sumStartY + 14;
+            drawCanvasRoundedRect(ctx, sx + 35, thY, sw - 70, 30, 6);
+            ctx.fillStyle = P.tableHeaderBg;
+            ctx.fill();
+
+            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textMuted;
+            ctx.fillText('GENE', sx + 50, thY + 19);
+            ctx.fillText('DOLLO LOSSES', sx + 250, thY + 19);
+            ctx.fillText('EUKARYOTIC RETENTION', sx + 450, thY + 19);
+
+            let rowY = thY + 36;
+            const rowH = Math.min(40, Math.max(24, Math.floor(((sy + sh - 20) - rowY) / nGenes)));
+            TREE_SELECTED_GENES.forEach((g, idx) => {
                 const col = TREE_PALETTE[idx % TREE_PALETTE.length];
-                const losses = GM[g] !== undefined ? GM[g] : '—';
+                const losses = GM[g] !== undefined ? GM[g] : (getGeneData(g)?.l || 0);
                 const pVec = getTreeGenePresence(g);
                 let presCount = 0;
                 for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
-                const presPct = ((presCount / 196) * 100).toFixed(0);
+                const presPct = ((presCount / 196) * 100).toFixed(1);
 
+                if (idx % 2 === 1) {
+                    drawCanvasRoundedRect(ctx, sx + 35, rowY, sw - 70, rowH, 4);
+                    ctx.fillStyle = P.tableRowAlt;
+                    ctx.fill();
+                }
+
+                const midY = rowY + rowH / 2;
                 ctx.beginPath();
-                ctx.arc(sx + 34, chipY + 4, 6, 0, 2 * Math.PI);
+                ctx.arc(sx + 50, midY, 5, 0, 2 * Math.PI);
                 ctx.fillStyle = col;
                 ctx.fill();
 
-                ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = P.textPrimary;
-                ctx.fillText(g, sx + 48, chipY + 9);
-                const gW = ctx.measureText(g).width;
+                ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(g, sx + 64, midY);
 
-                ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.font = '600 12.5px ui-monospace, monospace';
                 ctx.fillStyle = P.textSecondary;
-                ctx.fillText(`•  ${losses} Dollo losses  •  Present in ${presCount}/196 species (${presPct}%)`, sx + 48 + gW + 10, chipY + 9);
+                ctx.fillText(`${losses} losses`, sx + 250, midY);
+                ctx.fillText(`${presCount} / 196 species (${presPct}%)`, sx + 450, midY);
 
-                chipY += 26;
+                rowY += rowH;
             });
+            ctx.textBaseline = 'alphabetic';
+
+        } else if (nGenes === 1) {
+            const g = TREE_SELECTED_GENES[0];
+            const col = TREE_PALETTE[0];
+            const losses = GM[g] !== undefined ? GM[g] : (getGeneData(g)?.l || 0);
+            const pVec = getTreeGenePresence(g);
+            let presCount = 0;
+            for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
+            const presPct = ((presCount / 196) * 100).toFixed(1);
+
+            const cardY = sy + 150;
+            drawCanvasRoundedRect(ctx, sx + 35, cardY, sw - 70, 180, 12);
+            ctx.fillStyle = P.tableRowAlt;
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = P.tableRowBorder;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(sx + 65, cardY + 40, 8, 0, 2 * Math.PI);
+            ctx.fillStyle = col;
+            ctx.fill();
+
+            ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textPrimary;
+            ctx.fillText(g, sx + 85, cardY + 48);
+
+            ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textSecondary;
+            ctx.fillText(`• Dollo Loss Events: ${losses} independent branch losses`, sx + 65, cardY + 88);
+            ctx.fillText(`• Genome Presence: ${presCount}/196 species (${presPct}%)`, sx + 65, cardY + 116);
+
+            ctx.font = 'italic 13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textMuted;
+            ctx.fillText('Pairwise matrix requires at least 2 genes on the tree.', sx + 65, cardY + 152);
+        } else {
+            ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textMuted;
+            ctx.fillText('No genes currently loaded on the tree.', sx + 50, sy + 180);
         }
-    } else if (selectedGene) {
+    } else {
+        if (selectedGene) {
         // Selected Gene Summary
         ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textPrimary;
@@ -3604,6 +4048,8 @@ async function generatePresentationSlideCanvas(options = {}) {
         ctx.font = '500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textMuted;
         ctx.fillText(`+ ${qualifying.length - rowsToDraw} more qualifying partners in interactive explorer (Jaccard ≥ ${thresh.toFixed(2)})`, sx + 30, rowY + 18);
+    }
+
     }
 
     // 5. Slide Footer Bar
