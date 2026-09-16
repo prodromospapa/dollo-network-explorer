@@ -335,7 +335,7 @@ The explorer is engineered to run completely within modern client web browsers h
 |                                                                       |
 |  +-----------------------------------------------------------------+  |
 |  | UI Controls & Navigation:                                       |  |
-|  |  * View toggle: [ 🌐 Network View | 🗂️ Leiden Modules | 🌳 Tree ]  |  |
+|  |  * View toggle: [ Network View | Leiden Modules | Species Tree ]   |  |
 |  |  * Real-time search with autocomplete prefix matching           |  |
 |  |  * Interactive Jaccard threshold, Top-N, and Ciliary filters     |  |
 |  |  * Add to Tree direct action from sidebar and partner rows      |  |
@@ -356,7 +356,7 @@ The explorer is engineered to run completely within modern client web browsers h
    - Visualizes entire complexes even when individual gene pairs are separated by intermediate partners.
 
 3. **Macro Layout ("All Clusters" Mode)**:
-   - Activated by clicking **🔬 All Clusters (Leiden)**.
+   - Activated by clicking **Leiden Modules**.
    - Calculates a square grid of coordinates ($cx, cy$) for all 80 clusters, separated by 600px spacing.
    - Places the top 30 representative hub nodes (highest loss counts) in a circle around each cluster center.
    - Places a central label node displaying:
