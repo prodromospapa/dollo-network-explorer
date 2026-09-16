@@ -464,6 +464,23 @@ body.light-theme .btn-accent {
 body.light-theme #graph-wrapper {
     background: #f8fafc;
 }
+body.light-theme #jaccard-scale-bar span {
+    color: #475569;
+}
+body.light-theme #jaccard-scale-bar div {
+    border-color: rgba(0, 0, 0, 0.15);
+}
+body.light-theme #cy-edge-legend {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+body.light-theme #cy-edge-legend div:first-child {
+    color: #334155 !important;
+}
+body.light-theme #cy-edge-legend span {
+    color: #475569 !important;
+}
 body.light-theme #sidebar {
     background: #ffffff;
     border-left: 1px solid #e2e8f0;
@@ -753,6 +770,12 @@ body.light-theme #tree-toast {
         <label>Jaccard &ge; <span id="thresh-val">0.20</span></label>
         <input type="range" id="thresh" min="0.10" max="0.70" step="0.02" value="0.20">
 
+        <div id="jaccard-scale-bar" title="Edge color scale by Jaccard similarity" style="display:flex; align-items:center; gap:4px; margin-left:2px; margin-right:4px;">
+            <span style="font-size:9.5px; color:#8892b0; font-family:ui-monospace, monospace;">0.20</span>
+            <div style="width:65px; height:8px; border-radius:4px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e); border:1px solid rgba(255,255,255,0.18);"></div>
+            <span style="font-size:9.5px; color:#8892b0; font-family:ui-monospace, monospace;">&ge;0.65</span>
+        </div>
+
         <label>Show Top <span id="topn-val">25</span></label>
         <input type="range" id="topn" min="5" max="100" step="5" value="25">
         <label><input type="checkbox" id="toggle-topn-max"> Max</label>
@@ -781,6 +804,17 @@ body.light-theme #tree-toast {
 <div id="main">
     <div id="graph-wrapper">
         <div id="cy"></div>
+        <div id="cy-edge-legend" style="position:absolute; bottom:16px; left:16px; background:rgba(13, 18, 32, 0.85); backdrop-filter:blur(6px); border:1px solid #2a3558; border-radius:6px; padding:6px 10px; z-index:5; display:flex; flex-direction:column; gap:4px; pointer-events:none; box-shadow:0 4px 12px rgba(0,0,0,0.4); transition:opacity 0.2s;">
+            <div style="font-size:10px; font-weight:600; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#38bdf8;"></span>
+                Co-Loss Strength (Jaccard)
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:9.5px; color:#94a3b8; font-family:ui-monospace, monospace;">0.20</span>
+                <div style="width:110px; height:8px; border-radius:4px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e); border:1px solid rgba(255,255,255,0.2);"></div>
+                <span style="font-size:9.5px; color:#94a3b8; font-family:ui-monospace, monospace;">&ge;0.65</span>
+            </div>
+        </div>
         <div id="tree-panel" class="tree-theme-dark" style="display:none; position:absolute; inset:0; flex-direction:column; overflow:hidden; z-index:10;">
             <div id="tree-header">
                 <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
@@ -1047,6 +1081,10 @@ function updateControlsForMode(isLeiden) {
             lbl.style.opacity = isLeiden ? '0.35' : '1';
         }
     });
+    const scaleBar = document.getElementById('jaccard-scale-bar');
+    if (scaleBar) scaleBar.style.opacity = isLeiden ? '0.35' : '1';
+    const cyLegend = document.getElementById('cy-edge-legend');
+    if (cyLegend) cyLegend.style.display = isLeiden ? 'none' : 'flex';
 }
 
 function switchView(mode) {
@@ -1203,6 +1241,30 @@ function zoomToCluster(cid) {
     }
 }
 
+function getJaccardColor(j) {
+    if (j === undefined || j === null) return '#38bdf8';
+    const stops = [
+        { t: 0.00, r: 56,  g: 189, b: 248 },
+        { t: 0.25, r: 45,  g: 212, b: 191 },
+        { t: 0.50, r: 52,  g: 211, b: 153 },
+        { t: 0.75, r: 251, g: 191, b: 36  },
+        { t: 1.00, r: 244, g: 63,  b: 94  }
+    ];
+    const t = Math.max(0, Math.min(1, (j - 0.20) / (0.65 - 0.20)));
+    for (let i = 0; i < stops.length - 1; i++) {
+        const s1 = stops[i];
+        const s2 = stops[i + 1];
+        if (t >= s1.t && t <= s2.t) {
+            const f = (t - s1.t) / (s2.t - s1.t);
+            const r = Math.round(s1.r + f * (s2.r - s1.r));
+            const g = Math.round(s1.g + f * (s2.g - s1.g));
+            const b = Math.round(s1.b + f * (s2.b - s1.b));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+    }
+    return '#f43f5e';
+}
+
 function renderSidebar(name) {
     const info = getGeneData(name) || { l: GM[name] || 0, p: [] };
     const cid = GENE_CL[name];
@@ -1255,7 +1317,7 @@ function renderSidebar(name) {
             <span class="rank">#${idx + 1}</span>
             <span class="pname in-graph">${p.n}</span>
             ${isCil ? getCiliaBadgeHtml(p.n) : ''}
-            <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%;"></div></div>
+            <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%; background: ${getJaccardColor(p.j)};"></div></div>
             <span class="pjaccard">${p.j.toFixed(2)}</span>
             <span class="ploss">${pLoss}L</span>
             <button class="partner-tree-btn" onclick="event.stopPropagation(); addTreeGene('${p.n}');" title="Add ${p.n} to Species Tree">🌳</button>
@@ -1365,9 +1427,9 @@ function initCy() {
             {
                 selector: 'edge.highlighted',
                 style: {
-                    'line-color': '#38bdf8',
-                    'opacity': 0.9,
-                    'width': 2.5,
+                    'line-color': 'data(color)',
+                    'opacity': 1.0,
+                    'width': 3.5,
                     'z-index': 8
                 }
             },
@@ -1456,7 +1518,8 @@ function initCy() {
     cy.on('mouseover', 'edge', function(evt) {
         const d = evt.target.data();
         if (!tipEl || d.jaccard === undefined) return;
-        tipEl.innerHTML = `<strong>${d.source} ⟷ ${d.target}</strong><br>Jaccard Similarity: <strong>${d.jaccard.toFixed(2)}</strong>`;
+        const jCol = getJaccardColor(d.jaccard);
+        tipEl.innerHTML = `<strong>${d.source} ⟷ ${d.target}</strong><br><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${jCol}; margin-right:5px; vertical-align:middle; border:1px solid rgba(255,255,255,0.4);"></span>Jaccard Similarity: <strong>${d.jaccard.toFixed(2)}</strong>`;
         tipEl.style.display = 'block';
     });
     cy.on('mouseout', 'edge', function() {
@@ -1622,8 +1685,8 @@ function renderEgoNetwork(geneName) {
                 target: p.n,
                 jaccard: p.j,
                 width: 1.2 + p.j * 4.5,
-                opacity: Math.min(0.88, 0.25 + p.j * 0.9),
-                color: '#38bdf8'
+                opacity: Math.min(0.92, 0.30 + p.j * 0.9),
+                color: getJaccardColor(p.j)
             }
         });
     });
@@ -1643,7 +1706,7 @@ function renderEgoNetwork(geneName) {
                         jaccard: pp.j,
                         width: 0.6 + pp.j * 1.5,
                         opacity: Math.min(0.18, 0.06 + pp.j * 0.20),
-                        color: 'rgba(100, 140, 220, 0.35)'
+                        color: getJaccardColor(pp.j)
                     }
                 });
             }
@@ -1736,16 +1799,24 @@ function runLayout(randomize) {
     };
 
     const layout = cy.layout(layoutConfig);
+    if (randomize) {
+        layout.promiseOn('layoutstop').then(() => {
+            cy.animate({
+                fit: { padding: 60 }
+            }, { duration: 300 });
+        });
+    }
     layout.promiseOn('layoutstop').then(() => {
         if (isEgo && intraData && intraData.length > 0) {
             cy.add(intraData);
             // Re-apply subtle styling to restored intra-partner edges
             cy.edges().forEach(e => {
                 if (e.data('source') !== selectedGene && e.data('target') !== selectedGene) {
+                    const j = e.data('jaccard') || 0.2;
                     e.style({
-                        'opacity': Math.min(0.18, 0.06 + (e.data('jaccard') || 0.2) * 0.20),
-                        'width': 0.6 + (e.data('jaccard') || 0.2) * 1.5,
-                        'line-color': 'rgba(100, 140, 220, 0.35)'
+                        'opacity': Math.min(0.18, 0.06 + j * 0.20),
+                        'width': 0.6 + j * 1.5,
+                        'line-color': getJaccardColor(j)
                     });
                 }
             });
