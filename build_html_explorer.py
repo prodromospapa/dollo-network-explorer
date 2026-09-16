@@ -1332,6 +1332,68 @@ body.light-theme #tree-toast {{
     </div>
 </div>
 
+<!-- Edge Alignment Modal (Safe Prototype) -->
+<div id="edge-alignment-modal" style="display:none; position:fixed; inset:0; background:rgba(2, 6, 23, 0.82); backdrop-filter:blur(6px); z-index:10001; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; width:95%; max-width:850px; max-height:94vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.85); overflow:hidden; color:#f8fafc; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
+        <!-- Modal Header -->
+        <div style="padding:12px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; background:#111827; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">🧬</span>
+                <div>
+                    <div style="font-size:15px; font-weight:700; color:#f8fafc;">Interaction Interface</div>
+                    <div style="font-size:11.5px; color:#8892b0;">Mockup of sequence domain divergence due to co-loss (Jaccard: <span id="ea-jaccard" style="font-weight:600; color:#38bdf8;"></span>)</div>
+                </div>
+            </div>
+            <button onclick="closeEdgeAlignmentModal()" style="background:transparent; border:none; color:#94a3b8; font-size:22px; cursor:pointer; padding:2px 8px; border-radius:4px; line-height:1;" title="Close (Esc)">&times;</button>
+        </div>
+
+        <!-- Modal Body (Mock Alignment) -->
+        <div style="padding:30px 40px; background:#0b1120; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:20px;">
+            <div style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); border-radius:6px; padding:12px; color:#93c5fd; font-size:12px; display:flex; gap:10px; align-items:flex-start;">
+                <span style="font-size:16px;">ℹ️</span>
+                <div>
+                    <strong style="display:block; margin-bottom:4px; color:#bfdbfe;">Prototype Visualization</strong>
+                    This is a safe UI placeholder for the sequence alignment of interacting partners. The repository currently stores binary Jaccard matrices but lacks the raw FASTA/ALN alignments for these specific orthogroups. When MSAs are added to the pipeline, this modal can dynamically display real interaction logos.
+                </div>
+            </div>
+            
+            <div style="text-align:center; font-size:18px; font-weight:600; margin:10px 0;">
+                <span id="ea-source" style="color:#f8fafc;">Gene A</span>
+                <span style="color:#64748b; margin:0 10px;">↔</span>
+                <span id="ea-target" style="color:#f8fafc;">Gene B</span>
+            </div>
+
+            <!-- Fake Sequence Logo / Alignment -->
+            <div style="background:#1e293b; border-radius:8px; padding:20px; font-family:monospace; font-size:14px; overflow-x:auto;">
+                <div style="display:flex; flex-direction:column; gap:8px; min-width:600px;">
+                    <div style="display:flex; justify-content:space-between; color:#94a3b8; font-size:11px; margin-bottom:5px; border-bottom:1px solid #334155; padding-bottom:5px;">
+                        <span>Conserved Interaction Domain</span>
+                        <span>Positions 340-385</span>
+                    </div>
+                    <!-- Source row -->
+                    <div style="display:flex; align-items:center;">
+                        <span id="ea-source-lbl" style="width:100px; color:#f8fafc; font-weight:bold;">Gene A</span>
+                        <span style="color:#64748b; margin-right:15px;">|</span>
+                        <span><span style="color:#38bdf8;">M</span>T<span style="color:#10b981;">D</span>E<span style="color:#ef4444;">K</span><span style="color:#eab308;">C</span>G<span style="color:#38bdf8;">M</span>M<span style="color:#10b981;">D</span><span style="color:#ef4444;">R</span>T<span style="color:#eab308;">C</span><span style="color:#ef4444;">K</span><span style="color:#10b981;">D</span>G<span style="color:#38bdf8;">M</span>P<span style="color:#ef4444;">R</span>A</span>
+                    </div>
+                    <!-- Match row -->
+                    <div style="display:flex; align-items:center;">
+                        <span style="width:100px;"></span>
+                        <span style="color:#64748b; margin-right:15px;">|</span>
+                        <span style="color:#cbd5e1;">: : :* : * : : : :* * : : * : :</span>
+                    </div>
+                    <!-- Target row -->
+                    <div style="display:flex; align-items:center;">
+                        <span id="ea-target-lbl" style="width:100px; color:#f8fafc; font-weight:bold;">Gene B</span>
+                        <span style="color:#64748b; margin-right:15px;">|</span>
+                        <span><span style="color:#38bdf8;">L</span>T<span style="color:#10b981;">D</span>E<span style="color:#ef4444;">R</span><span style="color:#eab308;">C</span>G<span style="color:#38bdf8;">L</span>M<span style="color:#10b981;">D</span><span style="color:#ef4444;">K</span>T<span style="color:#eab308;">C</span><span style="color:#ef4444;">R</span><span style="color:#10b981;">D</span>G<span style="color:#38bdf8;">V</span>P<span style="color:#ef4444;">K</span>A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // ---- Static Inlined Metadata ----
 const NAMES = {names_json};
@@ -1940,6 +2002,14 @@ function initCy() {{
             // Double tap directly navigates to individual interactors
             unfocusClusterGene();
             selectGene(d.id);
+        }}
+    }});
+
+    cy.on('tap', 'edge', function(evt) {{
+        const edge = evt.target;
+        const d = edge.data();
+        if (d.jaccard !== undefined) {{
+            openEdgeAlignmentModal(d.source, d.target, d.jaccard);
         }}
     }});
 
@@ -3289,8 +3359,26 @@ function closeExportModal() {{
     if (modal) modal.style.display = 'none';
 }}
 
+function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
+    const sourceName = NAMES[sourceId] || sourceId;
+    const targetName = NAMES[targetId] || targetId;
+    
+    document.getElementById('ea-source').textContent = sourceName;
+    document.getElementById('ea-target').textContent = targetName;
+    document.getElementById('ea-source-lbl').textContent = sourceName;
+    document.getElementById('ea-target-lbl').textContent = targetName;
+    document.getElementById('ea-jaccard').textContent = Number(jaccard).toFixed(3);
+    
+    document.getElementById('edge-alignment-modal').style.display = 'flex';
+}}
+
+function closeEdgeAlignmentModal() {{
+    document.getElementById('edge-alignment-modal').style.display = 'none';
+}}
+
+
 window.addEventListener('keydown', (e) => {{
-    if (e.key === 'Escape') closeExportModal();
+    if (e.key === 'Escape') {{ closeExportModal(); closeEdgeAlignmentModal(); }}
 }});
 
 function drawCanvasRoundedRect(ctx, x, y, w, h, r) {{
