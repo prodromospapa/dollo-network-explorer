@@ -1120,39 +1120,82 @@ body.light-theme #tree-toast {{
         <div id="suggestions"></div>
     </div>
 
-    <div class="controls">
-        <label>Jaccard &ge; <span id="thresh-val">0.20</span></label>
-        <input type="range" id="thresh" min="0.10" max="0.70" step="0.02" value="0.20">
+    <div class="controls" id="header-controls">
+        <!-- Network Controls (Only visible in network mode) -->
+        <div id="controls-network" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <label>Jaccard &ge; <span id="thresh-val">0.20</span></label>
+            <input type="range" id="thresh" min="0.10" max="0.70" step="0.02" value="0.20">
 
-        <div id="jaccard-scale-bar" title="Edge color scale by Jaccard similarity" style="display:flex; align-items:center; gap:4px; margin-left:2px; margin-right:4px;">
-            <span style="font-size:9.5px; color:#8892b0; font-family:ui-monospace, monospace;">0.20</span>
-            <div style="width:65px; height:8px; border-radius:4px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e); border:1px solid rgba(255,255,255,0.18);"></div>
-            <span style="font-size:9.5px; color:#8892b0; font-family:ui-monospace, monospace;">&ge;0.65</span>
+            <label>Show Top <span id="topn-val">25</span></label>
+            <input type="range" id="topn" min="5" max="300" step="5" value="25">
+            <label><input type="checkbox" id="toggle-topn-max"> Max</label>
+
+            <label style="margin-left:2px;">Layout:</label>
+            <select id="layout-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
+                <option value="cose" selected>Force (Spread)</option>
+                <option value="concentric">Concentric (Radial)</option>
+            </select>
+
+            <label>Filter:</label>
+            <select id="gene-filter">
+                <option value="all">All Genes</option>
+                <option value="all_ciliary">All Union (SCGSv2 ∪ CiliaCarta) ({len_all_ciliary})</option>
+                <option value="ciliacarta">CiliaCarta ({len_cc})</option>
+                <option value="syscilia_v2">SYSCILIA v2 ({len_v2})</option>
+                <option value="shared_core">Merged / Core (SCGSv2 ∩ CiliaCarta) ({len_core})</option>
+            </select>
+
+            <label><input type="checkbox" id="toggle-labels" checked> Labels</label>
         </div>
 
-        <label>Show Top <span id="topn-val">25</span></label>
-        <input type="range" id="topn" min="5" max="300" step="5" value="25">
-        <label><input type="checkbox" id="toggle-topn-max"> Max</label>
+        <!-- Leiden Cluster Controls (Only visible in cluster mode) -->
+        <div id="controls-cluster" style="display:none; align-items:center; gap:10px;">
+            <label>Filter:</label>
+            <select id="gene-filter-cluster" onchange="document.getElementById('gene-filter').value=this.value; onGeneFilterChange();" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
+                <option value="all">All Genes</option>
+                <option value="all_ciliary">All Union ({len_all_ciliary})</option>
+                <option value="ciliacarta">CiliaCarta ({len_cc})</option>
+                <option value="syscilia_v2">SYSCILIA v2 ({len_v2})</option>
+                <option value="shared_core">Core ({len_core})</option>
+            </select>
+            <span style="font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:10px; font-weight:600;">80 Modules</span>
+        </div>
 
-        <label style="margin-left:4px;">Layout:</label>
-        <select id="layout-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
-            <option value="cose" selected>Force (Spread)</option>
-            <option value="concentric">Concentric (Radial)</option>
-        </select>
+        <!-- Tree Controls (Only visible in species tree mode) -->
+        <div id="controls-tree" style="display:none; align-items:center; gap:8px; flex-wrap:wrap;">
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Taxonomy:
+                <select id="tree-tax-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
+                    <option value="kingdom" selected>Kingdom (UniProt)</option>
+                    <option value="phylum">Phylum (UniProt)</option>
+                    <option value="supergroup">Supergroup</option>
+                    <option value="tcs">TCS Major Clades (31)</option>
+                    <option value="detailed">Detailed (Phylum)</option>
+                </select>
+            </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Branches:
+                <select id="tree-branch-mode" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchMode(this.value)">
+                    <option value="genes">Gene Parsimony</option>
+                    <option value="taxonomy">Taxonomy Clade</option>
+                </select>
+            </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
+                Length:
+                <select id="tree-branch-len-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchLength(this.value)" title="Ignore branch lengths (cladogram like in iTOL) or use molecular clock branch lengths">
+                    <option value="cladogram" selected>Ignore (Cladogram)</option>
+                    <option value="phylogram">Use Branch Lengths</option>
+                </select>
+            </label>
+            <button class="btn" style="padding:3px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">Fit</button>
+            <button class="btn" style="padding:3px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">SVG</button>
+        </div>
 
-        <label>Filter:</label>
-        <select id="gene-filter">
-            <option value="all">All Genes</option>
-            <option value="all_ciliary">All Union (SCGSv2 ∪ CiliaCarta) ({len_all_ciliary})</option>
-            <option value="ciliacarta">CiliaCarta ({len_cc})</option>
-            <option value="syscilia_v2">SYSCILIA v2 ({len_v2})</option>
-            <option value="shared_core">Merged / Core (SCGSv2 ∩ CiliaCarta) ({len_core})</option>
-        </select>
-
-        <label style="margin-left:4px;">Labels:</label>
-        <input type="checkbox" id="toggle-labels" checked>
-        <button id="btn-theme-toggle" class="btn" style="margin-left:6px;" onclick="toggleSiteTheme()" title="Toggle Dark/Light Site Theme">Dark</button>
-        <button id="btn-export-slide-header" class="btn btn-accent" style="margin-left:8px; font-weight:600; display:inline-flex; align-items:center; gap:5px;" onclick="openExportModal()" title="Export presentation-ready slide with graph & sidebar results">Export Slide</button>
+        <!-- Global Actions (Always visible on far right) -->
+        <div style="display:flex; align-items:center; gap:6px; margin-left:auto;">
+            <button id="btn-theme-toggle" class="btn" onclick="toggleSiteTheme()" title="Toggle Dark/Light Site Theme">Dark</button>
+            <button id="btn-export-slide-header" class="btn btn-accent" style="font-weight:600; display:inline-flex; align-items:center; gap:5px;" onclick="openExportModal()" title="Export presentation-ready slide with current view results">Export Slide</button>
+        </div>
     </div>
 </div>
 
@@ -1171,57 +1214,6 @@ body.light-theme #tree-toast {{
             </div>
         </div>
         <div id="tree-panel" class="tree-theme-dark" style="display:none; position:absolute; inset:0; flex-direction:column; overflow:hidden; z-index:10;">
-            <div id="tree-header">
-                <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
-                    <span style="font-size:13px; font-weight:700; color:#f8fafc; white-space:nowrap; display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                        Species Tree <span style="font-size:10.5px; color:#8892b0; font-weight:400;">(196)</span>
-                    </span>
-                    <div style="position:relative; width:150px; flex-shrink:0;">
-                        <input type="text" id="tree-gene-input" placeholder="+ Add gene…" autocomplete="off" style="width:100%; height:26px; background:#161d31; border:1px solid #2d3748; border-radius:4px; color:#e2e8f0; padding:0 8px; font-size:11px; outline:none;">
-                        <div id="tree-gene-suggestions" style="display:none; position:absolute; top:30px; left:0; right:0; background:#0f172a; border:1px solid #334155; border-radius:4px; max-height:220px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.6);"></div>
-                    </div>
-                    <div id="tree-chips-container" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto; min-width:0;"></div>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                        Taxonomy:
-                        <select id="tree-tax-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
-                            <option value="kingdom" selected>Kingdom (UniProt)</option>
-                            <option value="phylum">Phylum (UniProt)</option>
-                            <option value="supergroup">Supergroup</option>
-                            <option value="tcs">TCS Major Clades (31)</option>
-                            <option value="detailed">Detailed (Phylum)</option>
-                        </select>
-                    </label>
-                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                        Branches:
-                        <select id="tree-branch-mode" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchMode(this.value)">
-                            <option value="genes">Gene Parsimony</option>
-                            <option value="taxonomy">Taxonomy Clade</option>
-                        </select>
-                    </label>
-                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                        Length:
-                        <select id="tree-branch-len-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchLength(this.value)" title="Ignore branch lengths (cladogram like in iTOL) or use molecular clock branch lengths">
-                            <option value="cladogram" selected>Ignore (Cladogram)</option>
-                            <option value="phylogram">Use Branch Lengths</option>
-                        </select>
-                    </label>
-                    <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
-                        Theme:
-                        <select id="tree-theme-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTheme(this.value)" title="Choose tree appearance mode">
-                            <option value="auto" selected>Auto (Site)</option>
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
-                        </select>
-                    </label>
-                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeGenes([])" title="Clear all genes on tree">Clear Genes</button>
-                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
-                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
-                    <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">SVG</button>
-                    <button class="btn btn-accent" style="padding:4px 8px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;" onclick="openExportModal()" title="Export presentation-ready slide with tree & sidebar results">Export Slide</button>
-                </div>
-            </div>
             <div id="tree-viewport" style="flex:1; position:relative; overflow:hidden; background:#0a0e17; cursor:grab; user-select:none;">
                 <div id="tree-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,14,23,0.85); color:#cbd5e1; font-size:14px; font-weight:600; z-index:50;">
                     <div class="spinner" style="margin-right:10px;"></div> Loading species tree and presence matrix…
@@ -1514,23 +1506,7 @@ function getActiveGeneSet() {{
 
 // ---- View Switching ----
 function updateControlsForMode(isLeiden) {{
-    // Grey out Jaccard & Top-N controls when in Leiden cluster or Tree mode (they don't apply)
-    const ids = ['thresh', 'topn', 'toggle-topn-max'];
-    ids.forEach(id => {{
-        const el = document.getElementById(id);
-        if (el) el.disabled = isLeiden;
-    }});
-    const labels = document.querySelectorAll('.controls label');
-    labels.forEach(lbl => {{
-        const text = lbl.textContent.trim();
-        if (text.startsWith('Jaccard') || text.startsWith('Show Top') || text.startsWith('Max')) {{
-            lbl.style.opacity = isLeiden ? '0.35' : '1';
-        }}
-    }});
-    const scaleBar = document.getElementById('jaccard-scale-bar');
-    if (scaleBar) scaleBar.style.opacity = (currentMode === 'tree') ? '0.35' : '1';
-    const cyLegend = document.getElementById('cy-edge-legend');
-    if (cyLegend) cyLegend.style.display = (currentMode === 'tree') ? 'none' : 'flex';
+    // Mode controls are cleanly toggled in switchView
 }}
 
 function switchView(mode) {{
@@ -1540,9 +1516,12 @@ function switchView(mode) {{
     const btnTree = document.getElementById('btn-view-tree');
     const cyEl = document.getElementById('cy');
     const treeEl = document.getElementById('tree-panel');
+    const searchInput = document.getElementById('search');
 
-    const isLeiden = (mode === 'single_cluster' || mode === 'all_clusters');
-    updateControlsForMode(isLeiden || mode === 'tree');
+    const netControls = document.getElementById('controls-network');
+    const clusterControls = document.getElementById('controls-cluster');
+    const treeControls = document.getElementById('controls-tree');
+    const sbSearchWrap = document.getElementById('sidebar-search-wrap');
 
     if (btnNet) btnNet.classList.toggle('active', mode === 'gene' || mode === 'network');
     if (btnClusters) btnClusters.classList.toggle('active', mode === 'all_clusters' || mode === 'single_cluster');
@@ -1551,28 +1530,39 @@ function switchView(mode) {{
     if (mode === 'gene' || mode === 'network') {{
         if (treeEl) treeEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
-        if (cy) cy.resize();
+        if (netControls) netControls.style.display = 'flex';
+        if (clusterControls) clusterControls.style.display = 'none';
+        if (treeControls) treeControls.style.display = 'none';
+        if (searchInput) searchInput.placeholder = "Search gene (e.g. SCAPER, CEP290)...";
+        if (sbSearchWrap) sbSearchWrap.style.display = 'block';
         const sSearch = document.getElementById('sidebar-search');
         if (sSearch) sSearch.placeholder = "Filter sidebar genes / clusters...";
+        if (cy) cy.resize();
         if (selectedGene) {{
             renderEgoNetwork(selectedGene);
         }} else {{
             showAllClusters();
         }}
         updateStatus();
-    }} else if (mode === 'single_cluster') {{
+    }} else if (mode === 'single_cluster' || mode === 'all_clusters') {{
         if (treeEl) treeEl.style.display = 'none';
         if (cyEl) cyEl.style.display = 'block';
+        if (netControls) netControls.style.display = 'none';
+        if (clusterControls) clusterControls.style.display = 'flex';
+        if (treeControls) treeControls.style.display = 'none';
+        if (searchInput) searchInput.placeholder = "Search gene or cluster...";
+        if (sbSearchWrap) sbSearchWrap.style.display = 'block';
         if (cy) cy.resize();
+        if (mode === 'all_clusters') showAllClusters();
         updateStatus();
-    }} else if (mode === 'all_clusters') {{
-        if (treeEl) treeEl.style.display = 'none';
-        if (cyEl) cyEl.style.display = 'block';
-        if (cy) cy.resize();
-        showAllClusters();
     }} else if (mode === 'tree') {{
         if (cyEl) cyEl.style.display = 'none';
         if (treeEl) treeEl.style.display = 'flex';
+        if (netControls) netControls.style.display = 'none';
+        if (clusterControls) clusterControls.style.display = 'none';
+        if (treeControls) treeControls.style.display = 'flex';
+        if (searchInput) searchInput.placeholder = "Search & add gene to tree (e.g. SCAPER, TTC5)...";
+        if (sbSearchWrap) sbSearchWrap.style.display = 'none';
         initTreeView();
         renderTreeSidebar();
         updateTreeModalTheme();
@@ -1709,6 +1699,132 @@ function getPairwiseJaccard(gA, gB) {{
         if (found) return found.j;
     }}
     return 0.0;
+}}
+
+let TREE_PARTNER_FOCUS_GENE = null;
+
+function setTreePartnerFocusGene(gene) {{
+    TREE_PARTNER_FOCUS_GENE = gene;
+    renderTreeSidebar();
+}}
+
+function handleTreeSidebarSearch(val) {{
+    const q = (val || '').trim().toUpperCase();
+    const sug = document.getElementById('tree-sidebar-add-suggestions');
+    if (!sug) return;
+    if (!q || !TREE_LAYOUT) {{ sug.style.display = 'none'; return; }}
+    const matches = TREE_LAYOUT.gene_names.filter(g => g.toUpperCase().includes(q)).slice(0, 15);
+    if (matches.length === 0) {{ sug.style.display = 'none'; return; }}
+    const isDark = (SITE_THEME !== 'light');
+    sug.innerHTML = matches.map(m => {{
+        const onTree = TREE_SELECTED_GENES.includes(m);
+        const losses = GM[m] !== undefined ? GM[m] : (getGeneData(m)?.l || 0);
+        return `
+            <div style="padding:6px 10px; cursor:pointer; font-size:11.5px; border-bottom:1px solid ${{isDark ? '#1e293b' : '#e2e8f0'}}; display:flex; justify-content:space-between; align-items:center;"
+                onmouseover="this.style.background='${{isDark ? '#1e293b' : '#f1f5f9'}}'" 
+                onmouseout="this.style.background='transparent'"
+                onclick="addTreeGene('${{m}}'); document.getElementById('tree-sidebar-add-suggestions').style.display='none'; const inp=document.getElementById('tree-sidebar-add-input'); if(inp) inp.value='';">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <strong style="color:${{isDark ? '#f8fafc' : '#0f172a'}};">${{m}}</strong>
+                    ${{getCiliaBadgeHtml(m)}}
+                    <span style="color:#8892b0; font-size:10px;">${{losses}}L</span>
+                </div>
+                <span style="font-size:10px; color:${{onTree ? '#10b981' : '#38bdf8'}}; font-weight:700;">${{onTree ? 'On Tree' : '+ Add'}}</span>
+            </div>
+        `;
+    }}).join('');
+    sug.style.display = 'block';
+}}
+
+function handleTreeSidebarSearchSubmit(val) {{
+    const q = (val || '').trim().toUpperCase();
+    if (q && TREE_GENE_IDX[q] !== undefined) {{
+        addTreeGene(q);
+        const sug = document.getElementById('tree-sidebar-add-suggestions');
+        if (sug) sug.style.display = 'none';
+        const inp = document.getElementById('tree-sidebar-add-input');
+        if (inp) inp.value = '';
+    }}
+}}
+
+function renderTreeCandidatePartnersHtml(isDark) {{
+    if (TREE_SELECTED_GENES.length === 0) return '';
+    
+    if (!TREE_PARTNER_FOCUS_GENE || !TREE_SELECTED_GENES.includes(TREE_PARTNER_FOCUS_GENE)) {{
+        TREE_PARTNER_FOCUS_GENE = TREE_SELECTED_GENES[0];
+    }}
+    
+    const focusG = TREE_PARTNER_FOCUS_GENE;
+    const gData = getGeneData(focusG);
+    const topPartners = (gData && gData.p) ? gData.p.slice(0, 15) : [];
+
+    let switcherHtml = '';
+    if (TREE_SELECTED_GENES.length > 1) {{
+        switcherHtml = `
+            <div style="display:flex; align-items:center; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+                <span style="font-size:10.5px; color:#8892b0;">Partners for:</span>
+                ${{TREE_SELECTED_GENES.map(g => `
+                    <button class="btn" style="padding:1px 6px; font-size:10px; ${{g === focusG ? (isDark ? 'background:#0284c7; color:#fff; border-color:#38bdf8; font-weight:700;' : 'background:#0284c7; color:#fff; border-color:#0284c7; font-weight:700;') : ''}}" onclick="setTreePartnerFocusGene('${{g}}')">${{g}}</button>
+                `).join('')}}
+            </div>
+        `;
+    }}
+
+    let partnersListHtml = '';
+    if (topPartners.length === 0) {{
+        partnersListHtml = `<div style="font-size:11px; color:#8892b0; font-style:italic;">No partner data available for ${{focusG}}</div>`;
+    }} else {{
+        partnersListHtml = topPartners.map(p => {{
+            const isOnTree = TREE_SELECTED_GENES.includes(p.n);
+            const isCil = ALL_CILIARY.has(p.n);
+            if (isOnTree) {{
+                return `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 8px; background:${{isDark ? '#0f172a' : '#f8fafc'}}; border:1px solid ${{isDark ? '#1e293b' : '#e2e8f0'}}; border-radius:5px; margin-bottom:4px; font-size:11.5px; opacity:0.65;">
+                        <div style="display:flex; align-items:center; gap:5px; min-width:0;">
+                            <strong style="color:${{isDark ? '#94a3b8' : '#64748b'}}; overflow:hidden; text-overflow:ellipsis;">${{p.n}}</strong>
+                            ${{isCil ? '<span style="font-size:9px; background:rgba(56,189,248,0.15); color:#38bdf8; padding:1px 4px; border-radius:3px; font-weight:600;">CILIA</span>' : ''}}
+                            <span style="font-size:10.5px; color:#64748b;">J=${{p.j.toFixed(2)}}</span>
+                        </div>
+                        <span style="font-size:10px; color:#10b981; font-weight:700; white-space:nowrap;">✓ On Tree</span>
+                    </div>
+                `;
+            }} else {{
+                return `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 8px; background:${{isDark ? '#161d31' : '#ffffff'}}; border:1px solid ${{isDark ? '#23304d' : '#e2e8f0'}}; border-radius:5px; margin-bottom:4px; font-size:11.5px;">
+                        <div style="display:flex; align-items:center; gap:5px; min-width:0;">
+                            <strong style="color:${{isDark ? '#f8fafc' : '#0f172a'}}; overflow:hidden; text-overflow:ellipsis;">${{p.n}}</strong>
+                            ${{isCil ? '<span style="font-size:9px; background:rgba(56,189,248,0.2); color:#38bdf8; padding:1px 4px; border-radius:3px; font-weight:600;">CILIA</span>' : ''}}
+                            <span style="font-size:10.5px; color:#8892b0;">J=${{p.j.toFixed(2)}}</span>
+                        </div>
+                        <button class="btn" style="padding:2px 7px; font-size:10.5px; font-weight:600; color:#38bdf8; border-color:rgba(56,189,248,0.35); white-space:nowrap;" onclick="addTreeGene('${{p.n}}')" title="Add ${{p.n}} to species tree">+ Add</button>
+                    </div>
+                `;
+            }}
+        }}).join('');
+    }}
+
+    return `
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid ${{isDark ? '#1e293b' : '#e2e8f0'}};">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <div style="font-size:10.5px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px;">
+                    Candidate Partners to Add:
+                </div>
+            </div>
+            ${{switcherHtml}}
+            <div style="max-height:190px; overflow-y:auto; margin-bottom:8px; padding-right:2px;">
+                ${{partnersListHtml}}
+            </div>
+
+            <!-- Inline Search to add any gene from database -->
+            <div id="tree-sidebar-add-wrap" style="position:relative; margin-top:8px;">
+                <input type="text" id="tree-sidebar-add-input" placeholder="+ Search any gene to add to tree..." autocomplete="off"
+                    style="width:100%; height:26px; background:${{isDark ? '#0b1120' : '#f8fafc'}}; border:1px solid ${{isDark ? '#2a3558' : '#cbd5e1'}}; border-radius:4px; color:${{isDark ? '#f8fafc' : '#0f172a'}}; padding:0 8px; font-size:11px; outline:none;"
+                    oninput="handleTreeSidebarSearch(this.value)"
+                    onkeydown="if(event.key==='Enter') handleTreeSidebarSearchSubmit(this.value)">
+                <div id="tree-sidebar-add-suggestions" style="display:none; position:absolute; bottom:30px; left:0; right:0; background:${{isDark ? '#0f172a' : '#ffffff'}}; border:1px solid ${{isDark ? '#334155' : '#cbd5e1'}}; border-radius:4px; max-height:180px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.6);"></div>
+            </div>
+        </div>
+    `;
 }}
 
 function renderTreeSidebar() {{
@@ -1988,6 +2104,8 @@ function renderTreeSidebar() {{
             <div>
                 ${{geneSummaryHtml}}
             </div>
+
+            ${{renderTreeCandidatePartnersHtml(isDark)}}
         </div>
     `;
 }}
@@ -2873,7 +2991,20 @@ searchInput.addEventListener('input', function() {{
     if (!q) {{ sugBox.style.display = 'none'; return; }}
     const matches = NAMES.filter(n => n.toUpperCase().includes(q)).slice(0, 15);
     if (matches.length === 0) {{ sugBox.style.display = 'none'; return; }}
-    sugBox.innerHTML = matches.map(m => `<div onclick="selectGene('${{m}}'); document.getElementById('suggestions').style.display='none';">${{m}} ${{getCiliaBadgeHtml(m)}}</div>`).join('');
+    if (currentMode === 'tree') {{
+        sugBox.innerHTML = matches.map(m => {{
+            const onTree = TREE_SELECTED_GENES.includes(m);
+            const badge = onTree 
+                ? '<span style="font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:1px 6px; border-radius:6px;">On Tree</span>'
+                : '<span style="font-size:10px; color:#38bdf8; font-weight:700; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:1px 6px; border-radius:6px;">+ Add to Tree</span>';
+            return `<div onclick="addTreeGene('${{m}}'); document.getElementById('suggestions').style.display='none'; document.getElementById('search').value='';">
+                <span style="display:flex; align-items:center; gap:6px;"><strong>${{m}}</strong> ${{getCiliaBadgeHtml(m)}}</span>
+                ${{badge}}
+            </div>`;
+        }}).join('');
+    }} else {{
+        sugBox.innerHTML = matches.map(m => `<div onclick="selectGene('${{m}}'); document.getElementById('suggestions').style.display='none';">${{m}} ${{getCiliaBadgeHtml(m)}}</div>`).join('');
+    }}
     sugBox.style.display = 'block';
 }});
 
@@ -2882,7 +3013,12 @@ searchInput.addEventListener('keydown', function(e) {{
         const q = this.value.trim().toUpperCase();
         const exact = NAMES.find(n => n.toUpperCase() === q);
         if (exact) {{
-            selectGene(exact);
+            if (currentMode === 'tree') {{
+                addTreeGene(exact);
+                this.value = '';
+            }} else {{
+                selectGene(exact);
+            }}
             sugBox.style.display = 'none';
         }}
     }}
@@ -2890,6 +3026,8 @@ searchInput.addEventListener('keydown', function(e) {{
 
 document.addEventListener('click', (e) => {{
     if (!e.target.closest('.search-box')) sugBox.style.display = 'none';
+    const treeSug = document.getElementById('tree-sidebar-add-suggestions');
+    if (treeSug && !e.target.closest('#tree-sidebar-add-wrap')) treeSug.style.display = 'none';
 }});
 
 // Sidebar search & filter
@@ -3162,9 +3300,10 @@ function resetTreeGenes(genes) {{
 }}
 
 function loadCurrentNetworkGenesInTree() {{
-    if (selectedGene && (TREE_GENE_IDX[selectedGene] !== undefined || !TREE_LAYOUT)) {{
-        const list = [selectedGene];
-        const gData = getGeneData(selectedGene);
+    const geneToLoad = selectedGene || (TREE_SELECTED_GENES.length > 0 ? TREE_SELECTED_GENES[0] : 'SCAPER');
+    if (geneToLoad && (TREE_GENE_IDX[geneToLoad] !== undefined || !TREE_LAYOUT)) {{
+        const list = [geneToLoad];
+        const gData = getGeneData(geneToLoad);
         if (gData && gData.p) {{
             for (const partner of gData.p) {{
                 if (!list.includes(partner.n)) {{
@@ -3176,7 +3315,7 @@ function loadCurrentNetworkGenesInTree() {{
         resetTreeGenes(list);
         showTreeToast(`Loaded ${{list.join(', ')}} onto tree`);
     }} else {{
-        showTreeToast('Select a gene in the network first to load it and its partners');
+        showTreeToast('Select a gene first to load it and its partners');
     }}
 }}
 
