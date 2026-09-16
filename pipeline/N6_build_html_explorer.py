@@ -1750,6 +1750,11 @@ function renderTreeSidebar() {{
                 <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Species Tree</div>
                 <strong style="color:${{isDark ? '#e2e8f0' : '#1e293b'}}; display:block; margin-bottom:6px;">No Genes on Tree</strong>
                 Use the search box above, the <strong>"+ Add gene…"</strong> input in the tree header, or click <strong>"+ Top Partners"</strong> to compare co-loss values.
+                <div style="margin-top:16px; padding:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.25); border-radius:6px; text-align:left;">
+                    <div style="font-size:11.5px; font-weight:700; color:#7dd3fc; margin-bottom:4px;">Quick Example: Co-Evolution Interface</div>
+                    <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">Compare SCAPER and its binding partner TTC5 to inspect the sequence interface deletion across eukaryotes.</div>
+                    <button class="btn btn-accent" style="width:100%; margin-top:8px; font-size:11px; font-weight:600; padding:5px;" onclick="addTreeGene('SCAPER'); addTreeGene('TTC5');">+ Load SCAPER &amp; TTC5 on Tree</button>
+                </div>
             </div>
         `;
         return;
@@ -1808,6 +1813,20 @@ function renderTreeSidebar() {{
                 </div>
 
                 ${{partnersHtml}}
+                ${{g === 'SCAPER' ? `
+                    <div style="margin-top:14px; padding:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.28); border-radius:8px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                            <strong style="color:#7dd3fc; font-size:12px;">Co-Evolution Interface Available</strong>
+                            <span style="font-size:10px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:8px;">Pre-Computed</span>
+                        </div>
+                        <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
+                            SCAPER has a pre-computed sequence alignment with interactor <strong>TTC5</strong> showing critical domain deletion upon co-loss.
+                        </div>
+                        <button class="btn btn-accent" style="width:100%; margin-top:8px; font-size:11px; font-weight:600; padding:5px 10px;" onclick="addTreeGene('TTC5'); openEdgeAlignmentModal('SCAPER', 'TTC5', 0.428571)">
+                            + Add TTC5 &amp; Inspect Deletion Hotspot →
+                        </button>
+                    </div>
+                ` : ''}}
             </div>
         `;
         return;
@@ -1911,6 +1930,38 @@ function renderTreeSidebar() {{
                 </div>
                 <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
             </div>
+
+        ${{(TREE_SELECTED_GENES.includes('SCAPER') && TREE_SELECTED_GENES.includes('TTC5')) ? `
+            <div style="margin-top:12px; margin-bottom:12px; padding:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.28); border-radius:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                    <strong style="color:#7dd3fc; font-size:12px;">Sequence Co-Evolution: SCAPER ↔ TTC5</strong>
+                    <span style="font-size:10px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:8px;">J = 0.43</span>
+                </div>
+                <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
+                    TTC5 loss relaxes selective constraint on SCAPER: <strong>7 of 11 TTC5-lost species</strong> exhibit <strong>91%–100% complete deletion</strong> in the 35-aa core interaction motif (aa 181–215).
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10.5px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px; border:1px solid #1e293b;">
+                    <span>TTC5 Retained: <strong style="color:#10b981;">76.5% intact</strong></span>
+                    <span>TTC5 Lost: <strong style="color:#f43f5e;">36.2% (-40.3% loss)</strong></span>
+                </div>
+                <button class="btn btn-accent" style="width:100%; margin-top:8px; font-size:11px; font-weight:600; padding:6px 10px;" onclick="openEdgeAlignmentModal('SCAPER', 'TTC5', 0.428571)">
+                    Inspect Deletion Hotspot &amp; Interface →
+                </button>
+            </div>
+        ` : ((TREE_SELECTED_GENES.includes('SCAPER') && !TREE_SELECTED_GENES.includes('TTC5')) ? `
+            <div style="margin-top:12px; margin-bottom:12px; padding:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.28); border-radius:8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                    <strong style="color:#7dd3fc; font-size:12px;">Co-Evolution Interface Available</strong>
+                    <span style="font-size:10px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:8px;">Pre-Computed</span>
+                </div>
+                <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
+                    SCAPER has a pre-computed sequence alignment with interactor <strong>TTC5</strong> showing critical domain deletion upon co-loss.
+                </div>
+                <button class="btn btn-accent" style="width:100%; margin-top:8px; font-size:11px; font-weight:600; padding:5px 10px;" onclick="addTreeGene('TTC5'); openEdgeAlignmentModal('SCAPER', 'TTC5', 0.428571)">
+                    + Add TTC5 &amp; Inspect Deletion Hotspot →
+                </button>
+            </div>
+        ` : '')}}
 
             <div style="font-size:10.5px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
                 Genes on Tree (${{n}}):
@@ -3586,23 +3637,28 @@ function closeExportModal() {{
     if (modal) modal.style.display = 'none';
 }}
 
-function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
-    const sourceName = NAMES[sourceId] || sourceId;
-    const targetName = NAMES[targetId] || targetId;
-    
+function openEdgeAlignmentModal(sourceName, targetName, jaccard) {{
     const modalEl = document.getElementById('edge-alignment-modal');
     if (!modalEl) return;
 
-    const pairKey = ((sourceName === 'SCAPER' && targetName === 'TTC5') || (sourceName === 'TTC5' && targetName === 'SCAPER'))
-        ? 'SCAPER_TTC5'
-        : null;
+    let pairKey = null;
+    const k1 = sourceName + '_' + targetName;
+    const k2 = targetName + '_' + sourceName;
+    if (ALIGNMENT_DATA[k1]) {{
+        pairKey = k1;
+    }} else if (ALIGNMENT_DATA[k2]) {{
+        pairKey = k2;
+    }}
+
+    const jaccardEl = document.getElementById('ea-jaccard');
+    if (jaccardEl) jaccardEl.textContent = Number(jaccard || 0).toFixed(3);
 
     const bodyEl = document.getElementById('ea-modal-body');
-    const jVal = Number(jaccard || 0).toFixed(3);
+    const jVal = Number(jaccard || (pairKey ? ALIGNMENT_DATA[pairKey].jaccard : 0)).toFixed(3);
 
     if (pairKey && ALIGNMENT_DATA[pairKey]) {{
         const d = ALIGNMENT_DATA[pairKey];
-        ALN_VIEW_MODE = 'cterm';
+        ALN_VIEW_MODE = 'hotspot';
 
         bodyEl.innerHTML = `
             <div style="background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.3); border-radius:8px; padding:14px 18px; font-size:12.5px; line-height:1.5;">
@@ -3615,31 +3671,34 @@ function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
                     </span>
                 </div>
                 <div style="color:#cbd5e1; font-size:12px;">
-                    When two proteins physically interact, evolutionary loss of one partner relaxes selective constraint on the interaction interface of the remaining partner. In this eukaryotic dataset:
+                    Evolutionary loss of TTC5 relaxes selective constraint on SCAPER's binding interface. Pre-computed ortholog analysis across 196 eukaryotic genomes:
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
                     <div style="background:#0f172a; padding:8px 12px; border-radius:6px; border:1px solid #1e293b;">
                         <div style="color:#10b981; font-weight:700; font-size:11px; text-transform:uppercase;">Co-Retained (${{d.both_count}} Species)</div>
                         <div style="font-size:12px; color:#f8fafc; margin-top:2px;">
-                            • Overall domain integrity: <strong>${{d.both_retention_pct}}%</strong><br>
-                            • C-terminal interaction motif: <strong>${{d.cterm_both_pct}}% intact</strong>
+                            • Critical 35-aa core motif: <strong style="color:#10b981;">${{d.hotspot_both_pct}}% intact</strong><br>
+                            • Overall domain integrity: <strong>${{d.both_retention_pct}}%</strong>
                         </div>
                     </div>
                     <div style="background:#0f172a; padding:8px 12px; border-radius:6px; border:1px solid #1e293b;">
                         <div style="color:#f43f5e; font-weight:700; font-size:11px; text-transform:uppercase;">TTC5 Lost (${{d.lost_count}} Species)</div>
                         <div style="font-size:12px; color:#f8fafc; margin-top:2px;">
-                            • C-terminal motif retention: <strong>drops to ${{d.cterm_lost_pct}}% (-53% loss)</strong><br>
-                            • <strong>5 species</strong> exhibit complete domain truncation (>75% deleted)
+                            • Critical 35-aa core motif: <strong style="color:#f43f5e;">drops to ${{d.hotspot_lost_pct}}% (-40.3% loss)</strong><br>
+                            • <strong>7 species</strong> exhibit 91%–100% complete motif deletion
                         </div>
                     </div>
                 </div>
             </div>
 
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:11.5px; font-weight:600; color:#94a3b8;">Alignment View:</span>
-                    <button id="btn-aln-cterm" class="btn active" style="font-size:11px; padding:3px 10px;" onclick="setAlnViewMode('cterm', '${{pairKey}}')">
-                        C-Terminal Interaction Motif (aa 181–265)
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:11.5px; font-weight:600; color:#94a3b8;">Focus Region:</span>
+                    <button id="btn-aln-hotspot" class="btn active" style="font-size:11px; padding:3px 10px;" onclick="setAlnViewMode('hotspot', '${{pairKey}}')">
+                        Critical Deletion Hotspot (aa 181–215)
+                    </button>
+                    <button id="btn-aln-cterm" class="btn" style="font-size:11px; padding:3px 10px;" onclick="setAlnViewMode('cterm', '${{pairKey}}')">
+                        C-Terminal Motif (aa 181–265)
                     </button>
                     <button id="btn-aln-full" class="btn" style="font-size:11px; padding:3px 10px;" onclick="setAlnViewMode('full', '${{pairKey}}')">
                         Full Domain (aa 1–265)
@@ -3654,13 +3713,13 @@ function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
                 </div>
             </div>
 
-            <div id="ea-alignment-rows" style="background:#0f172a; border-radius:8px; padding:14px; border:1px solid #1e293b; max-height:360px; overflow-y:auto;">
-                ${{renderAlignmentHtml(pairKey, 'cterm')}}
+            <div id="ea-alignment-rows" style="background:#0f172a; border-radius:8px; padding:14px; border:1px solid #1e293b; max-height:380px; overflow-y:auto;">
+                ${{renderAlignmentHtml(pairKey, 'hotspot')}}
             </div>
 
             <div style="font-size:11px; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
-                <span>Source: Multiple Sequence Alignment across 196 comparative eukaryotic genomes (TCS / EukProt v3)</span>
-                <span>Dataset: /home/prodromosp/scaper_new/TCS</span>
+                <span>Source: Multiple Sequence Alignment across 196 comparative eukaryotic proteomes</span>
+                <span>Dataset: Pre-computed TCS / OrthoFinder</span>
             </div>
         `;
     }} else {{
@@ -3677,11 +3736,8 @@ function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
             </div>
 
             <div style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:16px; font-size:12.5px; color:#cbd5e1; line-height:1.5;">
-                <strong style="color:#f8fafc; display:block; margin-bottom:6px;">Sequence Alignment & Domain Extraction</strong>
-                To inspect sequence conservation and interface loss for this specific edge, you can extract the ortholog alignments across the 196 eukaryotic proteomes located in <code>/home/prodromosp/scaper_new/TCS</code>.
-                <div style="margin-top:10px; font-size:11.5px; color:#94a3b8; background:#070b13; padding:10px; border-radius:6px; border:1px solid #1e293b; font-family:monospace;">
-                    python pipeline/extract_orthogroup_aln.py --geneA "${{sourceName}}" --geneB "${{targetName}}"
-                </div>
+                <strong style="color:#f8fafc; display:block; margin-bottom:6px;">Pre-Computed Alignment Available for SCAPER ↔ TTC5</strong>
+                The pre-computed high-resolution sequence alignment with co-evolution interface deletion is currently indexed for <strong>SCAPER ↔ TTC5</strong>. Select SCAPER and TTC5 on the tree or network to inspect the deletion hotspots.
             </div>
         `;
     }}
@@ -3689,78 +3745,135 @@ function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
     modalEl.style.display = 'flex';
 }}
 
-
 const ALIGNMENT_DATA = {{
-    'SCAPER_TTC5': {{
-        geneA: 'SCAPER',
-        geneB: 'TTC5',
-        jaccard: 0.428571,
-        shared_losses: 24,
-        both_count: 101,
-        lost_count: 11,
-        neither_count: 66,
-        both_retention_pct: 74.7,
-        lost_retention_pct: 48.0,
-        cterm_both_pct: 70.4,
-        cterm_lost_pct: 35.0,
-        domain_name: 'SCAPER C-Terminal Interaction Helix (aa 505–769)',
-        species: [
+    "SCAPER_TTC5": {{
+        "geneA": "SCAPER",
+        "geneB": "TTC5",
+        "jaccard": 0.428571,
+        "shared_losses": 24,
+        "both_count": 101,
+        "lost_count": 11,
+        "neither_count": 66,
+        "both_retention_pct": 74.7,
+        "lost_retention_pct": 48.0,
+        "cterm_both_pct": 70.4,
+        "cterm_lost_pct": 35.0,
+        "hotspot_both_pct": 76.5,
+        "hotspot_lost_pct": 36.2,
+        "species": [
             {{
-                name: 'Homo sapiens',
-                label: 'Human (Reference)',
-                status: 'retained',
-                seq_cterm: 'QARVEELLMKRKEQEARIEQQRQEKEKAREDAARERARDREERLAALTAAQQEAMEELQKKIQLKHDESIRRHMEQIEQRKEKAA',
-                seq_full: 'QNTSWGDIVEEEPARPPGHGIHMHEKLSSPSRKRTIAESKKKHEEKQMKAQQLREKLREEKTLKLQKLLEREKDVRKWKEELLDQRRRMMEEKLLHAEFKREVQLQAIVKKAQEEEAKVNEIAFINTLEAQNKRHDVLSKLKEYEQRLNELQEERQRRQEEKQARDEAVQERKRALEAERQARVEELLMKRKEQEARIEQQRQEKEKAREDAARERARDREERLAALTAAQQEAMEELQKKIQLKHDESIRRHMEQIEQRKEKAA',
-                gaps: 0
+                "name": "Homo sapiens (Human)",
+                "status": "retained",
+                "seq_hotspot": "QARVEELLMKRKEQEARIEQQRQEKEKAREDAARE",
+                "seq_cterm": "QARVEELLMKRKEQEARIEQQRQEKEKAREDAARERARDREERLAALTAAQQEAMEELQKKIQLKHDESIRRHMEQIEQRKEKAA",
+                "seq_full": "QNTSWGDIVEEEPARPPGHGIHMHEKLSSPSRKRTIAESKKKHEEKQMKAQQLREKLREEKTLKLQKLLEREKDVRKWKEELLDQRRRMMEEKLLHAEFKREVQLQAIVKKAQEEEAKVNEIAFINTLEAQNKRHDVLSKLKEYEQRLNELQEERQRRQEEKQARDEAVQERKRALEAERQARVEELLMKRKEQEARIEQQRQEKEKAREDAARERARDREERLAALTAAQQEAMEELQKKIQLKHDESIRRHMEQIEQRKEKAA"
             }},
             {{
-                name: 'Mantamonas plastica',
-                label: 'M. plastica',
-                status: 'retained',
-                seq_cterm: 'DQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKGKGKG-------KGKGKGKSKNKSKKNRNRNNSASASENEQEPEFHRRQST',
-                seq_full: 'STGS-ASGGDSSRDSPPPSARSLHSKLSSPERHKKSKETRKHIERKQAKARLQRQRLENEKQHRRRKHTNKMRRVSERQQEIREAQQQDIASKFEKADQRREQHIQEIKRKAEKESSKVEELAFITSLTNENKRASIEQKLESEQRRLANMDN-KLKQLHENADREYKIEMAKRWNTQQGDQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKGKGKG-------KGKGKGKSKNKSKKNRNRNNSASASENEQEPEFHRRQST',
-                gaps: 13
+                "name": "Mantamonas plastica",
+                "status": "retained",
+                "seq_hotspot": "DQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKG",
+                "seq_cterm": "DQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKGKGKG-------KGKGKGKSKNKSKKNRNRNNSASASENEQEPEFHRRQST",
+                "seq_full": "STGS-ASGGDSSRDSPPPSARSLHSKLSSPERHKKSKETRKHIERKQAKARLQRQRLENEKQHRRRKHTNKMRRVSERQQEIREAQQQDIASKFEKADQRREQHIQEIKRKAEKESSKVEELAFITSLTNENKRASIEQKLESEQRRLANMDN-KLKQLHENADREYKIEMAKRWNTQQGDQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKGKGKG-------KGKGKGKSKNKSKKNRNRNNSASASENEQEPEFHRRQST"
             }},
             {{
-                name: 'Dracoamoeba jomungandri',
-                label: 'D. jomungandri',
-                status: 'retained',
-                seq_cterm: 'GKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEEKEKSKQ-----------------NTKVRKKLTNSNIHQATQL--------',
-                seq_full: '----WADIVKRRENNSP-----RHQKLSSPA--RCKDEVKKKCNEKHERAKLVRERIKLEKKEKWSRTAERVRGVTERKTQREEKLRQEITXXXXLADKRYLEHLENIVKKAGDENKKVDEVAFIKELSTGNKKLSLEQKRRMAKKRREELLEQRKAKMDQRGSSQPSSTQKTTSMNSDFGKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEEKEKSKQ-----------------NTKVRKKLTNSNIHQATQL--------',
-                gaps: 36
+                "name": "Dracoamoeba jomungandri",
+                "status": "retained",
+                "seq_hotspot": "GKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEE",
+                "seq_cterm": "GKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEEKEKSKQ-----------------NTKVRKKLTNSNIHQATQL--------",
+                "seq_full": "----WADIVKRRENNSP-----RHQKLSSPA--RCKDEVKKKCNEKHERAKLVRERIKLEKKEKWSRTAERVRGVTERKTQREEKLRQEITXXXXLADKRYLEHLENIVKKAGDENKKVDEVAFIKELSTGNKKLSLEQKRRMAKKRREELLEQRKAKMDQRGSSQPSSTQKTTSMNSDFGKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEEKEKSKQ-----------------NTKVRKKLTNSNIHQATQL--------"
             }},
             {{
-                name: 'Gefionella okellyi',
-                label: 'G. okellyi',
-                status: 'lost',
-                seq_cterm: '------------EKQ-----------------------MRA--------------------------ES--------KSIR----',
-                seq_full: '-----------------PPPYHRHNKLSSPE--KTKQETRAHIQEKHAKARLKREKLENERRHKRSKRSDKVRSLSERQKEIRQAQQEDFADKYEKADRRRDQHIQEIKKKAEKESSKVEELAFITSLSNENKRISLEQKLESEEKRVKSLEEKREKLRQKAESEYKTEMAERWKTQQG-----------------------EKQ-----------------------MRA--------------------------ES--------KSIR----',
-                gaps: 88
+                "name": "Diphylleia rotans",
+                "status": "retained",
+                "seq_hotspot": "DEILFQERRKILEEL----KRQDQEAEAKHTQARK",
+                "seq_cterm": "DEILFQERRKILEEL----KRQDQEAEAKHTQARKK---------------------------------AEKAEKPPKIRKE---",
+                "seq_full": "--------------SPPPQRVSLHEKLMSPDRKKKTPEIQRIQEEKQEKARQIREQIECQRGDRYRETVSKQQRANERLEEKRVKKRLDIDEKLDKAEQLHEQHLQTIIRKAENENSKVDEVAFITTLSLENKRLALMARLESEQRRQQQLEEWKQRQ--------------KR------DEILFQERRKILEEL----KRQDQEAEAKHTQARKK---------------------------------AEKAEKPPKIRKE---"
             }},
             {{
-                name: 'Pharyngomonas kirbyi',
-                label: 'P. kirbyi',
-                status: 'lost',
-                seq_cterm: '-------------------------------------R---HE---------------INNLTKRMPNS-------L--------',
-                seq_full: '--------------------------------------------------------------------------------------------------LEHIQQLKGKAEEESAKVDEIAFITKLSTANQKRSLNEKMKCEEKRMNQLKEKRTALKEKVRSELESEKIRRQAEKNK-------------------------------------R---HE---------------INNLTKRMPNS-------L--------',
-                gaps: 199
+                "name": "Thecamonas trahens",
+                "status": "retained",
+                "seq_hotspot": "-----------------------------------",
+                "seq_cterm": "----------------------------------------------------------------------------V--------",
+                "seq_full": "AARSWADYT-------P-----LHRKLSSPERKKRNPEAARIAAEKQARAQEARERVEQEKILRARSHNERVAAHRELERQRAQERAARADEKQAKAAVLREEALAAKVRKAQAEDAKVRENAIVRELSEAASRAELQRRLLRDEARTAELR---AKKEEKKAKRAKDAAKKRI----------------------------------------------------------------------------------V--------"
             }},
             {{
-                name: 'Pygsuia biforma',
-                label: 'P. biforma',
-                status: 'lost',
-                seq_cterm: '-------------------------------------------------------------------------------------',
-                seq_full: '----------EEPER------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------',
-                gaps: 255
+                "name": "Salpingoeca rosetta",
+                "status": "retained",
+                "seq_hotspot": "KQRVESIERDKHEEEEEVIEHRRHHRSNKKGNKKN",
+                "seq_cterm": "KQRVESIERDKHEEEEEVIEHRRHHRSNKKGNKKNRVRKSATRSSSSTAAAAARGEVVKQQQQQQQEEASKRRTKN-QQQKRKHK",
+                "seq_full": "----------------P-----LHHRLSSPSRKSVDTE--KELRERQRRAQMNRRQHQQRLTRRLQQQHDKVVKVRGRREEREEQRKQDIEERLSRAERLRQSYLDEVRRRNREEDIKTREVAFIQRLEEDSKRRAVLARIEHEEARLQRRILERRQKMEENARRQAAVQQRREEMDSMRKQRVESIERDKHEEEEEVIEHRRHHRSNKKGNKKNRVRKSATRSSSSTAAAAARGEVVKQQQQQQQEEASKRRTKN-QQQKRKHK"
+            }},
+            {{
+                "name": "Pygsuia biforma",
+                "status": "lost",
+                "seq_hotspot": "-----------------------------------",
+                "seq_cterm": "-------------------------------------------------------------------------------------",
+                "seq_full": "------------------------------N-----------------------------------NQSE--------------------------------------------------NTSWL--------------------------------------------------------------------------------------------------------------------------------------------"
+            }},
+            {{
+                "name": "Pharyngomonas kirbyi",
+                "status": "lost",
+                "seq_hotspot": "-----------------------------------",
+                "seq_cterm": "-------------------------------------R---HE---------------INNLTKRMPNS-------L--------",
+                "seq_full": "-----------------------------PN---------NKNNYKN--------------------------------------------KKNNQSK---------------------------NTLKETDNDSILENGN--------------------LSEDEQYLISRKSKSEAQR-------------------------------------R---HE---------------INNLTKRMPNS-------L--------"
+            }},
+            {{
+                "name": "Gefionella okellyi",
+                "status": "lost",
+                "seq_hotspot": "------------EKQ--------------------",
+                "seq_cterm": "------------EKQ-----------------------MRA--------------------------ES--------KSIR----",
+                "seq_full": "STNSWAQVC-------PGSRGSIEHKLRSPQKHRKSPEVKRDADDRHMAAARNREQLEQEKQQKMQSLAKRSESVQQAKELSRAAKKAVLEEKVQQAVSKREEHIRQQKLKAENESSKVEEIIFINTMTQENAKLDLQHKLHEAEARKKESVGVRIARAAS--AQSKIVTERRR------------------EKQ-----------------------MRA--------------------------ES--------KSIR----"
+            }},
+            {{
+                "name": "Baffinella frigidus",
+                "status": "lost",
+                "seq_hotspot": "------------ERQ--------------------",
+                "seq_cterm": "------------ERQ----------------------------------------------------QA-------V--------",
+                "seq_full": "-----------------------------------------XSEEKQKQALERKQELEEAKMGRLR-EAEKRQKGLQSMRVKREEKQGAMESRQQRAAAIHEKQLLEIQRKASKDTTKVHEIAFIEQLTAKSKNVELQARLGQAEARRAEAM-----------EASVTALHRKA------------------ERQ----------------------------------------------------QA-------V--------"
+            }},
+            {{
+                "name": "Geminigera cryophila",
+                "status": "lost",
+                "seq_hotspot": "-----------------------------------",
+                "seq_cterm": "-------------------------------------------------------------------------------------",
+                "seq_full": "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+            }},
+            {{
+                "name": "Gloeochaete wittrockiana",
+                "status": "lost",
+                "seq_hotspot": "-----------------------------------",
+                "seq_cterm": "------------------------------------------R------------------------QS-------I--------",
+                "seq_full": "------------------------------D-------LARVLEAKK-------------------------------------------------------------------------EADFL-------------------------------------------------------------------------------------------------R------------------------QS-------I--------"
+            }},
+            {{
+                "name": "Nephroselmis pyriformis",
+                "status": "lost",
+                "seq_hotspot": "-----------------------------------",
+                "seq_cterm": "-------------------------------------R---RR---------------AKKLLGRLDDG--------EEVR----",
+                "seq_full": "----------------P------------PD------------------------------------VAA---------------------AAAAAAA----------------------AVAVV---------------------------ATS------SAAATATAGNRIR-------------------------------------------R---RR---------------AKKLLGRLDDG--------EEVR----"
+            }},
+            {{
+                "name": "Naegleria gruberi",
+                "status": "lost",
+                "seq_hotspot": "LESIKAKEKKVEKEQ-----------KEKESAERI",
+                "seq_cterm": "LESIKAKEKKVEKEQ-----------KEKESAERIKV-EYEKKIQKTKKETELSTQHLSEKLEKKLEAAEDRKTKTIETKKAKAS",
+                "seq_full": "----WADVV--SPPSSP-----VRERLSSPNRKRLSPDIRRRQEEKMAKSAWNRQTKQIQQEVKFLKEAEKQKEVLKKREKELEETKKKQEEKHERARKNNQIHIKKVMEEARKESEKVEEVKFIKSLEEEKNKFQLDQKLTASQERREREQHKIKVKCTKDLEKERAAKMRRQQLEIERLESIKAKEKKVEKEQ-----------KEKESAERIKV-EYEKKIQKTKKETELSTQHLSEKLEKKLEAAEDRKTKTIETKKAKAS"
+            }},
+            {{
+                "name": "Drosophila melanogaster",
+                "status": "lost",
+                "seq_hotspot": "LLKLEKMNETRLEKEQRIGKMQEQKEKQRQALARE",
+                "seq_cterm": "LLKLEKMNETRLEKEQRIGKMQEQKEKQRQALAREKARDREERLLALQVQQQQTTEELQRKILQKQMESARRHEENIEHIRQRAL",
+                "seq_full": "SDMSWNERA----ARHPGRAQ-LHQKLSSPSRRRSLQETLKKYQAKQARAQQKRNLLQQEKAAKLQQLFSRVEDVKAAKNQIIEDKRQKMQGRLQRAAENREQYLKQIIEKAHDEEKKLKEINFIKNIEAQNKRLDLLESSKETEGRLQDLEQERQKRVEEKLAKEAAVERRRQALEKERLLKLEKMNETRLEKEQRIGKMQEQKEKQRQALAREKARDREERLLALQVQQQQTTEELQRKILQKQMESARRHEENIEHIRQRAL"
             }}
         ]
     }}
 }};
 
-let ALN_VIEW_MODE = 'cterm'; // 'cterm' or 'full'
+let ALN_VIEW_MODE = 'hotspot'; // 'hotspot', 'cterm', or 'full'
 
 function colorizeResidue(aa) {{
-    if (aa === '-') return `<span style="color:#475569; background:#0f172a; padding:0 1px;">-</span>`;
+    if (aa === '-') return `<span style="color:#475569; background:#0a0e17; padding:0 1px; font-weight:400;">-</span>`;
     if ('DE'.includes(aa)) return `<span style="color:#f87171; font-weight:700;">${{aa}}</span>`;
     if ('KRH'.includes(aa)) return `<span style="color:#60a5fa; font-weight:700;">${{aa}}</span>`;
     if ('STNQC'.includes(aa)) return `<span style="color:#34d399; font-weight:600;">${{aa}}</span>`;
@@ -3772,7 +3885,34 @@ function renderAlignmentHtml(pairKey, viewMode) {{
     const d = ALIGNMENT_DATA[pairKey];
     if (!d) return '';
 
-    let rowsHtml = '';
+    let headerTrack = '';
+    if (viewMode === 'hotspot') {{
+        headerTrack = `
+            <div style="margin-bottom:12px; padding:10px 14px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:6px; font-size:11.5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color:#fda4af; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">Critical 35-aa Interaction Motif (aa 181–215 / Human aa 685–719)</strong>
+                    <span style="font-size:10.5px; color:#f43f5e; font-weight:700; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.35); padding:1px 6px; border-radius:8px;">+40.3% Deletion Gap Spike</span>
+                </div>
+                <div style="color:#cbd5e1; font-size:11px; line-height:1.4;">
+                    In species that retain TTC5, this binding helix is conserved intact (<strong>76.5% retention</strong>). In <strong>7 of the 11 lineages</strong> that lost TTC5, this entire 35-residue interface is <strong>91% to 100% deleted</strong>.
+                </div>
+            </div>
+        `;
+    }} else if (viewMode === 'cterm') {{
+        headerTrack = `
+            <div style="margin-bottom:12px; padding:10px 14px; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:6px; font-size:11.5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color:#7dd3fc; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">C-Terminal Interaction Motif (aa 181–265)</strong>
+                    <span style="font-size:10.5px; color:#38bdf8; font-weight:700;">85-residue Coiled-Coil Domain</span>
+                </div>
+                <div style="color:#cbd5e1; font-size:11px; line-height:1.4;">
+                    Broad C-terminal region encompassing both the core interaction helix and flanking structural contacts.
+                </div>
+            </div>
+        `;
+    }}
+
+    let rowsHtml = headerTrack;
     d.species.forEach(sp => {{
         const isRet = (sp.status === 'retained');
         const badgeCol = isRet ? '#10b981' : '#f43f5e';
@@ -3780,21 +3920,21 @@ function renderAlignmentHtml(pairKey, viewMode) {{
         const badgeBorder = isRet ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)';
         const badgeText = isRet ? 'TTC5 Retained' : 'TTC5 Lost';
 
-        const rawSeq = viewMode === 'cterm' ? sp.seq_cterm : sp.seq_full;
+        const rawSeq = (viewMode === 'hotspot') ? sp.seq_hotspot : ((viewMode === 'cterm') ? sp.seq_cterm : sp.seq_full);
         const coloredSeq = rawSeq.split('').map(colorizeResidue).join('');
         const gapCount = rawSeq.split('').filter(c => c === '-').length;
         const gapPct = ((gapCount / rawSeq.length) * 100).toFixed(0);
 
         rowsHtml += `
-            <div style="display:flex; align-items:flex-start; margin-bottom:10px; font-family:ui-monospace, SFMono-Regular, monospace; font-size:12.5px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+            <div style="display:flex; align-items:center; margin-bottom:8px; font-family:ui-monospace, SFMono-Regular, monospace; font-size:12px; border-bottom:1px solid #1e293b; padding-bottom:6px;">
                 <div style="width:230px; flex-shrink:0; padding-right:12px;">
-                    <div style="font-weight:700; color:#f8fafc; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${{sp.name}}</div>
+                    <div style="font-weight:700; color:#f8fafc; font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${{sp.name}}</div>
                     <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
-                        <span style="font-size:9.5px; padding:1px 5px; border-radius:3px; background:${{badgeBg}}; color:${{badgeCol}}; border:1px solid ${{badgeBorder}}; font-weight:600;">${{badgeText}}</span>
-                        <span style="font-size:10px; color:#64748b;">${{gapPct}}% gaps</span>
+                        <span style="font-size:9px; padding:1px 5px; border-radius:3px; background:${{badgeBg}}; color:${{badgeCol}}; border:1px solid ${{badgeBorder}}; font-weight:600;">${{badgeText}}</span>
+                        <span style="font-size:9.5px; color:${{gapPct >= 80 ? '#f43f5e' : '#64748b'}}; font-weight:${{gapPct >= 80 ? '700' : '400'}};">${{gapPct}}% gaps</span>
                     </div>
                 </div>
-                <div style="flex:1; overflow-x:auto; letter-spacing:1.5px; line-height:1.6; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
+                <div style="flex:1; overflow-x:auto; letter-spacing:1.5px; line-height:1.5; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
                     ${{coloredSeq}}
                 </div>
             </div>
@@ -3806,8 +3946,10 @@ function renderAlignmentHtml(pairKey, viewMode) {{
 
 function setAlnViewMode(mode, pairKey) {{
     ALN_VIEW_MODE = mode;
+    const btnHotspot = document.getElementById('btn-aln-hotspot');
     const btnCterm = document.getElementById('btn-aln-cterm');
     const btnFull = document.getElementById('btn-aln-full');
+    if (btnHotspot) btnHotspot.classList.toggle('active', mode === 'hotspot');
     if (btnCterm) btnCterm.classList.toggle('active', mode === 'cterm');
     if (btnFull) btnFull.classList.toggle('active', mode === 'full');
     
