@@ -4570,8 +4570,8 @@ function drawCanvasRoundedRect(ctx, x, y, w, h, r) {{
     ctx.closePath();
 }}
 
-function drawCanvasPill(ctx, text, x, y, bg, color, border, fontSize = 13, bold = false) {{
-    const pillScale = EXPORT_SLIDE_SCALE || 1.0;
+function drawCanvasPill(ctx, text, x, y, bg, color, border, fontSize = 13, bold = false, scale = null) {{
+    const pillScale = scale != null ? scale : (EXPORT_SLIDE_SCALE || 1.0);
     const scaledFontSize = (fontSize * pillScale).toFixed(2);
     ctx.font = `${{bold ? 'bold ' : '600 '}}${{scaledFontSize}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     const metrics = ctx.measureText(text);
@@ -5132,7 +5132,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
         // Cilia Badge if applicable
         if (ALL_CILIARY.has(selectedGene)) {{
-            drawCanvasPill(ctx, 'CILIA', sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true);
+            drawCanvasPill(ctx, 'CILIA', sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true, uiScale);
         }}
 
         // Loss Events
@@ -5294,7 +5294,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
         // Cilia tag
         if (ALL_CILIARY.has(p.n)) {{
-            drawCanvasPill(ctx, 'CILIA', sx + 124 + gnW, midY, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, pillFontSize, true);
+            drawCanvasPill(ctx, 'CILIA', sx + 124 + gnW, midY, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, pillFontSize, true, uiScale);
         }}
 
         // Jaccard Bar + Value
