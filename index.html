@@ -3480,32 +3480,6 @@ function runLayout(randomize, options = {}) {
         return p;
     }
 
-    // COSE's repulsion pass is O(n^2); above a few hundred nodes it takes tens of
-    // seconds and the view appears to hang (some Leiden clusters exceed 2000 genes).
-    // Fall back to a fast grid layout instead of running physics on graphs that big.
-    if (layoutMode !== 'concentric' && cy.nodes().length > 500) {
-        const gridConfig = {
-            name: 'grid',
-            animate: !immediate,
-            animationDuration: immediate ? 0 : 400,
-            fit: randomize,
-            padding: 60,
-            avoidOverlapPadding: 8
-        };
-        const layout = cy.layout(gridConfig);
-        const p = layout.promiseOn('layoutstop').then(() => {
-            if (randomize) {
-                if (immediate) {
-                    cy.fit(undefined, 60);
-                } else {
-                    cy.animate({ fit: { padding: 60 } }, { duration: 300 });
-                }
-            }
-        });
-        layout.run();
-        return p;
-    }
-
     // Force-directed (cose) - organic spread layout with label awareness
     const isEgo = Boolean(selectedGene && (currentMode === 'gene' || currentMode === 'network'));
     let intraEdges = null;
@@ -3521,11 +3495,15 @@ function runLayout(randomize, options = {}) {
 
     // COSE's per-iteration repulsion pass is O(n^2); on the largest Leiden clusters
     // (several exceed 1500-2000 genes) the default iteration count makes the layout
-    // take tens of seconds and the view appears to "not load". Scale iterations down
-    // as the graph grows so it still converges quickly.
+    // take tens of seconds and the view appears to "not load". Hold the total
+    // repulsion work (nodeCount^2 * numIter) to a roughly constant budget instead of
+    // scaling numIter down linearly, since it's the n^2 term that actually dominates.
     const nodeCount = cy.nodes().length;
     const baseIter = immediate ? 800 : 1400;
-    const numIter = nodeCount > 150 ? Math.max(40, Math.round(baseIter * 150 / nodeCount)) : baseIter;
+    const REPULSION_BUDGET = 6e7;
+    const numIter = nodeCount > 150
+        ? Math.min(baseIter, Math.max(8, Math.round(REPULSION_BUDGET / (nodeCount * nodeCount))))
+        : baseIter;
 
     const layoutConfig = {
         name: 'cose',
@@ -3533,19 +3511,20 @@ function runLayout(randomize, options = {}) {
         randomize: randomize,
         nodeDimensionsIncludeLabels: true,
         componentSpacing: isEgo ? 130 : 100,
-        nodeRepulsion: function(node) {
-            if (isEgo) return node.id() === selectedGene ? 20000000 : 8000000;
-            return 2500000;
-        },
+        // Plain numbers (rather than per-element callbacks) for the common cluster/network
+        // case avoid a JS function call on every pairwise/edge check during physics, which
+        // matters once nodeCount runs into the thousands.
+        nodeRepulsion: isEgo
+            ? function(node) { return node.id() === selectedGene ? 20000000 : 8000000; }
+            : 2500000,
         nodeOverlap: 20,
-        idealEdgeLength: function(edge) {
-            if (isEgo) {
+        idealEdgeLength: isEgo
+            ? function(edge) {
                 const j = edge.data('jaccard') || 0.2;
                 return Math.max(160, 310 - (j - 0.2) * 250);
             }
-            return 160;
-        },
-        edgeElasticity: function(edge) { return isEgo ? 25 : 15; },
+            : 160,
+        edgeElasticity: isEgo ? 25 : 15,
         nestingFactor: 1.0,
         gravity: isEgo ? 0.04 : 0.06,
         numIter: numIter,
