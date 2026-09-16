@@ -5074,12 +5074,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
         // Cilia Badge if applicable
         if (ALL_CILIARY.has(selectedGene)) {{
-            const cInfo = CILIA_INFO[selectedGene];
-            let cilText = 'CILIARY GENE';
-            if (cInfo && cInfo.v2 && cInfo.cc) cilText = `CORE CILIARY (${{cInfo.v2.toUpperCase()}} ∩ CILIACARTA)`;
-            else if (cInfo && cInfo.v2) cilText = `SYSCILIA ${{cInfo.v2.toUpperCase()}}`;
-            else if (cInfo && cInfo.cc) cilText = 'CILIACARTA';
-            drawCanvasPill(ctx, cilText, sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true);
+            drawCanvasPill(ctx, 'CILIA', sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true);
         }}
 
         // Loss Events
