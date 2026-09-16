@@ -3635,44 +3635,49 @@ function showSingleCluster(cid, highlightGene) {
     const shown = members.filter(n => GM[n] !== undefined && (!activeSet || activeSet.has(n)));
     const shownSet = new Set(shown);
 
-    // Gather intra-cluster co-loss pairs once — used both for sub-group detection
-    // (on the full set) and for the rendered edges (capped below for legibility/perf).
-    const edgeCandidates = [];
+    // Sort each gene's own intra-cluster partners once, strongest first. Everything
+    // below is built from per-gene top-K slices of this rather than a single global
+    // top-K-by-weight cut: a global cut let a few very strongly auto-correlated genes
+    // hog most of the edge budget and left everyone else with zero rendered edges,
+    // which fractured genuinely single-component clusters into 100+ disconnected
+    // islands in the force layout (e.g. one cluster went from 1 component to 181,
+    // 118 of them totally isolated nodes) even though the underlying data was one
+    // connected community.
+    const sortedPartnersOf = new Map();
     shown.forEach(name => {
         const d = getGeneData(name);
-        if (!d) return;
-        for (const p of d.p) {
-            if (p.j > 0 && shownSet.has(p.n) && name < p.n) {
-                edgeCandidates.push({ a: name, b: p.n, j: p.j });
-            }
-        }
+        const sorted = d ? d.p.filter(p => p.j > 0 && p.n !== name && shownSet.has(p.n)).sort((x, y) => y.j - x.j) : [];
+        sortedPartnersOf.set(name, sorted);
     });
+    function topKEdgeMap(k) {
+        const map = new Map();
+        shown.forEach(name => {
+            sortedPartnersOf.get(name).slice(0, k).forEach(p => {
+                const a = name < p.n ? name : p.n;
+                const b = name < p.n ? p.n : name;
+                const key = a + '\u0000' + b;
+                const existing = map.get(key);
+                if (!existing || p.j > existing.j) map.set(key, { a, b, j: p.j });
+            });
+        });
+        return map;
+    }
+
+    // One per-gene top-K cap serves both purposes: it's sparse enough that label
+    // propagation still finds real sub-groups instead of collapsing into one giant
+    // community, while (unlike a global top-K-by-weight cut) every gene keeps its
+    // own strongest few connections, so the rendered graph matches the cluster's
+    // true connectivity instead of an artifact of the cutoff. K=10 was verified to
+    // already eliminate stray isolated nodes across the largest Leiden clusters;
+    // going higher roughly doubles edge count (and layout time) for little gain.
+    const K_NEAREST = 10;
+    const nearestEdges = Array.from(topKEdgeMap(K_NEAREST).values());
+    const edgeList = nearestEdges;
 
     // A single flat color across 100s-2000+ genes is unreadable once force-spread —
     // split the module into its own tighter-knit sub-groups and color those instead,
     // so the layout the physics already produces is actually legible.
-    // Label propagation over every nonzero-Jaccard pair collapses into one giant
-    // community on these densely-connected modules (everything is a little bit
-    // connected to everything), so detect structure on a sparser, top-K-strongest-
-    // partner-per-gene graph instead — that's what actually reveals sub-groups.
-    const K_NEAREST = 10;
-    const lpaEdgeMap = new Map();
-    shown.forEach(name => {
-        const d = getGeneData(name);
-        if (!d) return;
-        const topPartners = d.p
-            .filter(p => p.j > 0 && p.n !== name && shownSet.has(p.n))
-            .sort((x, y) => y.j - x.j)
-            .slice(0, K_NEAREST);
-        topPartners.forEach(p => {
-            const a = name < p.n ? name : p.n;
-            const b = name < p.n ? p.n : name;
-            const key = a + '\u0000' + b;
-            const existing = lpaEdgeMap.get(key);
-            if (!existing || p.j > existing.j) lpaEdgeMap.set(key, { a, b, j: p.j });
-        });
-    });
-    const lpaEdges = Array.from(lpaEdgeMap.values());
+    const lpaEdges = nearestEdges;
 
     // Dedicated palette (not TREE_PALETTE, which has a repeated color) so all 10
     // sub-group slots stay visually distinct from each other and from the gray "Other".
@@ -3732,16 +3737,6 @@ function showSingleCluster(cid, highlightGene) {
         });
     });
 
-    // Add intra-cluster edges. The largest Leiden clusters (2000+ genes) can have
-    // 100,000+ pairs at any nonzero Jaccard — rendering/laying out that many edges is
-    // what made big clusters appear to hang, so cap to the strongest edges once a
-    // cluster is large enough for that to matter; small clusters are unaffected.
-    const MAX_CLUSTER_EDGES = 4000;
-    let edgeList = edgeCandidates;
-    if (edgeCandidates.length > MAX_CLUSTER_EDGES) {
-        edgeCandidates.sort((x, y) => y.j - x.j);
-        edgeList = edgeCandidates.slice(0, MAX_CLUSTER_EDGES);
-    }
     edgeList.forEach(({a, b, j}) => {
         elements.push({
             group: 'edges',
