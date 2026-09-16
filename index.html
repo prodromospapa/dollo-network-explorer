@@ -845,7 +845,7 @@ body.light-theme #tree-toast {
         <!-- Leiden Cluster Controls (Only visible in cluster mode) -->
         <div id="controls-cluster" style="display:none; align-items:center; gap:10px;">
             <label>Filter:</label>
-            <select id="gene-filter-cluster" onchange="document.getElementById('gene-filter').value=this.value; onGeneFilterChange();" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
+            <select id="gene-filter-cluster" onchange="applyGeneFilterChange(this.value);" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
                 <option value="all">All Genes</option>
                 <option value="all_ciliary">All Union (513)</option>
                 <option value="ciliacarta">CiliaCarta (361)</option>
@@ -2146,11 +2146,31 @@ function getActiveGeneSet() {
     return new Set(CILIARY_SETS[geneFilterMode] || []);
 }
 
+// Shared by both the Network View filter (#gene-filter) and the Leiden Modules
+// filter (#gene-filter-cluster) — they show/hide together depending on mode, but
+// both need to update the same geneFilterMode and re-render whichever view is live.
+function applyGeneFilterChange(mode) {
+    geneFilterMode = mode;
+    const mainSelect = document.getElementById('gene-filter');
+    const clusterSelect = document.getElementById('gene-filter-cluster');
+    if (mainSelect && mainSelect.value !== mode) mainSelect.value = mode;
+    if (clusterSelect && clusterSelect.value !== mode) clusterSelect.value = mode;
+
+    if (selectedGene) renderSidebar(selectedGene);
+    if ((currentMode === 'gene' || currentMode === 'network') && selectedGene) renderEgoNetwork(selectedGene);
+    if (currentMode === 'single_cluster') showSingleCluster(currentClusterId);
+    if (currentMode === 'all_clusters') showAllClusters();
+}
+
 // ---- View Switching ----
 // ---- Sidebar Tabs & View Switching ----
 let CURRENT_SIDEBAR_TAB = 'list';
 
-function setSidebarTab(tab) {
+function setSidebarTab(tab, opts) {
+    // switchView() passes skipRender: true when it's about to trigger the equivalent
+    // content render itself right afterward (e.g. showAllClusters() /
+    // renderSingleClusterContent()) — without this, both would run per mode switch.
+    const skipRender = Boolean(opts && opts.skipRender);
     CURRENT_SIDEBAR_TAB = tab;
     const btnList = document.getElementById('sidebar-tab-list');
     const btnMatrix = document.getElementById('sidebar-tab-matrix');
@@ -2161,9 +2181,10 @@ function setSidebarTab(tab) {
 
     if (tab === 'matrix') {
         if (sbSearchWrap) sbSearchWrap.style.display = 'none';
-        renderTreeSidebar();
+        if (!skipRender) renderTreeSidebar();
     } else {
         if (sbSearchWrap) sbSearchWrap.style.display = 'block';
+        if (skipRender) return;
         let geneToLoad = selectedGene;
         if (!geneToLoad && typeof TREE_SELECTED_GENES !== 'undefined' && TREE_SELECTED_GENES.length > 0) {
             geneToLoad = (typeof TREE_ACTIVE_COEV_PAIR !== 'undefined' && TREE_ACTIVE_COEV_PAIR && TREE_ACTIVE_COEV_PAIR[0])
@@ -2182,7 +2203,7 @@ function setSidebarTab(tab) {
         } else if (currentMode === 'all_clusters') {
             renderClusterDirectory();
         } else if (currentMode === 'single_cluster' && currentClusterId !== null) {
-            showSingleCluster(currentClusterId);
+            renderSingleClusterContent(currentClusterId);
         } else {
             renderClusterDirectory();
         }
@@ -2245,11 +2266,12 @@ function switchView(mode) {
         if (ssClear) ssClear.style.display = 'none';
         if (cy) cy.resize();
         
-        setSidebarTab('list');
+        setSidebarTab('list', { skipRender: true });
         if (mode === 'all_clusters') {
             showAllClusters();
         } else if (mode === 'single_cluster' && currentClusterId !== null) {
-            showSingleCluster(currentClusterId);
+            renderSingleClusterContent(currentClusterId, PENDING_CLUSTER_HIGHLIGHT);
+            PENDING_CLUSTER_HIGHLIGHT = null;
         } else {
             showAllClusters();
         }
@@ -3615,17 +3637,30 @@ function detectSubClusters(nodeNames, edges) {
     return labelOf;
 }
 
+// Set by showSingleCluster() right before it drives a mode switch, so the highlight
+// gene survives the switchView -> setSidebarTab -> renderSingleClusterContent chain.
+let PENDING_CLUSTER_HIGHLIGHT = null;
+
 function showSingleCluster(cid, highlightGene) {
+    if (!CLUSTERS[cid]) return;
+    if (currentMode !== 'single_cluster') {
+        // Not in cluster mode yet: switchView() below will call
+        // renderSingleClusterContent() itself once the mode/UI is set up. Doing the
+        // heavy render here too (or letting setSidebarTab do it a third time, as this
+        // used to) would redo the same expensive work 2-3x per click.
+        currentClusterId = cid;
+        clusterFocusedGene = null;
+        PENDING_CLUSTER_HIGHLIGHT = highlightGene || null;
+        switchView('single_cluster');
+        return;
+    }
+    renderSingleClusterContent(cid, highlightGene);
+}
+
+function renderSingleClusterContent(cid, highlightGene) {
     if (!CLUSTERS[cid]) return;
     currentClusterId = cid;
     clusterFocusedGene = null;
-    // switchView('single_cluster') re-enters here via setSidebarTab('list') once currentMode
-    // is already 'single_cluster' — only drive the mode switch on the initial (outside) call,
-    // or it recurses forever and blows the call stack.
-    if (currentMode !== 'single_cluster') {
-        switchView('single_cluster');
-    }
-    currentClusterId = cid;
 
     const members = CLUSTERS[cid];
     const color = getClusterColor(cid);
@@ -3663,21 +3698,27 @@ function showSingleCluster(cid, highlightGene) {
         return map;
     }
 
-    // One per-gene top-K cap serves both purposes: it's sparse enough that label
-    // propagation still finds real sub-groups instead of collapsing into one giant
-    // community, while (unlike a global top-K-by-weight cut) every gene keeps its
-    // own strongest few connections, so the rendered graph matches the cluster's
-    // true connectivity instead of an artifact of the cutoff. K=10 was verified to
-    // already eliminate stray isolated nodes across the largest Leiden clusters;
-    // going higher roughly doubles edge count (and layout time) for little gain.
-    const K_NEAREST = 10;
-    const nearestEdges = Array.from(topKEdgeMap(K_NEAREST).values());
-    const edgeList = nearestEdges;
+    // Render every stored intra-cluster pair — no Jaccard threshold, no top-N cap.
+    // Leiden clustering itself was computed on the complete similarity graph (every
+    // pair >= 0.05, no per-gene limit); network_partners.bin (what getGeneData().p
+    // draws from) already only keeps each gene's strongest 500 partners at
+    // Jaccard >= 0.08 for the main ego-network browser, which is a narrower view
+    // than what the clustering saw. Capping further on top of that (as done
+    // previously) is what fragmented genuinely single-component clusters into many
+    // disconnected islands - so this shows everything the site's data has for the
+    // cluster, at the cost of a much longer render/layout time for the 1-2 largest
+    // modules (~2000 genes, 300k+ edges can take under a minute).
+    const edgeList = Array.from(topKEdgeMap(Infinity).values());
 
     // A single flat color across 100s-2000+ genes is unreadable once force-spread —
     // split the module into its own tighter-knit sub-groups and color those instead,
-    // so the layout the physics already produces is actually legible.
-    const lpaEdges = nearestEdges;
+    // so the layout the physics already produces is actually legible. This is purely
+    // an internal signal for node color, not a filter — every edge above is still
+    // rendered regardless of what label propagation decides here. Label propagation
+    // over the full graph collapses into one giant community on these densely-
+    // connected modules (nearly everything is at least weakly linked to everything),
+    // so detect structure on a sparser per-gene top-10 graph instead.
+    const lpaEdges = Array.from(topKEdgeMap(10).values());
 
     // Dedicated palette (not TREE_PALETTE, which has a repeated color) so all 10
     // sub-group slots stay visually distinct from each other and from the gray "Other".
@@ -5137,7 +5178,7 @@ function renderEdgeAlignmentModalContent() {
                     <div style="width:52px; text-align:right; font-weight:700; color:${isDeleted ? '#475569' : '#38bdf8'}; font-size:11px; padding-right:10px; flex-shrink:0; font-family:ui-monospace, monospace;" title="First amino acid position: ${firstAaPos}">
                         ${firstAaPos}
                     </div>
-                    <div style="flex:1; min-width:0; overflow-x:auto; letter-spacing:1.5px; line-height:1.5; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
+                    <div class="ea-seq-track" style="flex:1; min-width:0; overflow-x:auto; letter-spacing:1.5px; line-height:1.5; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
                         ${coloredSeq}
                     </div>
                     <div style="width:52px; text-align:left; font-weight:700; color:${isDeleted ? '#475569' : '#38bdf8'}; font-size:11px; padding-left:10px; flex-shrink:0; font-family:ui-monospace, monospace;" title="Last amino acid position: ${lastAaPos}">
@@ -5212,6 +5253,23 @@ function renderEdgeAlignmentModalContent() {
                 <span>Pre-computed OrthoFinder / MAFFT</span>
             </div>
         `;
+
+        // Each species' sequence track scrolls independently by default, which breaks
+        // the alignment (same horizontal offset = same alignment column) across rows
+        // whenever the region is wide enough to need scrolling, especially Full Track.
+        // Scrolling any one row drives every other row to the same position.
+        const seqTracks = bodyEl.querySelectorAll('.ea-seq-track');
+        let syncingScroll = false;
+        seqTracks.forEach(track => {
+            track.addEventListener('scroll', () => {
+                if (syncingScroll) return;
+                syncingScroll = true;
+                seqTracks.forEach(other => {
+                    if (other !== track) other.scrollLeft = track.scrollLeft;
+                });
+                syncingScroll = false;
+            });
+        });
     } else {
         bodyEl.innerHTML = `
             ${perspectiveSwitcherHtml}
@@ -6195,11 +6253,7 @@ document.getElementById('toggle-topn-max').addEventListener('change', function()
 });
 
 document.getElementById('gene-filter').addEventListener('change', function() {
-    geneFilterMode = this.value;
-    if (selectedGene) renderSidebar(selectedGene);
-    if ((currentMode === 'gene' || currentMode === 'network') && selectedGene) renderEgoNetwork(selectedGene);
-    if (currentMode === 'single_cluster') showSingleCluster(currentClusterId);
-    if (currentMode === 'all_clusters') showAllClusters();
+    applyGeneFilterChange(this.value);
 });
 
 // Init
