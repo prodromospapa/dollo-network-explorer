@@ -1342,6 +1342,16 @@ body.light-theme #tree-toast {{
                     <button id="export-theme-light" class="btn" style="padding:3px 10px; font-size:11px;" onclick="setExportSlideTheme('light')">Light (Slide Friendly)</button>
                     <button id="export-theme-dark" class="btn" style="padding:3px 10px; font-size:11px;" onclick="setExportSlideTheme('dark')">Dark</button>
                 </div>
+                <!-- Scale Option -->
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="color:#94a3b8; font-weight:500;">Scale:</span>
+                    <select id="export-scale-select" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;" onchange="setExportSlideScale(this.value)" title="Scale up text and diagram elements for high-visibility presentation slides">
+                        <option value="1.0" selected>1.0× (Standard)</option>
+                        <option value="1.15">1.15× (Medium)</option>
+                        <option value="1.3">1.3× (Large / Presentation)</option>
+                        <option value="1.5">1.5× (Extra Large)</option>
+                    </select>
+                </div>
                 <!-- Partner Count -->
                 <div style="display:flex; align-items:center; gap:5px;">
                     <span style="color:#94a3b8; font-weight:500;">Partners:</span>
@@ -3582,11 +3592,12 @@ function blendTreeColors(presentIndices, isDark) {{
     return `rgb(${{r}},${{g}},${{b}})`;
 }}
 
-function renderCircularTree() {{
+function renderCircularTree(scaleOptions = {{}}) {{
     if (!TREE_LAYOUT) return;
     const svg = document.getElementById('tree-svg');
     if (!svg) return;
 
+    const textScale = (scaleOptions && scaleOptions.textScale) ? scaleOptions.textScale : 1.0;
     const isDark = getEffectiveTreeTheme() === 'dark';
 
     const SIZE = 1000;
@@ -3659,6 +3670,8 @@ function renderCircularTree() {{
         : `Eukaryotic Species Tree (196 species • ${{taxLabel}} taxonomy)`;
     const titleColor = isDark ? '#f8fafc' : '#111827';
     svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="${{titleColor}}">${{titleText}}</text>`);
+    const titleFontSize = Math.round(16 * textScale);
+    svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="${{titleFontSize}}" font-weight="700" fill="${{titleColor}}">${{titleText}}</text>`);
 
     // Dimensions
     const R_ROOT = TREE_LAYOUT.r_root;
@@ -3702,7 +3715,7 @@ function renderCircularTree() {{
     }});
 
     // 2. Tree Branches
-    const branchWidth = isDark ? '1.8' : '1.7';
+    const branchWidth = (parseFloat(isDark ? '1.8' : '1.7') * Math.min(1.4, Math.sqrt(textScale))).toFixed(2);
     TREE_LAYOUT.nodes.forEach(node => {{
         if (node.p === null || node.p === undefined) return;
         const parent = idToNode[node.p];
@@ -3757,6 +3770,7 @@ function renderCircularTree() {{
     }});
 
     // 4. Clade Outer Arcs and Labels
+    const arcStroke = (5.5 * Math.min(1.4, Math.sqrt(textScale))).toFixed(1);
     cladeBlocks.forEach(block => {{
         const sIdx = block.start_idx;
         const eIdx = block.end_idx;
@@ -3774,6 +3788,7 @@ function renderCircularTree() {{
         const yE = (CY + R_CLADE_ARC * Math.sin(rad2)).toFixed(2);
 
         svgParts.push(`<path d="M ${{xS}} ${{yS}} A ${{R_CLADE_ARC}} ${{R_CLADE_ARC}} 0 0 0 ${{xE}} ${{yE}}" fill="none" stroke="${{col}}" stroke-width="5.5" stroke-linecap="round" />`);
+        svgParts.push(`<path d="M ${{xS}} ${{yS}} A ${{R_CLADE_ARC}} ${{R_CLADE_ARC}} 0 0 0 ${{xE}} ${{yE}}" fill="none" stroke="${{col}}" stroke-width="${{arcStroke}}" stroke-linecap="round" />`);
 
         // Skip label for tiny single-species sectors to avoid crowded/isolated labels
         const blockSize = (eIdx - sIdx) + 1;
@@ -3791,7 +3806,8 @@ function renderCircularTree() {{
             anchor = 'end';
         }}
 
-        const fontSize = cladeBlocks.length > 40 ? 7.5 : 8.5;
+        const baseFont = cladeBlocks.length > 40 ? 7.5 : 8.5;
+        const fontSize = (baseFont * textScale).toFixed(1);
         svgParts.push(`<text x="${{lx.toFixed(2)}}" y="${{ly.toFixed(2)}}" transform="rotate(${{rot.toFixed(1)}}, ${{lx.toFixed(2)}}, ${{ly.toFixed(2)}})" font-size="${{fontSize}}" font-weight="700" fill="${{col}}" text-anchor="${{anchor}}" alignment-baseline="middle">${{cname}}</text>`);
     }});
 
@@ -3800,28 +3816,36 @@ function renderCircularTree() {{
     const legSubCol = isDark ? '#94a3b8' : '#6b7280';
     const legTextCol = isDark ? '#cbd5e1' : '#374151';
 
+    const legTitleSz = (11 * textScale).toFixed(1);
+    const legSubSz = (9 * textScale).toFixed(1);
+    const legItemSz = (9.5 * textScale).toFixed(1);
+    const rectW = Math.round(18 * Math.min(1.4, Math.sqrt(textScale)));
+    const rectH = Math.round(8 * Math.min(1.4, Math.sqrt(textScale)));
+    const lineGap = Math.round(16 * textScale);
+    const itemStartY = Math.round(26 * textScale);
+
     svgParts.push('<g id="tree-coloring-legend" transform="translate(35, 45)">');
     if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {{
-        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Taxonomy: ${{taxLabel}}</text>`);
-        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(clade color coding)</text>`);
+        svgParts.push(`<text x="0" y="0" font-size="${{legTitleSz}}" font-weight="700" fill="${{legTitleCol}}">Taxonomy: ${{taxLabel}}</text>`);
+        svgParts.push(`<text x="0" y="${{Math.round(14 * textScale)}}" font-size="${{legSubSz}}" fill="${{legSubCol}}">(clade color coding)</text>`);
 
         const seenClades = new Set();
         let lI = 0;
         cladeBlocks.forEach(block => {{
             if (seenClades.has(block.clade) || lI >= 12) return;
             seenClades.add(block.clade);
-            const y = 30 + lI * 15;
-            svgParts.push(`<rect x="0" y="${{y}}" width="18" height="8" rx="2" fill="${{block.color}}" />`);
-            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9" fill="${{legTextCol}}">${{block.clade}}</text>`);
+            const y = itemStartY + lI * lineGap;
+            svgParts.push(`<rect x="0" y="${{y}}" width="${{rectW}}" height="${{rectH}}" rx="2" fill="${{block.color}}" />`);
+            svgParts.push(`<text x="${{rectW + 6}}" y="${{y + rectH - 1}}" font-size="${{legItemSz}}" fill="${{legTextCol}}">${{block.clade}}</text>`);
             lI++;
         }});
         if (seenClades.size > 12) {{
-            const y = 30 + lI * 15;
-            svgParts.push(`<text x="0" y="${{y + 7}}" font-size="8.5" fill="#94a3b8">+ ${{seenClades.size - 12}} more...</text>`);
+            const y = itemStartY + lI * lineGap;
+            svgParts.push(`<text x="0" y="${{y + rectH - 1}}" font-size="${{(8.5 * textScale).toFixed(1)}}" fill="#94a3b8">+ ${{seenClades.size - 12}} more...</text>`);
         }}
     }} else {{
-        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Branch Color: Gene Presence</text>`);
-        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(presence combinations)</text>`);
+        svgParts.push(`<text x="0" y="0" font-size="${{legTitleSz}}" font-weight="700" fill="${{legTitleCol}}">Branch Color: Gene Presence</text>`);
+        svgParts.push(`<text x="0" y="${{Math.round(14 * textScale)}}" font-size="${{legSubSz}}" fill="${{legSubCol}}">(presence combinations)</text>`);
 
         const noneCol = isDark ? '#334155' : '#cbd5e1';
         const allCol = isDark ? '#ffffff' : '#111827';
@@ -3853,9 +3877,9 @@ function renderCircularTree() {{
 
         let lI = 0;
         uniqueCols.forEach((label, col) => {{
-            const y = 30 + lI * 16;
-            svgParts.push(`<rect x="0" y="${{y}}" width="18" height="8" rx="2" fill="${{col}}" />`);
-            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9.5" fill="${{legTextCol}}">${{label}}</text>`);
+            const y = itemStartY + lI * lineGap;
+            svgParts.push(`<rect x="0" y="${{y}}" width="${{rectW}}" height="${{rectH}}" rx="2" fill="${{col}}" />`);
+            svgParts.push(`<text x="${{rectW + 6}}" y="${{y + rectH - 1}}" font-size="${{legItemSz}}" fill="${{legTextCol}}">${{label}}</text>`);
             lI++;
         }});
     }}
@@ -4017,6 +4041,7 @@ function exportTreeSvg() {{
 
 // ---- Presentation Slide Export Engine ----
 let EXPORT_SLIDE_THEME = 'light';
+let EXPORT_SLIDE_SCALE = 1.0;
 let EXPORT_RENDERING = false;
 let EXPORT_QUEUED = false;
 let MODAL_ORIG_TOPN = null;
@@ -4040,11 +4065,24 @@ function setExportSlideTheme(theme) {{
     refreshExportSlidePreview();
 }}
 
+function setExportSlideScale(scale) {{
+    EXPORT_SLIDE_SCALE = parseFloat(scale) || 1.0;
+    const sel = document.getElementById('export-scale-select');
+    if (sel && sel.value !== String(EXPORT_SLIDE_SCALE)) {{
+        sel.value = String(EXPORT_SLIDE_SCALE);
+    }}
+    refreshExportSlidePreview();
+}}
+
 function openExportModal() {{
     const modal = document.getElementById('export-slide-modal');
     if (!modal) return;
     modal.style.display = 'flex';
     setExportSlideTheme(EXPORT_SLIDE_THEME || 'light');
+    const scaleSelect = document.getElementById('export-scale-select');
+    if (scaleSelect) {{
+        scaleSelect.value = String(EXPORT_SLIDE_SCALE || 1.0);
+    }}
     const titleInput = document.getElementById('export-custom-title');
     if (titleInput) {{
         titleInput.value = '';
@@ -4533,20 +4571,22 @@ function drawCanvasRoundedRect(ctx, x, y, w, h, r) {{
 }}
 
 function drawCanvasPill(ctx, text, x, y, bg, color, border, fontSize = 13, bold = false) {{
-    ctx.font = `${{bold ? 'bold ' : '600 '}}${{fontSize}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const pillScale = EXPORT_SLIDE_SCALE || 1.0;
+    const scaledFontSize = (fontSize * pillScale).toFixed(2);
+    ctx.font = `${{bold ? 'bold ' : '600 '}}${{scaledFontSize}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     const metrics = ctx.measureText(text);
-    const pw = metrics.width + 16;
-    const ph = fontSize + 12;
+    const pw = metrics.width + 16 * pillScale;
+    const ph = scaledFontSize * 1.0 + 12 * pillScale;
     drawCanvasRoundedRect(ctx, x, y - ph / 2, pw, ph, ph / 2);
     ctx.fillStyle = bg;
     ctx.fill();
     if (border) {{
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 * pillScale;
         ctx.strokeStyle = border;
         ctx.stroke();
     }}
     ctx.fillStyle = color;
-    ctx.fillText(text, x + 8, y + fontSize / 3);
+    ctx.fillText(text, x + 8 * pillScale, y + scaledFontSize / 3);
     return pw;
 }}
 
@@ -4554,6 +4594,10 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     const theme = options.theme || EXPORT_SLIDE_THEME || 'light';
     const partnerLimit = parseInt(options.partnerLimit || document.getElementById('export-partner-count')?.value || 15);
     const customTitle = (options.customTitle || document.getElementById('export-custom-title')?.value || '').trim();
+    const uiScale = parseFloat(options.scale) || EXPORT_SLIDE_SCALE || 1.0;
+    // Scales the px sizes embedded in a ctx.font spec string/template so the whole
+    // presentation slide (text + everything sized off it) enlarges together.
+    const fs = (spec) => String(spec).replace(/(\\d+(?:\\.\\d+)?)px/g, (_m, n) => `${{(parseFloat(n) * uiScale).toFixed(2)}}px`);
 
     const SW = 2560;
     const SH = 1440;
@@ -4669,7 +4713,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     }}
 
     // Draw Slide Title
-    ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textPrimary;
     ctx.fillText(slideTitle, 52, 68);
 
@@ -4682,10 +4726,10 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
     // Draw Branding Watermark on Top Right
     ctx.textAlign = 'right';
-    ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textPrimary;
     ctx.fillText('DOLLO NETWORK EXPLORER', SW - 52, 62);
-    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textMuted;
     ctx.fillText('Dollo Parsimony Co-Loss Analysis • 196 Genomes', SW - 52, 82);
     ctx.textAlign = 'left';
@@ -4698,7 +4742,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     drawCanvasRoundedRect(ctx, vx, vy, vw, vh, 16);
     ctx.fillStyle = P.cardBg;
     ctx.fill();
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * uiScale;
     ctx.strokeStyle = P.cardBorder;
     ctx.stroke();
 
@@ -4709,10 +4753,13 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         if (getEffectiveTreeTheme() !== targetTreeTheme) {{
             setTreeTheme(targetTreeTheme);
         }}
+        renderCircularTree({{ textScale: uiScale }});
         const svgEl = document.getElementById('tree-svg');
         const svgData = new XMLSerializer().serializeToString(svgEl);
         if (getEffectiveTreeTheme() !== origTreeTheme) {{
             setTreeTheme(origTreeTheme);
+        }} else {{
+            renderCircularTree();
         }}
 
         const svgBlob = new Blob([svgData], {{ type: 'image/svg+xml;charset=utf-8' }});
@@ -4749,12 +4796,25 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             }}
         }}
 
-        // Cytoscape network
+        // Cytoscape network (temporarily bump label/border sizes so exported text stays legible at the chosen scale)
+        const cyStyleOverride = cy.style()
+            .selector('node').style({{ 'font-size': 10 * uiScale, 'text-margin-y': 4 * uiScale }})
+            .selector('node.focus').style({{ 'font-size': 13.5 * uiScale, 'border-width': 3.5 * uiScale }})
+            .selector('node.cluster-label').style({{ 'font-size': 13 * uiScale }});
+        cyStyleOverride.update();
+
         const cyPngUri = cy.png({{
             full: true,
             scale: 2.5,
             bg: P.graphBg
         }});
+
+        cy.style()
+            .selector('node').style({{ 'font-size': 10, 'text-margin-y': 4 }})
+            .selector('node.focus').style({{ 'font-size': 13.5, 'border-width': 3.5 }})
+            .selector('node.cluster-label').style({{ 'font-size': 13 }})
+            .update();
+
         const cyImg = new Image();
         await new Promise((res, rej) => {{
             cyImg.onload = res;
@@ -4780,15 +4840,15 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         drawCanvasRoundedRect(ctx, legX, legY, legW, legH, 8);
         ctx.fillStyle = P.legendBg;
         ctx.fill();
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 * uiScale;
         ctx.strokeStyle = P.legendBorder;
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(legX + 22, legY + 23, 4.5, 0, 2 * Math.PI);
+        ctx.arc(legX + 22, legY + 23, 4.5 * uiScale, 0, 2 * Math.PI);
         ctx.fillStyle = '#38bdf8';
         ctx.fill();
-        ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
         ctx.fillText('CO-LOSS STRENGTH (JACCARD)', legX + 34, legY + 27);
 
@@ -4806,16 +4866,16 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         drawCanvasRoundedRect(ctx, barX, barY, barW, barH, 4);
         ctx.fillStyle = grad;
         ctx.fill();
-        ctx.lineWidth = 0.8;
+        ctx.lineWidth = 0.8 * uiScale;
         ctx.strokeStyle = P.cardBorder;
         ctx.stroke();
 
-        ctx.font = '600 11px ui-monospace, SFMono-Regular, monospace';
+        ctx.font = fs('600 11px ui-monospace, SFMono-Regular, monospace');
         ctx.fillStyle = P.textMuted;
         ctx.fillText('0.20', barX - 1, barY + 24);
         ctx.fillText('≥0.65', barX + barW - 28, barY + 24);
     }} else {{
-        ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textMuted;
         ctx.textAlign = 'center';
         ctx.fillText('No active network graph view', vx + vw / 2, vy + vh / 2);
@@ -4830,7 +4890,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     drawCanvasRoundedRect(ctx, sx, sy, sw, sh, 16);
     ctx.fillStyle = P.cardBg;
     ctx.fill();
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * uiScale;
     ctx.strokeStyle = P.cardBorder;
     ctx.stroke();
 
@@ -4843,11 +4903,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
     if (isTree) {{
         // ---- Species Tree Pairwise Matrix Slide Panel ----
-        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textPrimary;
         ctx.fillText('Pairwise Co-Loss Matrix', sx + 35, sy + 44);
 
-        ctx.font = '13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
         ctx.fillText('Pairwise Jaccard co-loss values across independent Dollo loss events', sx + 35, sy + 70);
 
@@ -4867,11 +4927,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
                 const colDot = TREE_PALETTE[j % TREE_PALETTE.length];
                 
                 ctx.beginPath();
-                ctx.arc(colCenterX, gridStartY - 24, 5.5, 0, 2 * Math.PI);
+                ctx.arc(colCenterX, gridStartY - 24, 5.5 * uiScale, 0, 2 * Math.PI);
                 ctx.fillStyle = colDot;
                 ctx.fill();
 
-                ctx.font = `bold ${{cellSize < 65 ? 12 : 14}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.font = fs(`bold ${{cellSize < 65 ? 12 : 14}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`);
                 ctx.fillStyle = P.textPrimary;
                 ctx.textAlign = 'center';
                 ctx.fillText(gCol, colCenterX, gridStartY - 38);
@@ -4883,11 +4943,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
                 const rowDot = TREE_PALETTE[i % TREE_PALETTE.length];
 
                 ctx.beginPath();
-                ctx.arc(gridStartX - 18, rowCenterY, 5.5, 0, 2 * Math.PI);
+                ctx.arc(gridStartX - 18, rowCenterY, 5.5 * uiScale, 0, 2 * Math.PI);
                 ctx.fillStyle = rowDot;
                 ctx.fill();
 
-                ctx.font = `bold ${{cellSize < 65 ? 12 : 14}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.font = fs(`bold ${{cellSize < 65 ? 12 : 14}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`);
                 ctx.fillStyle = P.textPrimary;
                 ctx.textAlign = 'right';
                 ctx.fillText(gRow, gridStartX - 30, rowCenterY + 4);
@@ -4902,11 +4962,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
                     if (i === j) {{
                         ctx.fillStyle = isDark ? '#1a2438' : '#f1f5f9';
                         ctx.fill();
-                        ctx.lineWidth = 1;
+                        ctx.lineWidth = 1 * uiScale;
                         ctx.strokeStyle = P.tableRowBorder;
                         ctx.stroke();
 
-                        ctx.font = `bold ${{cellSize < 65 ? 13 : 15}}px ui-monospace, monospace`;
+                        ctx.font = fs(`bold ${{cellSize < 65 ? 13 : 15}}px ui-monospace, monospace`);
                         ctx.fillStyle = P.textMuted;
                         ctx.textAlign = 'center';
                         ctx.fillText('1.00', cX + cW / 2, cY + cH / 2 + 5);
@@ -4917,11 +4977,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
                         ctx.fillStyle = cellColor;
                         ctx.fill();
-                        ctx.lineWidth = 1;
+                        ctx.lineWidth = 1 * uiScale;
                         ctx.strokeStyle = isDark ? '#1e293b' : '#e2e8f0';
                         ctx.stroke();
 
-                        ctx.font = `bold ${{cellSize < 65 ? 13 : 16}}px ui-monospace, monospace`;
+                        ctx.font = fs(`bold ${{cellSize < 65 ? 13 : 16}}px ui-monospace, monospace`);
                         ctx.fillStyle = jaccard <= 0.001 ? P.textMuted : '#ffffff';
                         ctx.textAlign = 'center';
                         ctx.fillText(cellVal, cX + cW / 2, cY + cH / 2 + 5);
@@ -4939,11 +4999,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             drawCanvasRoundedRect(ctx, legX, legY, legW, legH, 8);
             ctx.fillStyle = P.legendBg;
             ctx.fill();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1 * uiScale;
             ctx.strokeStyle = P.legendBorder;
             ctx.stroke();
 
-            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
             ctx.textAlign = 'center';
             ctx.fillText('CO-LOSS STRENGTH (JACCARD)', legX + legW / 2, legY + 16);
@@ -4962,7 +5022,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             ctx.fillStyle = grad;
             ctx.fill();
 
-            ctx.font = '600 10.5px ui-monospace, SFMono-Regular, monospace';
+            ctx.font = fs('600 10.5px ui-monospace, SFMono-Regular, monospace');
             ctx.fillStyle = P.textMuted;
             ctx.textAlign = 'left';
             ctx.fillText('0.20 (Low)', barX, legY + 42);
@@ -4972,7 +5032,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
             // 4. Gene Status Summary Table
             const sumStartY = legY + legH + 26;
-            ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textPrimary;
             ctx.fillText(`Genes on Tree (${{nGenes}})`, sx + 35, sumStartY);
 
@@ -4981,7 +5041,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             ctx.fillStyle = P.tableHeaderBg;
             ctx.fill();
 
-            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textMuted;
             ctx.fillText('GENE', sx + 50, thY + 19);
             ctx.fillText('DOLLO LOSSES', sx + 250, thY + 19);
@@ -5005,16 +5065,16 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
                 const midY = rowY + rowH / 2;
                 ctx.beginPath();
-                ctx.arc(sx + 50, midY, 5, 0, 2 * Math.PI);
+                ctx.arc(sx + 50, midY, 5 * uiScale, 0, 2 * Math.PI);
                 ctx.fillStyle = col;
                 ctx.fill();
 
-                ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.font = fs('bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
                 ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(g, sx + 64, midY);
 
-                ctx.font = '600 12.5px ui-monospace, monospace';
+                ctx.font = fs('600 12.5px ui-monospace, monospace');
                 ctx.fillStyle = P.textSecondary;
                 ctx.fillText(`${{losses}} losses`, sx + 250, midY);
                 ctx.fillText(`${{presCount}} / 196 species (${{presPct}}%)`, sx + 450, midY);
@@ -5036,36 +5096,36 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             drawCanvasRoundedRect(ctx, sx + 35, cardY, sw - 70, 180, 12);
             ctx.fillStyle = P.tableRowAlt;
             ctx.fill();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1 * uiScale;
             ctx.strokeStyle = P.tableRowBorder;
             ctx.stroke();
 
             ctx.beginPath();
-            ctx.arc(sx + 65, cardY + 40, 8, 0, 2 * Math.PI);
+            ctx.arc(sx + 65, cardY + 40, 8 * uiScale, 0, 2 * Math.PI);
             ctx.fillStyle = col;
             ctx.fill();
 
-            ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textPrimary;
             ctx.fillText(g, sx + 85, cardY + 48);
 
-            ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
             ctx.fillText(`• Dollo Loss Events: ${{losses}} independent branch losses`, sx + 65, cardY + 88);
             ctx.fillText(`• Genome Presence: ${{presCount}}/196 species (${{presPct}}%)`, sx + 65, cardY + 116);
 
-            ctx.font = 'italic 13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('italic 13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textMuted;
             ctx.fillText('Pairwise matrix requires at least 2 genes on the tree.', sx + 65, cardY + 152);
         }} else {{
-            ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textMuted;
             ctx.fillText('No genes currently loaded on the tree.', sx + 50, sy + 180);
         }}
     }} else {{
         if (selectedGene) {{
         // Selected Gene Summary
-        ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textPrimary;
         ctx.fillText(selectedGene, sx + 25, sy + 44);
         const nameW = ctx.measureText(selectedGene).width;
@@ -5076,11 +5136,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         }}
 
         // Loss Events
-        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
         ctx.fillText('Independent Dollo loss events: ', sx + 25, sy + 76);
         const metaW = ctx.measureText('Independent Dollo loss events: ').width;
-        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textPrimary;
         ctx.fillText(`${{geneInfo ? geneInfo.l : (GM[selectedGene] || 0)}} losses`, sx + 25 + metaW, sy + 76);
 
@@ -5092,42 +5152,42 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             drawCanvasRoundedRect(ctx, sx + 25, clBoxY, clBoxW, clBoxH, 6);
             ctx.fillStyle = isDark ? 'rgba(26,32,64,0.85)' : '#f1f5f9';
             ctx.fill();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1 * uiScale;
             ctx.strokeStyle = isDark ? '#2a3558' : '#cbd5e1';
             ctx.stroke();
 
             ctx.beginPath();
-            ctx.arc(sx + 40, clBoxY + 17, 5, 0, 2 * Math.PI);
+            ctx.arc(sx + 40, clBoxY + 17, 5 * uiScale, 0, 2 * Math.PI);
             ctx.fillStyle = ccolor;
             ctx.fill();
 
-            ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
             ctx.fillText(`Cluster C${{cid}}:`, sx + 52, clBoxY + 21);
             const tagW = ctx.measureText(`Cluster C${{cid}}:`).width;
 
-            ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
             const fullClText = ` ${{cname}}`;
             ctx.fillText(fullClText.length > 55 ? fullClText.slice(0, 52) + '…' : fullClText, sx + 52 + tagW, clBoxY + 21);
         }}
     }} else if (currentMode === 'single_cluster') {{
         // Single Cluster Summary
-        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = ccolor;
         ctx.fillText(`Cluster C${{currentClusterId}}: ${{cname}}`, sx + 25, sy + 44);
 
         const members = CLUSTERS[currentClusterId] || [];
         const cilCount = members.filter(m => ALL_CILIARY.has(m)).length;
-        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
         ctx.fillText(`${{members.length}} member genes • ${{cilCount}} ciliary (${{((cilCount/Math.max(1,members.length))*100).toFixed(0)}}%)`, sx + 25, sy + 76);
     }} else {{
         // All Clusters Overview Summary
-        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textPrimary;
         ctx.fillText('Leiden Modules Overview', sx + 25, sy + 44);
-        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
         ctx.fillText('80 community clusters partitioned by co-loss concordance', sx + 25, sy + 76);
     }}
@@ -5137,7 +5197,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     ctx.beginPath();
     ctx.moveTo(sx + 25, dividerY);
     ctx.lineTo(sx + sw - 25, dividerY);
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1 * uiScale;
     ctx.strokeStyle = P.headerBorder;
     ctx.stroke();
 
@@ -5158,7 +5218,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     }}
 
     // Table Header Title
-    ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textPrimary;
     const tableTitle = (currentMode === 'single_cluster')
         ? `Cluster Members (${{qualifying.length}} total)`
@@ -5167,7 +5227,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             : `Co-Loss Partners (${{qualifying.length}} qualifying)`);
     ctx.fillText(tableTitle, sx + 25, dividerY + 32);
 
-    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textMuted;
     ctx.fillText(currentMode === 'single_cluster' ? 'Intra-cluster member genes' : `Ranked by Jaccard similarity (J ≥ ${{thresh.toFixed(2)}})`, sx + 25, dividerY + 50);
 
@@ -5178,7 +5238,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     ctx.fillStyle = P.tableHeaderBg;
     ctx.fill();
 
-    ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textMuted;
     ctx.fillText('RANK', sx + 42, thY + 21);
     ctx.fillText('GENE', sx + 115, thY + 21);
@@ -5220,13 +5280,13 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         const midY = rowY + rowH / 2;
 
         // Rank
-        ctx.font = `600 ${{rankFontSize}} ui-monospace, SFMono-Regular, monospace`;
+        ctx.font = fs(`600 ${{rankFontSize}} ui-monospace, SFMono-Regular, monospace`);
         ctx.fillStyle = P.textMuted;
         ctx.textBaseline = 'middle';
         ctx.fillText(`#${{i + 1}}`, sx + 42, midY);
 
         // Gene Name
-        ctx.font = `bold ${{geneFontSize}} -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.font = fs(`bold ${{geneFontSize}} -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`);
         ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
         ctx.textBaseline = 'middle';
         ctx.fillText(p.n, sx + 115, midY);
@@ -5251,12 +5311,12 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             ctx.fillStyle = getJaccardColor(p.j);
             ctx.fill();
 
-            ctx.font = `bold ${{jaccardFontSize}} ui-monospace, SFMono-Regular, monospace`;
+            ctx.font = fs(`bold ${{jaccardFontSize}} ui-monospace, SFMono-Regular, monospace`);
             ctx.fillStyle = P.textPrimary;
             ctx.textBaseline = 'middle';
             ctx.fillText(p.j.toFixed(2), bX + bW + 14, midY);
         }} else {{
-            ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.font = fs('13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
             ctx.textBaseline = 'middle';
             ctx.fillText(`Cluster C${{currentClusterId}}`, sx + 340, midY);
@@ -5264,7 +5324,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
         // Losses
         const pLoss = GM[p.n] !== undefined ? GM[p.n] : (p.l || 0);
-        ctx.font = `600 ${{lossesFontSize}} ui-monospace, SFMono-Regular, monospace`;
+        ctx.font = fs(`600 ${{lossesFontSize}} ui-monospace, SFMono-Regular, monospace`);
         ctx.fillStyle = P.textSecondary;
         ctx.textBaseline = 'middle';
         ctx.fillText(`${{pLoss}}L`, sx + 680, midY);
@@ -5276,11 +5336,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
     // Overflow message or Empty notice
     if (qualifying.length === 0) {{
-        ctx.font = 'italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textMuted;
         ctx.fillText('No qualifying partners meeting current criteria', sx + sw / 2 - 130, rowY + 28);
     }} else if (hasOverflowNote) {{
-        ctx.font = '500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = fs('500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textMuted;
         ctx.fillText(`+ ${{qualifying.length - rowsToDraw}} more qualifying partners in interactive explorer (Jaccard ≥ ${{thresh.toFixed(2)}})`, sx + 30, rowY + 18);
     }}
@@ -5288,7 +5348,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     }}
 
     // 5. Slide Footer Bar
-    ctx.font = '11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = fs('11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.footerText;
     ctx.fillText('Dollo Network Explorer • Dollo Parsimony Co-Loss Analysis Across 196 Eukaryotic Species • Presentation Slide Export', 52, SH - 28);
 
