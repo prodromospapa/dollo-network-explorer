@@ -2116,11 +2116,8 @@ function renderTreeSidebar() {{
     const n = TREE_SELECTED_GENES.length;
     const countBadge = `<span style="font-size:11px; color:#38bdf8; font-weight:600; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:10px;">${{n}} Gene${{n === 1 ? '' : 's'}} on Tree</span>`;
     
-    const isDist = (TREE_MATRIX_METRIC === 'distance');
-    const matrixTitle = isDist ? 'Pairwise Tree Distance Matrix' : 'Pairwise Co-Loss Matrix';
-    const matrixDesc = isDist 
-        ? 'Pairwise evolutionary tree distance (1 - Jaccard) between genes loaded on the tree.'
-        : 'Pairwise Jaccard co-loss values between genes loaded on the tree.';
+    const matrixTitle = 'Pairwise Co-Loss Matrix';
+    const matrixDesc = 'Pairwise Jaccard co-loss values between genes loaded on the tree.';
 
     geneInfoEl.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -2142,7 +2139,7 @@ function renderTreeSidebar() {{
     if (n === 0) {{
         partnerListEl.innerHTML = `
             <div style="padding:24px 16px; text-align:center; color:#94a3b8; font-size:12.5px;">
-                <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">${{TREE_MATRIX_METRIC === 'distance' ? 'Tree Distance Matrix' : 'Co-Loss Matrix'}}</div>
+                <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Co-Loss Matrix</div>
                 <strong style="color:${{isDark ? '#e2e8f0' : '#1e293b'}}; display:block; margin-bottom:6px;">No Genes Loaded on Matrix</strong>
                 Add genes using the search box above, "+ Top Partners", or load genes below to inspect pairwise values.
                 <div style="margin-top:16px; padding:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.25); border-radius:6px; text-align:left;">
@@ -2247,7 +2244,7 @@ function renderTreeSidebar() {{
 
         TREE_SELECTED_GENES.forEach((gCol, j) => {{
             if (i === j) {{
-                const diagVal = (TREE_MATRIX_METRIC === 'distance') ? '0.00' : '1.00';
+                const diagVal = '1.00';
                 rowCells += `
                     <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:600; color:#64748b; background:${{isDark ? '#161e2e' : '#f1f5f9'}}; border:1px solid ${{isDark ? '#1e293b' : '#e2e8f0'}};">
                         ${{diagVal}}
@@ -2255,17 +2252,11 @@ function renderTreeSidebar() {{
                 `;
             }} else {{
                 const jaccard = getPairwiseJaccard(gRow, gCol);
-                const dInfo = getPairwiseTreeDistance(gRow, gCol);
-                const isDist = (TREE_MATRIX_METRIC === 'distance');
-                
-                const cellVal = isDist ? dInfo.dist.toFixed(2) : jaccard.toFixed(2);
-                const bg = isDist ? getTreeDistanceColor(dInfo.dist) : (jaccard <= 0.001 ? (isDark ? '#0c1220' : '#ffffff') : getJaccardColor(jaccard));
-                const textCol = (!isDist && jaccard <= 0.001) ? '#64748b' : '#ffffff';
-                const opacity = (!isDist && jaccard <= 0.001) ? '0.4' : '1';
-                
-                const tipText = isDist
-                    ? `${{gRow}} ↔ ${{gCol}}: Tree Distance = ${{dInfo.dist}} (1 - J) • ${{dInfo.hamming}} discordant species (${{dInfo.onlyA}} ${{gRow}}+, ${{dInfo.onlyB}} ${{gCol}}+) • ${{dInfo.both}} co-retained (Click for interface)`
-                    : `${{gRow}} ↔ ${{gCol}}: Jaccard = ${{jaccard.toFixed(3)}} (Click to view interaction)`;
+                const cellVal = jaccard.toFixed(2);
+                const bg = jaccard <= 0.001 ? (isDark ? '#0c1220' : '#ffffff') : getJaccardColor(jaccard);
+                const textCol = jaccard <= 0.001 ? '#64748b' : '#ffffff';
+                const opacity = jaccard <= 0.001 ? '0.4' : '1';
+                const tipText = `${{gRow}} ↔ ${{gCol}}: Jaccard = ${{jaccard.toFixed(3)}} (Click to view interaction)`;
 
                 rowCells += `
                     <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:700; color:${{textCol}}; background:${{bg}}; opacity:${{opacity}}; border:1px solid ${{isDark ? '#1e293b' : '#e2e8f0'}}; cursor:pointer; transition:transform 0.1s;" 
@@ -2302,13 +2293,9 @@ function renderTreeSidebar() {{
 
     partnerListEl.innerHTML = `
         <div style="padding:12px 10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+            <div style="margin-bottom:6px;">
                 <div style="font-size:10px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px;">
-                    ${{TREE_MATRIX_METRIC === 'distance' ? 'Tree Distance Matrix:' : 'Pairwise Co-Loss Matrix:'}}
-                </div>
-                <div style="display:inline-flex; background:${{isDark ? '#0b1120' : '#f1f5f9'}}; border:1px solid ${{isDark ? '#23304d' : '#cbd5e1'}}; border-radius:4px; padding:1px; gap:2px;">
-                    <button class="btn" style="padding:1px 6px; font-size:9.5px; border:none; ${{TREE_MATRIX_METRIC === 'coloss' ? 'background:#0284c7; color:#fff; font-weight:700;' : 'background:transparent; color:#8892b0;'}}" onclick="setTreeMatrixMetric('coloss')" title="Show Jaccard co-retention similarity">Co-Loss</button>
-                    <button class="btn" style="padding:1px 6px; font-size:9.5px; border:none; ${{TREE_MATRIX_METRIC === 'distance' ? 'background:#0284c7; color:#fff; font-weight:700;' : 'background:transparent; color:#8892b0;'}}" onclick="setTreeMatrixMetric('distance')" title="Show evolutionary tree distance & branch lengths">Tree Distance</button>
+                    Pairwise Co-Loss Matrix
                 </div>
             </div>
             
@@ -2320,21 +2307,12 @@ function renderTreeSidebar() {{
             </div>
 
             <div style="margin-bottom:14px; padding:6px 10px; background:${{isDark ? '#161d31' : '#f1f5f9'}}; border-radius:6px; border:1px solid ${{isDark ? '#23304d' : '#e2e8f0'}};">
-                ${{TREE_MATRIX_METRIC === 'distance' ? `
-                    <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
-                        <span>0.00 (Coupled)</span>
-                        <span style="font-weight:600; color:${{isDark ? '#cbd5e1' : '#334155'}};">Tree Distance (1 - Jaccard)</span>
-                        <span>1.00 (Divergent)</span>
-                    </div>
-                    <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #161e2e, #059669, #0d9488, #0284c7, #6366f1, #d946ef);"></div>
-                ` : `
-                    <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
-                        <span>0.20 (Low)</span>
-                        <span style="font-weight:600; color:${{isDark ? '#cbd5e1' : '#334155'}};">Co-Loss Scale (Jaccard)</span>
-                        <span>&ge;0.65 (Coupled)</span>
-                    </div>
-                    <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
-                `}}
+                <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
+                    <span>0.20 (Low)</span>
+                    <span style="font-weight:600; color:${{isDark ? '#cbd5e1' : '#334155'}};">Co-Loss Scale (Jaccard)</span>
+                    <span>&ge;0.65 (Coupled)</span>
+                </div>
+                <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
             </div>
 
         ${{renderTreeCoevolutionCard(isDark)}}
@@ -3407,16 +3385,6 @@ function getTreeDistanceColor(dist) {{
 }}
 
 function setTreeMatrixMetric(metric) {{
-    TREE_MATRIX_METRIC = metric;
-    if (metric === 'distance') {{
-        TREE_BRANCH_LEN_MODE = 'phylogram';
-        const sel = document.getElementById('tree-branch-len-select');
-        if (sel) sel.value = 'phylogram';
-    }} else {{
-        TREE_BRANCH_LEN_MODE = 'cladogram';
-        const sel = document.getElementById('tree-branch-len-select');
-        if (sel) sel.value = 'cladogram';
-    }}
     if (TREE_LAYOUT) renderCircularTree();
     renderTreeSidebar();
 }}
@@ -4875,14 +4843,13 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
     if (isTree) {{
         // ---- Species Tree Pairwise Matrix Slide Panel ----
-        const isDistSlide = true; // Tree export always presents Tree Distance Matrix
         ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textPrimary;
-        ctx.fillText('Pairwise Tree Distance Matrix', sx + 35, sy + 44);
+        ctx.fillText('Pairwise Co-Loss Matrix', sx + 35, sy + 44);
 
         ctx.font = '13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textSecondary;
-        ctx.fillText('Evolutionary tree distance & profile discordance across 196 genomes', sx + 35, sy + 70);
+        ctx.fillText('Pairwise Jaccard co-loss values across independent Dollo loss events', sx + 35, sy + 70);
 
         const nGenes = TREE_SELECTED_GENES.length;
         if (nGenes >= 2) {{
@@ -4942,20 +4909,11 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
                         ctx.font = `bold ${{cellSize < 65 ? 13 : 15}}px ui-monospace, monospace`;
                         ctx.fillStyle = P.textMuted;
                         ctx.textAlign = 'center';
-                        ctx.fillText(isDistSlide ? '0.00' : '1.00', cX + cW / 2, cY + cH / 2 + 5);
+                        ctx.fillText('1.00', cX + cW / 2, cY + cH / 2 + 5);
                     }} else {{
                         const jaccard = getPairwiseJaccard(gRow, gCol);
-                        const dInfo = getPairwiseTreeDistance(gRow, gCol);
-                        
-                        let cellColor;
-                        let cellVal;
-                        if (isDistSlide) {{
-                            cellColor = getTreeDistanceColor(dInfo.dist);
-                            cellVal = dInfo.dist.toFixed(2);
-                        }} else {{
-                            cellColor = jaccard <= 0.001 ? (isDark ? '#0e1626' : '#ffffff') : getJaccardColor(jaccard);
-                            cellVal = jaccard.toFixed(2);
-                        }}
+                        const cellVal = jaccard.toFixed(2);
+                        const cellColor = jaccard <= 0.001 ? (isDark ? '#0e1626' : '#ffffff') : getJaccardColor(jaccard);
 
                         ctx.fillStyle = cellColor;
                         ctx.fill();
@@ -4964,7 +4922,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
                         ctx.stroke();
 
                         ctx.font = `bold ${{cellSize < 65 ? 13 : 16}}px ui-monospace, monospace`;
-                        ctx.fillStyle = (!isDistSlide && jaccard <= 0.001) ? P.textMuted : '#ffffff';
+                        ctx.fillStyle = jaccard <= 0.001 ? P.textMuted : '#ffffff';
                         ctx.textAlign = 'center';
                         ctx.fillText(cellVal, cX + cW / 2, cY + cH / 2 + 5);
                     }}
@@ -4972,8 +4930,48 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
             }});
             ctx.textAlign = 'left';
 
+            // 3. Clean Co-Loss Scale Legend Card below Grid
+            const legY = gridStartY + nGenes * cellSize + 22;
+            const legW = 280;
+            const legX = sx + 35 + Math.floor((sw - 70 - legW) / 2);
+            const legH = 50;
+
+            drawCanvasRoundedRect(ctx, legX, legY, legW, legH, 8);
+            ctx.fillStyle = P.legendBg;
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = P.legendBorder;
+            ctx.stroke();
+
+            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textSecondary;
+            ctx.textAlign = 'center';
+            ctx.fillText('CO-LOSS STRENGTH (JACCARD)', legX + legW / 2, legY + 16);
+
+            const barW = legW - 36;
+            const barX = legX + 18;
+            const barY = legY + 23;
+            const barH = 7;
+            drawCanvasRoundedRect(ctx, barX, barY, barW, barH, 3.5);
+            const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+            grad.addColorStop(0.00, '#38bdf8');
+            grad.addColorStop(0.25, '#2dd4bf');
+            grad.addColorStop(0.50, '#34d399');
+            grad.addColorStop(0.75, '#fbbf24');
+            grad.addColorStop(1.00, '#f43f5e');
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            ctx.font = '600 10.5px ui-monospace, SFMono-Regular, monospace';
+            ctx.fillStyle = P.textMuted;
+            ctx.textAlign = 'left';
+            ctx.fillText('0.20 (Low)', barX, legY + 42);
+            ctx.textAlign = 'right';
+            ctx.fillText('≥0.65 (Coupled)', barX + barW, legY + 42);
+            ctx.textAlign = 'left';
+
             // 4. Gene Status Summary Table
-            const sumStartY = gridStartY + nGenes * cellSize + 24;
+            const sumStartY = legY + legH + 26;
             ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.fillStyle = P.textPrimary;
             ctx.fillText(`Genes on Tree (${{nGenes}})`, sx + 35, sumStartY);
