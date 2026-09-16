@@ -798,6 +798,7 @@ body.light-theme #tree-toast {
         <label style="margin-left:4px;">Labels:</label>
         <input type="checkbox" id="toggle-labels" checked>
         <button id="btn-theme-toggle" class="btn" style="margin-left:6px;" onclick="toggleSiteTheme()" title="Toggle Dark/Light Site Theme">🌙 Dark</button>
+        <button id="btn-export-slide-header" class="btn btn-accent" style="margin-left:8px; font-weight:600; display:inline-flex; align-items:center; gap:5px;" onclick="openExportModal()" title="Export presentation-ready slide with graph & sidebar results">📊 Export Slide</button>
     </div>
 </div>
 
@@ -864,6 +865,7 @@ body.light-theme #tree-toast {
                     <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="loadCurrentNetworkGenesInTree()" title="Load currently selected gene and top partners">+ Current Gene</button>
                     <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">⟲ Reset</button>
                     <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">📥 SVG</button>
+                    <button class="btn btn-accent" style="padding:4px 8px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;" onclick="openExportModal()" title="Export presentation-ready slide with tree & sidebar results">📊 Export Slide</button>
                 </div>
             </div>
             <div id="tree-viewport" style="flex:1; position:relative; overflow:hidden; background:#0a0e17; cursor:grab; user-select:none;">
@@ -908,6 +910,73 @@ body.light-theme #tree-toast {
 <div id="status-bar">
     <span id="graph-status">Loading network data…</span>
     <div id="loading-pill"><div class="spinner"></div> Loading binary buffers…</div>
+</div>
+
+<!-- Presentation Export Modal -->
+<div id="export-slide-modal" style="display:none; position:fixed; inset:0; background:rgba(2, 6, 23, 0.82); backdrop-filter:blur(6px); z-index:10000; align-items:center; justify-content:center; padding:16px;">
+    <div id="export-modal-dialog" style="background:#0f172a; border:1px solid #334155; border-radius:12px; width:95%; max-width:1250px; max-height:94vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.85); overflow:hidden; color:#f8fafc; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
+        <!-- Modal Header -->
+        <div style="padding:12px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; background:#111827; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">📊</span>
+                <div>
+                    <div style="font-size:15px; font-weight:700; color:#f8fafc;">Export Presentation Slide <span style="font-size:12px; font-weight:400; color:#94a3b8;">(16:9 Widescreen • 2560 × 1440)</span></div>
+                    <div style="font-size:11.5px; color:#8892b0;">Combines the current visualization with sidebar results into a presentation-ready figure</div>
+                </div>
+            </div>
+            <button onclick="closeExportModal()" style="background:transparent; border:none; color:#94a3b8; font-size:22px; cursor:pointer; padding:2px 8px; border-radius:4px; line-height:1;" title="Close (Esc)">&times;</button>
+        </div>
+
+        <!-- Modal Toolbar -->
+        <div style="padding:10px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:#0b1120; font-size:12px; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <!-- Theme Option -->
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="color:#94a3b8; font-weight:500;">Slide Theme:</span>
+                    <button id="export-theme-light" class="btn" style="padding:3px 10px; font-size:11px;" onclick="setExportSlideTheme('light')">☀️ Light (Slide Friendly)</button>
+                    <button id="export-theme-dark" class="btn" style="padding:3px 10px; font-size:11px;" onclick="setExportSlideTheme('dark')">🌙 Dark</button>
+                </div>
+                <!-- Partner Count -->
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="color:#94a3b8; font-weight:500;">Partners:</span>
+                    <select id="export-partner-count" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;" onchange="refreshExportSlidePreview()">
+                        <option value="10">Top 10</option>
+                        <option value="15" selected>Top 15</option>
+                        <option value="20">Top 20</option>
+                        <option value="25">Top 25</option>
+                    </select>
+                </div>
+                <!-- Custom Title -->
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="color:#94a3b8; font-weight:500;">Title:</span>
+                    <input type="text" id="export-custom-title" placeholder="Auto title (or type custom title)..." style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:11.5px; width:220px; outline:none;" oninput="refreshExportSlidePreview()">
+                </div>
+            </div>
+            <!-- Action Buttons -->
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button id="btn-export-copy" class="btn" style="padding:5px 14px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px; background:#162544; border-color:#38bdf8; color:#7dd3fc;" onclick="copyExportSlideToClipboard()" title="Copy image to clipboard for instant pasting into PowerPoint/Keynote/Google Slides">
+                    <span>📋</span> Copy to Clipboard
+                </button>
+                <button id="btn-export-download" class="btn btn-accent" style="padding:5px 16px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="downloadExportSlidePng()" title="Download full resolution 2560×1440 PNG file">
+                    <span>📥</span> Download PNG
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div id="export-preview-container" style="flex:1; overflow:auto; padding:16px; display:flex; align-items:center; justify-content:center; background:#020617; position:relative; min-height:420px;">
+            <div id="export-loading-spinner" style="display:none; position:absolute; inset:0; background:rgba(2,6,23,0.7); backdrop-filter:blur(3px); z-index:10; align-items:center; justify-content:center; color:#38bdf8; font-size:14px; font-weight:600;">
+                <div class="spinner" style="margin-right:10px;"></div> Rendering high-resolution slide...
+            </div>
+            <canvas id="export-preview-canvas" style="max-width:100%; max-height:calc(88vh - 180px); box-shadow:0 12px 36px rgba(0,0,0,0.6); border-radius:8px; object-fit:contain; border:1px solid #1e293b;"></canvas>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:8px 20px; border-top:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; background:#111827; font-size:11px; color:#64748b; flex-shrink:0;">
+            <span>Resolution: 2560 × 1440 px • 16:9 Aspect Ratio • Optimized for PowerPoint, Keynote & Google Slides</span>
+            <span id="export-toast-msg" style="color:#38bdf8; font-weight:600; min-height:16px;"></span>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1292,6 +1361,7 @@ function renderSidebar(name) {
             <span style="overflow:hidden; text-overflow:ellipsis;">${name} ${ciliaBadge}</span>
             <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
                 <button class="btn btn-tree-add" onclick="addTreeGene('${name}')" title="Add ${name} to Species Tree">🌳 Add to Tree</button>
+                <button class="btn btn-accent" style="padding:2px 8px; font-size:11px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with graph & sidebar results">📊 Export Slide</button>
                 <a href="${uniprotUrl}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open in UniProt">UniProt ↗</a>
             </div>
         </h2>
@@ -1845,7 +1915,10 @@ function showSingleCluster(cid, highlightGene) {
         <a class="back-to-clusters" onclick="showAllClusters();">← All Leiden Clusters</a>
         <h2 style="color:${color};">C${cid}: ${cname}</h2>
         <div class="meta">${shown.length} genes • Jaccard &amp; Top-N filters inactive for clusters</div>
-        <button class="btn btn-tree-add" style="margin-top:7px;" onclick="addClusterGenesToTree(${cid})" title="Add top members of this cluster to Species Tree">🌳 Add Cluster to Tree</button>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:7px;">
+            <button class="btn btn-tree-add" onclick="addClusterGenesToTree(${cid})" title="Add top members of this cluster to Species Tree">🌳 Add Cluster to Tree</button>
+            <button class="btn btn-accent" style="font-size:11px; padding:2px 8px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with cluster graph & members">📊 Export Slide</button>
+        </div>
     `;
 
     const elements = [];
@@ -2756,6 +2829,678 @@ function exportTreeSvg() {
     a.download = `species_tree_${TREE_SELECTED_GENES.join('_')}.svg`;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// ---- Presentation Slide Export Engine ----
+let EXPORT_SLIDE_THEME = 'light';
+let EXPORT_RENDERING = false;
+
+function setExportSlideTheme(theme) {
+    EXPORT_SLIDE_THEME = theme;
+    const btnLight = document.getElementById('export-theme-light');
+    const btnDark = document.getElementById('export-theme-dark');
+    if (btnLight) {
+        btnLight.style.background = theme === 'light' ? '#0284c7' : '#161d31';
+        btnLight.style.borderColor = theme === 'light' ? '#38bdf8' : '#334155';
+        btnLight.style.color = theme === 'light' ? '#ffffff' : '#94a3b8';
+    }
+    if (btnDark) {
+        btnDark.style.background = theme === 'dark' ? '#0284c7' : '#161d31';
+        btnDark.style.borderColor = theme === 'dark' ? '#38bdf8' : '#334155';
+        btnDark.style.color = theme === 'dark' ? '#ffffff' : '#94a3b8';
+    }
+    refreshExportSlidePreview();
+}
+
+function openExportModal() {
+    const modal = document.getElementById('export-slide-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    setExportSlideTheme(EXPORT_SLIDE_THEME || 'light');
+    const titleInput = document.getElementById('export-custom-title');
+    if (titleInput) {
+        titleInput.value = '';
+    }
+    refreshExportSlidePreview();
+}
+
+function closeExportModal() {
+    const modal = document.getElementById('export-slide-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeExportModal();
+});
+
+function drawCanvasRoundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function drawCanvasPill(ctx, text, x, y, bg, color, border, fontSize = 13, bold = false) {
+    ctx.font = `${bold ? 'bold ' : '600 '}${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const metrics = ctx.measureText(text);
+    const pw = metrics.width + 16;
+    const ph = fontSize + 12;
+    drawCanvasRoundedRect(ctx, x, y - ph / 2, pw, ph, ph / 2);
+    ctx.fillStyle = bg;
+    ctx.fill();
+    if (border) {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = border;
+        ctx.stroke();
+    }
+    ctx.fillStyle = color;
+    ctx.fillText(text, x + 8, y + fontSize / 3);
+    return pw;
+}
+
+async function generatePresentationSlideCanvas(options = {}) {
+    const theme = options.theme || EXPORT_SLIDE_THEME || 'light';
+    const partnerLimit = parseInt(options.partnerLimit || document.getElementById('export-partner-count')?.value || 15);
+    const customTitle = (options.customTitle || document.getElementById('export-custom-title')?.value || '').trim();
+
+    const SW = 2560;
+    const SH = 1440;
+    const canvas = document.createElement('canvas');
+    canvas.width = SW;
+    canvas.height = SH;
+    const ctx = canvas.getContext('2d');
+
+    const isDark = (theme === 'dark');
+    const P = isDark ? {
+        bg: '#0a0e17',
+        cardBg: '#111827',
+        cardBorder: '#23304d',
+        textPrimary: '#f8fafc',
+        textSecondary: '#cbd5e1',
+        textMuted: '#64748b',
+        headerBorder: '#1e293b',
+        tableHeaderBg: '#162238',
+        tableRowAlt: '#0c1220',
+        tableRowBorder: '#1a243a',
+        badgeBg: '#162544',
+        badgeText: '#38bdf8',
+        badgeBorder: '#254a7c',
+        ciliaBadgeBg: 'rgba(56, 189, 248, 0.20)',
+        ciliaBadgeText: '#38bdf8',
+        ciliaBadgeBorder: 'rgba(56, 189, 248, 0.40)',
+        barBg: '#1e293b',
+        graphBg: '#070b13',
+        legendBg: 'rgba(17, 24, 39, 0.94)',
+        legendBorder: '#23304d',
+        footerText: '#475569'
+    } : {
+        bg: '#f8fafc',
+        cardBg: '#ffffff',
+        cardBorder: '#e2e8f0',
+        textPrimary: '#0f172a',
+        textSecondary: '#334155',
+        textMuted: '#64748b',
+        headerBorder: '#e2e8f0',
+        tableHeaderBg: '#f1f5f9',
+        tableRowAlt: '#f8fafc',
+        tableRowBorder: '#f1f5f9',
+        badgeBg: '#e0f2fe',
+        badgeText: '#0369a1',
+        badgeBorder: '#bae6fd',
+        ciliaBadgeBg: 'rgba(2, 132, 199, 0.12)',
+        ciliaBadgeText: '#0284c7',
+        ciliaBadgeBorder: 'rgba(2, 132, 199, 0.30)',
+        barBg: '#e2e8f0',
+        graphBg: '#ffffff',
+        legendBg: 'rgba(255, 255, 255, 0.94)',
+        legendBorder: '#cbd5e1',
+        footerText: '#94a3b8'
+    };
+
+    // 1. Fill slide background
+    ctx.fillStyle = P.bg;
+    ctx.fillRect(0, 0, SW, SH);
+
+    // 2. Header Section
+    let slideTitle = '';
+    const badges = [];
+    const isTree = (currentMode === 'tree');
+
+    if (customTitle) {
+        slideTitle = customTitle;
+    } else if (isTree) {
+        slideTitle = TREE_SELECTED_GENES.length > 0
+            ? `${TREE_SELECTED_GENES.join(', ')} • Eukaryotic Species Tree`
+            : 'Eukaryotic Species Tree (196 Species)';
+    } else if (selectedGene) {
+        slideTitle = `${selectedGene} • Gene Co-Loss Ego Network`;
+    } else if (currentMode === 'single_cluster') {
+        slideTitle = `Cluster C${currentClusterId}: ${CLUSTER_NAMES[currentClusterId] || 'Community'}`;
+    } else {
+        slideTitle = 'Dollo Co-Loss Network Modules Overview';
+    }
+
+    // Badges based on mode
+    if (isTree) {
+        const taxLabel = TREE_TAX_LEVEL === 'tcs' ? 'TCS Clades' : (TREE_TAX_LEVEL === 'detailed' ? 'Phylum' : TREE_TAX_LEVEL.charAt(0).toUpperCase() + TREE_TAX_LEVEL.slice(1));
+        badges.push(`Taxonomy: ${taxLabel}`);
+        badges.push(`Branches: ${TREE_BRANCH_MODE === 'taxonomy' ? 'Taxonomy Clade' : 'Gene Parsimony'}`);
+        badges.push(`Lengths: ${TREE_BRANCH_LEN_MODE === 'phylogram' ? 'Phylogram' : 'Cladogram'}`);
+        badges.push('196 Eukaryotic Species');
+    } else if (selectedGene || currentMode === 'network' || currentMode === 'gene') {
+        const thresh = parseFloat(document.getElementById('thresh')?.value || 0.20).toFixed(2);
+        const topn = document.getElementById('toggle-topn-max')?.checked ? 'Max' : (document.getElementById('topn')?.value || 25);
+        badges.push(`Jaccard ≥ ${thresh}`);
+        badges.push(`Showing Top ${topn}`);
+        badges.push(`Filter: ${geneFilterMode.replace(/_/g, ' ').toUpperCase()}`);
+        badges.push(`Layout: ${document.getElementById('layout-select')?.value === 'cose' ? 'Force (Spread)' : 'Radial'}`);
+    } else if (currentMode === 'single_cluster') {
+        badges.push('Leiden Module');
+        badges.push(`${(CLUSTERS[currentClusterId] || []).length} Genes`);
+        badges.push(`Filter: ${geneFilterMode.replace(/_/g, ' ').toUpperCase()}`);
+    } else {
+        badges.push('80 Leiden Modules');
+        badges.push('11,236 Genes');
+        badges.push('196 Eukaryotic Species');
+    }
+
+    // Draw Slide Title
+    ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.textPrimary;
+    ctx.fillText(slideTitle, 52, 68);
+
+    // Draw Subtitle / Parameter Badges
+    let badgeX = 52;
+    badges.forEach(b => {
+        const w = drawCanvasPill(ctx, b, badgeX, 108, P.badgeBg, P.badgeText, P.badgeBorder, 13, false);
+        badgeX += w + 8;
+    });
+
+    // Draw Branding Watermark on Top Right
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.textPrimary;
+    ctx.fillText('DOLLO NETWORK EXPLORER', SW - 52, 62);
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.textMuted;
+    ctx.fillText('Dollo Parsimony Co-Loss Analysis • 196 Genomes', SW - 52, 82);
+    ctx.textAlign = 'left';
+
+    // 3. Left Visualization Panel
+    const vx = 48;
+    const vy = 145;
+    const vw = 1570;
+    const vh = 1225;
+    drawCanvasRoundedRect(ctx, vx, vy, vw, vh, 16);
+    ctx.fillStyle = P.cardBg;
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P.cardBorder;
+    ctx.stroke();
+
+    if (isTree) {
+        // Render circular tree SVG
+        const origTreeTheme = TREE_THEME;
+        const targetTreeTheme = isDark ? 'dark' : 'light';
+        if (getEffectiveTreeTheme() !== targetTreeTheme) {
+            setTreeTheme(targetTreeTheme);
+        }
+        const svgEl = document.getElementById('tree-svg');
+        const svgData = new XMLSerializer().serializeToString(svgEl);
+        if (getEffectiveTreeTheme() !== origTreeTheme) {
+            setTreeTheme(origTreeTheme);
+        }
+
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        const treeImg = new Image();
+        await new Promise((res, rej) => {
+            treeImg.onload = res;
+            treeImg.onerror = rej;
+            treeImg.src = svgUrl;
+        });
+        URL.revokeObjectURL(svgUrl);
+
+        const pad = 24;
+        const maxW = vw - pad * 2;
+        const maxH = vh - pad * 2;
+        const scale = Math.min(maxW / treeImg.width, maxH / treeImg.height);
+        const dw = treeImg.width * scale;
+        const dh = treeImg.height * scale;
+        const dx = vx + (vw - dw) / 2;
+        const dy = vy + (vh - dh) / 2;
+        ctx.drawImage(treeImg, dx, dy, dw, dh);
+    } else if (cy && cy.nodes().length > 0) {
+        // Cytoscape network
+        const cyPngUri = cy.png({
+            full: true,
+            scale: 2.5,
+            bg: P.graphBg
+        });
+        const cyImg = new Image();
+        await new Promise((res, rej) => {
+            cyImg.onload = res;
+            cyImg.onerror = rej;
+            cyImg.src = cyPngUri;
+        });
+
+        const pad = 30;
+        const maxW = vw - pad * 2;
+        const maxH = vh - pad * 2;
+        const scale = Math.min(maxW / cyImg.width, maxH / cyImg.height);
+        const dw = cyImg.width * scale;
+        const dh = cyImg.height * scale;
+        const dx = vx + (vw - dw) / 2;
+        const dy = vy + (vh - dh) / 2;
+        ctx.drawImage(cyImg, dx, dy, dw, dh);
+
+        // Draw Jaccard Edge Color Scale Legend Card in bottom-left of visualization panel
+        const legX = vx + 30;
+        const legY = vy + vh - 95;
+        const legW = 340;
+        const legH = 70;
+        drawCanvasRoundedRect(ctx, legX, legY, legW, legH, 8);
+        ctx.fillStyle = P.legendBg;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = P.legendBorder;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(legX + 22, legY + 23, 4.5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+        ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textSecondary;
+        ctx.fillText('CO-LOSS STRENGTH (JACCARD)', legX + 34, legY + 27);
+
+        const barX = legX + 22;
+        const barY = legY + 38;
+        const barW = 220;
+        const barH = 12;
+        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        grad.addColorStop(0.00, '#38bdf8');
+        grad.addColorStop(0.25, '#2dd4bf');
+        grad.addColorStop(0.50, '#34d399');
+        grad.addColorStop(0.75, '#fbbf24');
+        grad.addColorStop(1.00, '#f43f5e');
+
+        drawCanvasRoundedRect(ctx, barX, barY, barW, barH, 4);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.lineWidth = 0.8;
+        ctx.strokeStyle = P.cardBorder;
+        ctx.stroke();
+
+        ctx.font = '600 11px ui-monospace, SFMono-Regular, monospace';
+        ctx.fillStyle = P.textMuted;
+        ctx.fillText('0.20', barX - 1, barY + 24);
+        ctx.fillText('≥0.65', barX + barW - 28, barY + 24);
+    } else {
+        ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textMuted;
+        ctx.textAlign = 'center';
+        ctx.fillText('No active network graph view', vx + vw / 2, vy + vh / 2);
+        ctx.textAlign = 'left';
+    }
+
+    // 4. Right Sidebar Results Panel
+    const sx = 1645;
+    const sy = 145;
+    const sw = 865;
+    const sh = 1225;
+    drawCanvasRoundedRect(ctx, sx, sy, sw, sh, 16);
+    ctx.fillStyle = P.cardBg;
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = P.cardBorder;
+    ctx.stroke();
+
+    // Summary Header
+    const targetGene = selectedGene || (isTree && TREE_SELECTED_GENES.length > 0 ? TREE_SELECTED_GENES[0] : null);
+    const geneInfo = targetGene ? (getGeneData(targetGene) || { l: GM[targetGene] || 0, p: [] }) : null;
+    const cid = targetGene ? GENE_CL[targetGene] : (currentMode === 'single_cluster' ? currentClusterId : null);
+    const cname = cid !== undefined && cid !== null ? (CLUSTER_NAMES[cid] || `Cluster ${cid}`) : null;
+    const ccolor = cid !== undefined && cid !== null ? getClusterColor(cid) : '#38bdf8';
+
+    if (isTree) {
+        // Species Tree Summary
+        ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textPrimary;
+        ctx.fillText('Species Tree & Gene Status', sx + 25, sy + 38);
+
+        ctx.font = '13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textSecondary;
+        ctx.fillText(`Tracking ${TREE_SELECTED_GENES.length} gene${TREE_SELECTED_GENES.length === 1 ? '' : 's'} across 196 eukaryotic genomes`, sx + 25, sy + 62);
+
+        let chipY = sy + 88;
+        if (TREE_SELECTED_GENES.length === 0) {
+            ctx.font = 'italic 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textMuted;
+            ctx.fillText('No genes currently on tree (add from sidebar or search)', sx + 25, chipY + 10);
+        } else {
+            TREE_SELECTED_GENES.slice(0, 4).forEach((g, idx) => {
+                const col = TREE_PALETTE[idx % TREE_PALETTE.length];
+                const losses = GM[g] !== undefined ? GM[g] : '—';
+                const pVec = getTreeGenePresence(g);
+                let presCount = 0;
+                for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
+                const presPct = ((presCount / 196) * 100).toFixed(0);
+
+                ctx.beginPath();
+                ctx.arc(sx + 34, chipY + 4, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = col;
+                ctx.fill();
+
+                ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillStyle = P.textPrimary;
+                ctx.fillText(g, sx + 48, chipY + 9);
+                const gW = ctx.measureText(g).width;
+
+                ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillStyle = P.textSecondary;
+                ctx.fillText(`•  ${losses} Dollo losses  •  Present in ${presCount}/196 species (${presPct}%)`, sx + 48 + gW + 10, chipY + 9);
+
+                chipY += 26;
+            });
+        }
+    } else if (selectedGene) {
+        // Selected Gene Summary
+        ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textPrimary;
+        ctx.fillText(selectedGene, sx + 25, sy + 44);
+        const nameW = ctx.measureText(selectedGene).width;
+
+        // Cilia Badge if applicable
+        if (ALL_CILIARY.has(selectedGene)) {
+            const cInfo = CILIA_INFO[selectedGene];
+            let cilText = 'CILIARY GENE';
+            if (cInfo && cInfo.v2) cilText = `SYSCILIA ${cInfo.v2.toUpperCase()}`;
+            else if (cInfo && cInfo.cc) cilText = 'CILIACARTA';
+            drawCanvasPill(ctx, cilText, sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true);
+        }
+
+        // Loss Events
+        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textSecondary;
+        ctx.fillText('Independent Dollo loss events: ', sx + 25, sy + 76);
+        const metaW = ctx.measureText('Independent Dollo loss events: ').width;
+        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textPrimary;
+        ctx.fillText(`${geneInfo ? geneInfo.l : (GM[selectedGene] || 0)} losses`, sx + 25 + metaW, sy + 76);
+
+        // Leiden Cluster Badge Card
+        if (cid !== null && cid !== undefined) {
+            const clBoxY = sy + 94;
+            const clBoxW = sw - 50;
+            const clBoxH = 34;
+            drawCanvasRoundedRect(ctx, sx + 25, clBoxY, clBoxW, clBoxH, 6);
+            ctx.fillStyle = isDark ? 'rgba(26,32,64,0.85)' : '#f1f5f9';
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = isDark ? '#2a3558' : '#cbd5e1';
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(sx + 40, clBoxY + 17, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = ccolor;
+            ctx.fill();
+
+            ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
+            ctx.fillText(`Cluster C${cid}:`, sx + 52, clBoxY + 21);
+            const tagW = ctx.measureText(`Cluster C${cid}:`).width;
+
+            ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textSecondary;
+            const fullClText = ` ${cname}`;
+            ctx.fillText(fullClText.length > 55 ? fullClText.slice(0, 52) + '…' : fullClText, sx + 52 + tagW, clBoxY + 21);
+        }
+    } else if (currentMode === 'single_cluster') {
+        // Single Cluster Summary
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = ccolor;
+        ctx.fillText(`Cluster C${currentClusterId}: ${cname}`, sx + 25, sy + 44);
+
+        const members = CLUSTERS[currentClusterId] || [];
+        const cilCount = members.filter(m => ALL_CILIARY.has(m)).length;
+        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textSecondary;
+        ctx.fillText(`${members.length} member genes • ${cilCount} ciliary (${((cilCount/Math.max(1,members.length))*100).toFixed(0)}%)`, sx + 25, sy + 76);
+    } else {
+        // All Clusters Overview Summary
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textPrimary;
+        ctx.fillText('Leiden Modules Overview', sx + 25, sy + 44);
+        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textSecondary;
+        ctx.fillText('80 community clusters partitioned by co-loss concordance', sx + 25, sy + 76);
+    }
+
+    // Divider Line
+    const dividerY = sy + 145;
+    ctx.beginPath();
+    ctx.moveTo(sx + 25, dividerY);
+    ctx.lineTo(sx + sw - 25, dividerY);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = P.headerBorder;
+    ctx.stroke();
+
+    // Table Section
+    const activeSet = getActiveGeneSet();
+    const thresh = parseFloat(document.getElementById('thresh')?.value || 0.20);
+    let qualifying = [];
+
+    if (targetGene && geneInfo && geneInfo.p) {
+        qualifying = geneInfo.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n)));
+    } else if (currentMode === 'single_cluster') {
+        const members = CLUSTERS[currentClusterId] || [];
+        qualifying = members.map(m => ({
+            n: m,
+            j: 1.0,
+            l: GM[m] || 0
+        }));
+    }
+
+    // Table Header Title
+    ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.textPrimary;
+    const tableTitle = (currentMode === 'single_cluster')
+        ? `Cluster Members (${qualifying.length} total)`
+        : (isTree && targetGene
+            ? `Co-Loss Partners of ${targetGene} (${qualifying.length} qualifying)`
+            : `Co-Loss Partners (${qualifying.length} qualifying)`);
+    ctx.fillText(tableTitle, sx + 25, dividerY + 32);
+
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.textMuted;
+    ctx.fillText(currentMode === 'single_cluster' ? 'Intra-cluster member genes' : `Ranked by Jaccard similarity (J ≥ ${thresh.toFixed(2)})`, sx + 25, dividerY + 50);
+
+    // Table Header Bar
+    const thY = dividerY + 65;
+    const thH = 34;
+    drawCanvasRoundedRect(ctx, sx + 25, thY, sw - 50, thH, 6);
+    ctx.fillStyle = P.tableHeaderBg;
+    ctx.fill();
+
+    ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.textMuted;
+    ctx.fillText('RANK', sx + 42, thY + 21);
+    ctx.fillText('GENE', sx + 115, thY + 21);
+    ctx.fillText(currentMode === 'single_cluster' ? 'COMMUNITY' : 'JACCARD SIMILARITY', sx + 340, thY + 21);
+    ctx.fillText('LOSSES', sx + 680, thY + 21);
+
+    // Table Rows
+    const rowsToDraw = Math.min(qualifying.length, partnerLimit);
+    const rowH = 46;
+    let rowY = thY + thH + 6;
+
+    for (let i = 0; i < rowsToDraw; i++) {
+        const p = qualifying[i];
+        const isAlt = (i % 2 === 1);
+        if (isAlt) {
+            drawCanvasRoundedRect(ctx, sx + 25, rowY, sw - 50, rowH - 4, 4);
+            ctx.fillStyle = P.tableRowAlt;
+            ctx.fill();
+        }
+
+        // Rank
+        ctx.font = '600 12.5px ui-monospace, SFMono-Regular, monospace';
+        ctx.fillStyle = P.textMuted;
+        ctx.fillText(`#${i + 1}`, sx + 42, rowY + 26);
+
+        // Gene Name
+        ctx.font = 'bold 14.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
+        ctx.fillText(p.n, sx + 115, rowY + 26);
+        const gnW = ctx.measureText(p.n).width;
+
+        // Cilia tag
+        if (ALL_CILIARY.has(p.n)) {
+            drawCanvasPill(ctx, 'CILIA', sx + 125 + gnW, rowY + 21, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 10, true);
+        }
+
+        // Jaccard Bar + Value
+        if (currentMode !== 'single_cluster') {
+            const bX = sx + 340;
+            const bY = rowY + 16;
+            const bW = 140;
+            const bH = 10;
+            drawCanvasRoundedRect(ctx, bX, bY, bW, bH, 5);
+            ctx.fillStyle = P.barBg;
+            ctx.fill();
+
+            const fillW = Math.max(4, Math.min(bW, p.j * bW));
+            drawCanvasRoundedRect(ctx, bX, bY, fillW, bH, 5);
+            ctx.fillStyle = getJaccardColor(p.j);
+            ctx.fill();
+
+            ctx.font = 'bold 13px ui-monospace, SFMono-Regular, monospace';
+            ctx.fillStyle = P.textPrimary;
+            ctx.fillText(p.j.toFixed(2), bX + bW + 14, rowY + 25);
+        } else {
+            ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillStyle = P.textSecondary;
+            ctx.fillText(`Cluster C${currentClusterId}`, sx + 340, rowY + 25);
+        }
+
+        // Losses
+        const pLoss = GM[p.n] !== undefined ? GM[p.n] : (p.l || 0);
+        ctx.font = '600 13px ui-monospace, SFMono-Regular, monospace';
+        ctx.fillStyle = P.textSecondary;
+        ctx.fillText(`${pLoss}L`, sx + 680, rowY + 25);
+
+        rowY += rowH;
+    }
+
+    // Overflow message or Empty notice
+    if (qualifying.length === 0) {
+        ctx.font = 'italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textMuted;
+        ctx.fillText('No qualifying partners meeting current criteria', sx + sw / 2 - 130, rowY + 30);
+    } else if (qualifying.length > partnerLimit) {
+        ctx.font = '500 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = P.textMuted;
+        ctx.fillText(`+ ${qualifying.length - partnerLimit} more qualifying partners in interactive explorer (Jaccard ≥ ${thresh.toFixed(2)})`, sx + 30, rowY + 20);
+    }
+
+    // 5. Slide Footer Bar
+    ctx.font = '11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = P.footerText;
+    ctx.fillText('Dollo Network Explorer • Dollo Parsimony Co-Loss Analysis Across 196 Eukaryotic Species • Presentation Slide Export', 52, SH - 28);
+
+    ctx.textAlign = 'right';
+    const todayStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    ctx.fillText(`Generated: ${todayStr}`, SW - 52, SH - 28);
+    ctx.textAlign = 'left';
+
+    return canvas;
+}
+
+async function refreshExportSlidePreview() {
+    const previewCanvas = document.getElementById('export-preview-canvas');
+    const spinner = document.getElementById('export-loading-spinner');
+    if (!previewCanvas) return;
+    if (EXPORT_RENDERING) return;
+    EXPORT_RENDERING = true;
+    if (spinner) spinner.style.display = 'flex';
+
+    try {
+        const fullCanvas = await generatePresentationSlideCanvas();
+        previewCanvas.width = fullCanvas.width;
+        previewCanvas.height = fullCanvas.height;
+        const pCtx = previewCanvas.getContext('2d');
+        pCtx.drawImage(fullCanvas, 0, 0);
+    } catch (err) {
+        console.error('Failed to generate presentation slide preview:', err);
+    } finally {
+        if (spinner) spinner.style.display = 'none';
+        EXPORT_RENDERING = false;
+    }
+}
+
+async function downloadExportSlidePng() {
+    const toast = document.getElementById('export-toast-msg');
+    try {
+        if (toast) toast.textContent = 'Generating high-resolution PNG...';
+        const canvas = await generatePresentationSlideCanvas();
+        canvas.toBlob(blob => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const customTitle = (document.getElementById('export-custom-title')?.value || '').trim();
+            const slug = customTitle
+                ? customTitle.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+                : (currentMode === 'tree'
+                    ? `species_tree_${TREE_SELECTED_GENES.join('_') || '196'}`
+                    : (selectedGene ? `gene_${selectedGene}_network` : 'dollo_network_slide'));
+            a.href = url;
+            a.download = `dollo_presentation_${slug}_${EXPORT_SLIDE_THEME}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+            if (toast) {
+                toast.textContent = '✓ Downloaded 2560 × 1440 presentation slide!';
+                setTimeout(() => { if (toast) toast.textContent = ''; }, 4000);
+            }
+        }, 'image/png');
+    } catch (err) {
+        console.error('Error downloading slide:', err);
+        if (toast) toast.textContent = 'Error exporting slide: ' + err.message;
+    }
+}
+
+async function copyExportSlideToClipboard() {
+    const toast = document.getElementById('export-toast-msg');
+    try {
+        if (toast) toast.textContent = 'Preparing slide for clipboard...';
+        const canvas = await generatePresentationSlideCanvas();
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                if (toast) {
+                    toast.textContent = '✓ Copied to clipboard! Ready to paste (Ctrl+V / Cmd+V)';
+                    setTimeout(() => { if (toast) toast.textContent = ''; }, 4500);
+                }
+            } catch (clipErr) {
+                console.warn('Clipboard write failed:', clipErr);
+                if (toast) toast.textContent = 'Clipboard restricted by browser. Downloading PNG instead...';
+                downloadExportSlidePng();
+            }
+        }, 'image/png');
+    } catch (err) {
+        console.error('Error copying slide:', err);
+        if (toast) toast.textContent = 'Error copying slide: ' + err.message;
+    }
 }
 
 
