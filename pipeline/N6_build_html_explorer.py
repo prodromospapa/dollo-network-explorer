@@ -1548,10 +1548,26 @@ function switchView(mode) {{
         if (searchInput) searchInput.placeholder = "Search gene (e.g. SCAPER, CEP290)...";
         if (sbSearchWrap) sbSearchWrap.style.display = 'block';
         const sSearch = document.getElementById('sidebar-search');
-        if (sSearch) sSearch.placeholder = "Filter sidebar genes / clusters...";
+        if (sSearch) {{
+            sSearch.placeholder = "Filter sidebar genes / clusters...";
+            sSearch.value = '';
+        }}
+        const ssClear = document.getElementById('sidebar-search-clear');
+        if (ssClear) ssClear.style.display = 'none';
         if (cy) cy.resize();
-        if (selectedGene) {{
-            renderEgoNetwork(selectedGene);
+
+        let geneToLoad = selectedGene;
+        if (!geneToLoad && typeof TREE_SELECTED_GENES !== 'undefined' && TREE_SELECTED_GENES.length > 0) {{
+            geneToLoad = (typeof TREE_ACTIVE_COEV_PAIR !== 'undefined' && TREE_ACTIVE_COEV_PAIR && TREE_ACTIVE_COEV_PAIR[0])
+                ? TREE_ACTIVE_COEV_PAIR[0]
+                : TREE_SELECTED_GENES[0];
+            selectedGene = geneToLoad;
+            if (searchInput) searchInput.value = geneToLoad;
+        }}
+
+        if (geneToLoad) {{
+            renderSidebar(geneToLoad);
+            renderEgoNetwork(geneToLoad);
         }} else {{
             showAllClusters();
         }}
@@ -1564,8 +1580,21 @@ function switchView(mode) {{
         if (treeControls) treeControls.style.display = 'none';
         if (searchInput) searchInput.placeholder = "Search gene or cluster...";
         if (sbSearchWrap) sbSearchWrap.style.display = 'block';
+        const sSearch = document.getElementById('sidebar-search');
+        if (sSearch) {{
+            sSearch.placeholder = "Filter sidebar genes / clusters...";
+            sSearch.value = '';
+        }}
+        const ssClear = document.getElementById('sidebar-search-clear');
+        if (ssClear) ssClear.style.display = 'none';
         if (cy) cy.resize();
-        if (mode === 'all_clusters') showAllClusters();
+        if (mode === 'all_clusters') {{
+            showAllClusters();
+        }} else if (mode === 'single_cluster' && currentClusterId !== null) {{
+            showSingleCluster(currentClusterId);
+        }} else {{
+            showAllClusters();
+        }}
         updateStatus();
     }} else if (mode === 'tree') {{
         if (cyEl) cyEl.style.display = 'none';
@@ -3687,71 +3716,6 @@ function renderCircularTree() {{
         svgParts.push(`<text x="${{lx.toFixed(2)}}" y="${{ly.toFixed(2)}}" transform="rotate(${{rot.toFixed(1)}}, ${{lx.toFixed(2)}}, ${{ly.toFixed(2)}})" font-size="${{fontSize}}" font-weight="700" fill="${{col}}" text-anchor="${{anchor}}" alignment-baseline="middle">${{cname}}</text>`);
     }});
 
-    // 5. Dynamic Legend in Top-Left
-    const legTitleCol = isDark ? '#f8fafc' : '#111827';
-    const legSubCol = isDark ? '#94a3b8' : '#6b7280';
-    const legTextCol = isDark ? '#cbd5e1' : '#374151';
-
-    svgParts.push('<g transform="translate(35, 45)">');
-    if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {{
-        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Taxonomy: ${{taxLabel}}</text>`);
-        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(clade color coding)</text>`);
-
-        const seenClades = new Set();
-        let lI = 0;
-        cladeBlocks.forEach(block => {{
-            if (seenClades.has(block.clade) || lI >= 12) return;
-            seenClades.add(block.clade);
-            const y = 30 + lI * 15;
-            svgParts.push(`<rect x="0" y="${{y}}" width="18" height="8" rx="2" fill="${{block.color}}" />`);
-            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9" fill="${{legTextCol}}">${{block.clade}}</text>`);
-            lI++;
-        }});
-        if (seenClades.size > 12) {{
-            const y = 30 + lI * 15;
-            svgParts.push(`<text x="0" y="${{y + 7}}" font-size="8.5" fill="#94a3b8">+ ${{seenClades.size - 12}} more...</text>`);
-        }}
-    }} else {{
-        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Branch Color: Gene Presence</text>`);
-        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(presence combinations)</text>`);
-
-        const noneCol = isDark ? '#334155' : '#cbd5e1';
-        const allCol = isDark ? '#ffffff' : '#111827';
-
-        const uniqueCols = new Map();
-        uniqueCols.set(noneCol, 'None present');
-        if (TREE_SELECTED_GENES.length === 1) {{
-            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0]);
-        }} else if (TREE_SELECTED_GENES.length === 2) {{
-            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0]);
-            uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1]);
-            uniqueCols.set(allCol, `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[1]}}`);
-        }} else if (TREE_SELECTED_GENES.length === 3) {{
-            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0]);
-            uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1]);
-            uniqueCols.set(TREE_PALETTE[2], TREE_SELECTED_GENES[2]);
-            uniqueCols.set('#a855f7', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[1]}}`);
-            uniqueCols.set('#f97316', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[2]}}`);
-            uniqueCols.set('#06b6d4', `${{TREE_SELECTED_GENES[1]}} + ${{TREE_SELECTED_GENES[2]}}`);
-            uniqueCols.set(allCol, 'All 3 genes');
-        }} else {{
-            TREE_SELECTED_GENES.forEach((g, idx) => {{
-                uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g);
-            }});
-            if (TREE_SELECTED_GENES.length > 1) {{
-                uniqueCols.set(allCol, `All ${{TREE_SELECTED_GENES.length}} genes`);
-            }}
-        }}
-
-        let lI = 0;
-        uniqueCols.forEach((label, col) => {{
-            const y = 30 + lI * 16;
-            svgParts.push(`<rect x="0" y="${{y}}" width="18" height="8" rx="2" fill="${{col}}" />`);
-            svgParts.push(`<text x="24" y="${{y + 7}}" font-size="9.5" fill="${{legTextCol}}">${{label}}</text>`);
-            lI++;
-        }});
-    }}
-    svgParts.push('</g>');
 
     svg.innerHTML = svgParts.join('');
     setupTreeTooltips();
