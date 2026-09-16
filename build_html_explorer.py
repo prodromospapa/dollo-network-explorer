@@ -3346,7 +3346,8 @@ async function initTreeView() {{
 }}
 
 function getTreeGenePresence(geneName) {{
-    const nLeaves = TREE_LAYOUT.n_leaves;
+    if (!TREE_LAYOUT) return new Uint8Array(0);
+    const nLeaves = TREE_LAYOUT.n_leaves || 0;
     if (TREE_GENE_IDX[geneName] === undefined || !TREE_PRESENCE_BUFFER) {{
         return new Uint8Array(nLeaves);
     }}
@@ -4072,13 +4073,49 @@ function setModalViewMode(mode) {{
     renderEdgeAlignmentModalContent();
 }}
 
-function colorizeResidue(aa) {{
-    if (aa === '-') return '<span style="color:#475569; background:#0a0e17; padding:0 1px; font-weight:400;">-</span>';
-    if ('DE'.includes(aa)) return '<span style="color:#f87171; font-weight:700;">' + aa + '</span>';
-    if ('KRH'.includes(aa)) return '<span style="color:#60a5fa; font-weight:700;">' + aa + '</span>';
-    if ('STNQC'.includes(aa)) return '<span style="color:#34d399; font-weight:600;">' + aa + '</span>';
-    if ('AVLIMFEPWGX'.includes(aa)) return '<span style="color:#fbbf24; font-weight:600;">' + aa + '</span>';
-    return '<span>' + aa + '</span>';
+function colorizeResidue(aa, pos) {{
+    const tip = pos ? (aa === '-' ? `Gap at pos aa ${{pos}}` : `${{aa}} at pos aa ${{pos}}`) : '';
+    const titleAttr = tip ? ` title="${{tip}}"` : '';
+    if (aa === '-') return `<span${{titleAttr}} style="color:#475569; background:#0a0e17; padding:0 1px; font-weight:400; cursor:default;">-</span>`;
+    if ('DE'.includes(aa)) return `<span${{titleAttr}} style="color:#f87171; font-weight:700; cursor:default;">` + aa + '</span>';
+    if ('KRH'.includes(aa)) return `<span${{titleAttr}} style="color:#60a5fa; font-weight:700; cursor:default;">` + aa + '</span>';
+    if ('STNQC'.includes(aa)) return `<span${{titleAttr}} style="color:#34d399; font-weight:600; cursor:default;">` + aa + '</span>';
+    if ('AVLIMFEPWGX'.includes(aa)) return `<span${{titleAttr}} style="color:#fbbf24; font-weight:600; cursor:default;">` + aa + '</span>';
+    return `<span${{titleAttr}} style="cursor:default;">` + aa + '</span>';
+}}
+
+function getModalRegionBounds(profile, viewMode) {{
+    if (!profile) return {{ start: 1, end: 1, len: 1, label: 'Region' }};
+    const hStart = profile.hotspot_start || 1;
+    const hEnd = profile.hotspot_end || 1;
+    const hLen = hEnd - hStart + 1;
+    
+    if (viewMode === 'hotspot') {{
+        return {{
+            start: hStart,
+            end: hEnd,
+            len: hLen,
+            label: 'Candidate Hotspot'
+        }};
+    }} else if (viewMode === 'domain') {{
+        const dStart = profile.domain_start !== undefined ? profile.domain_start : Math.max(1, hStart - 30);
+        const dEnd = profile.domain_end !== undefined ? profile.domain_end : (profile.species && profile.species[0] && profile.species[0].seq_domain ? dStart + profile.species[0].seq_domain.length - 1 : hEnd + 50);
+        return {{
+            start: dStart,
+            end: dEnd,
+            len: dEnd - dStart + 1,
+            label: 'Flanking Domain'
+        }};
+    }} else {{
+        const fStart = profile.full_start !== undefined ? profile.full_start : Math.max(1, hStart - 40);
+        const fEnd = profile.full_end !== undefined ? profile.full_end : (profile.species && profile.species[0] && profile.species[0].seq_full ? fStart + profile.species[0].seq_full.length - 1 : hEnd + 40);
+        return {{
+            start: fStart,
+            end: fEnd,
+            len: fEnd - fStart + 1,
+            label: 'Full Track'
+        }};
+    }}
 }}
 
 function renderEdgeAlignmentModalContent() {{
@@ -4174,6 +4211,30 @@ function renderEdgeAlignmentModalContent() {{
     `;
     
     if (profile) {{
+        const hotspotBounds = getModalRegionBounds(profile, 'hotspot');
+        const domainBounds = getModalRegionBounds(profile, 'domain');
+        const fullBounds = getModalRegionBounds(profile, 'full');
+        const currentBounds = getModalRegionBounds(profile, viewMode);
+
+        const alignmentHeaderHtml = `
+            <div style="display:flex; align-items:center; margin-bottom:8px; font-family:ui-monospace, SFMono-Regular, monospace; font-size:11px; border-bottom:1px solid #23304d; padding-bottom:6px;">
+                <div style="width:230px; flex-shrink:0; padding-right:12px; font-weight:700; text-transform:uppercase; font-size:10px; letter-spacing:0.5px; color:#64748b;">
+                    Species / Lineage Status
+                </div>
+                <div style="width:52px; text-align:right; font-weight:700; color:#38bdf8; font-size:11px; padding-right:10px; flex-shrink:0;" title="Region start amino acid position in ${{targetGene}}">
+                    aa ${{currentBounds.start}}
+                </div>
+                <div style="flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; background:#070b13; border:1px solid #1e293b; border-radius:4px; padding:2px 10px; font-size:10.5px; color:#94a3b8; font-weight:600;">
+                    <span>◄ N-term (aa ${{currentBounds.start}})</span>
+                    <span style="color:#f8fafc; font-weight:700; letter-spacing:0.5px;">${{currentBounds.label.toUpperCase()}} • ${{currentBounds.len}} RESIDUES (${{targetGene}})</span>
+                    <span>C-term (aa ${{currentBounds.end}}) ►</span>
+                </div>
+                <div style="width:52px; text-align:left; font-weight:700; color:#38bdf8; font-size:11px; padding-left:10px; flex-shrink:0;" title="Region end amino acid position in ${{targetGene}}">
+                    aa ${{currentBounds.end}}
+                </div>
+            </div>
+        `;
+
         let rowsHtml = '';
         profile.species.forEach(sp => {{
             const isRet = (sp.status === 'retained');
@@ -4183,21 +4244,51 @@ function renderEdgeAlignmentModalContent() {{
             const badgeText = isRet ? (partnerGene + ' Retained') : (partnerGene + ' Lost');
             
             const rawSeq = (viewMode === 'hotspot') ? (sp.seq_hotspot || '') : ((viewMode === 'domain') ? (sp.seq_domain || sp.seq_hotspot || '') : (sp.seq_full || ''));
-            const coloredSeq = rawSeq.split('').map(colorizeResidue).join('');
             const gapCount = rawSeq.split('').filter(c => c === '-').length;
             const gapPct = rawSeq.length > 0 ? ((gapCount / rawSeq.length) * 100).toFixed(0) : 0;
+            
+            // Calculate first and last amino acid positions for this species in reference coordinates
+            const firstNonGapIdx = rawSeq.search(/[^-]/);
+            const lastNonGapIdx = rawSeq.length > 0 ? (rawSeq.length - 1 - rawSeq.split('').reverse().join('').search(/[^-]/)) : -1;
+            
+            let firstAaPos = '—';
+            let lastAaPos = '—';
+            let rowCoordText = 'Deleted';
+            let isDeleted = (firstNonGapIdx === -1);
+            
+            if (!isDeleted) {{
+                const firstPos = currentBounds.start + firstNonGapIdx;
+                const lastPos = currentBounds.start + lastNonGapIdx;
+                firstAaPos = String(firstPos);
+                lastAaPos = String(lastPos);
+                rowCoordText = (firstPos === lastPos) ? `aa ${{firstPos}}` : `aa ${{firstPos}}–${{lastPos}}`;
+            }}
+            
+            let coloredSeq = '';
+            for (let i = 0; i < rawSeq.length; i++) {{
+                const char = rawSeq[i];
+                const resPos = currentBounds.start + i;
+                coloredSeq += colorizeResidue(char, resPos);
+            }}
             
             rowsHtml += `
                 <div style="display:flex; align-items:center; margin-bottom:8px; font-family:ui-monospace, SFMono-Regular, monospace; font-size:12px; border-bottom:1px solid #1e293b; padding-bottom:6px;">
                     <div style="width:230px; flex-shrink:0; padding-right:12px;">
-                        <div style="font-weight:700; color:#f8fafc; font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${{sp.name}}</div>
+                        <div style="font-weight:700; color:#f8fafc; font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${{sp.name}}">${{sp.name}}</div>
                         <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
                             <span style="font-size:9px; padding:1px 5px; border-radius:3px; background:${{badgeBg}}; color:${{badgeCol}}; border:1px solid ${{badgeBorder}}; font-weight:600;">${{badgeText}}</span>
                             <span style="font-size:9.5px; color:${{gapPct >= 70 ? '#f43f5e' : '#64748b'}}; font-weight:${{gapPct >= 70 ? '700' : '400'}};">${{gapPct}}% gaps</span>
+                            <span style="font-size:9.5px; padding:1px 5px; border-radius:3px; background:${{isDeleted ? 'rgba(244,63,94,0.12)' : 'rgba(56,189,248,0.12)'}}; color:${{isDeleted ? '#fda4af' : '#7dd3fc'}}; border:1px solid ${{isDeleted ? 'rgba(244,63,94,0.25)' : 'rgba(56,189,248,0.25)'}}; font-family:ui-monospace, monospace; font-weight:600;" title="Amino acid span for this species in ${{targetGene}} coordinates">${{rowCoordText}}</span>
                         </div>
                     </div>
-                    <div style="flex:1; overflow-x:auto; letter-spacing:1.5px; line-height:1.5; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
+                    <div style="width:52px; text-align:right; font-weight:700; color:${{isDeleted ? '#475569' : '#38bdf8'}}; font-size:11px; padding-right:10px; flex-shrink:0; font-family:ui-monospace, monospace;" title="First amino acid position: ${{firstAaPos}}">
+                        ${{firstAaPos}}
+                    </div>
+                    <div style="flex:1; min-width:0; overflow-x:auto; letter-spacing:1.5px; line-height:1.5; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
                         ${{coloredSeq}}
+                    </div>
+                    <div style="width:52px; text-align:left; font-weight:700; color:${{isDeleted ? '#475569' : '#38bdf8'}}; font-size:11px; padding-left:10px; flex-shrink:0; font-family:ui-monospace, monospace;" title="Last amino acid position: ${{lastAaPos}}">
+                        ${{lastAaPos}}
                     </div>
                 </div>
             `;
@@ -4209,7 +4300,7 @@ function renderEdgeAlignmentModalContent() {{
             <div style="background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.3); border-radius:8px; padding:12px 16px; font-size:12px; line-height:1.5;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
                     <strong style="color:#7dd3fc; font-size:13px; display:flex; align-items:center; gap:6px;">
-                        Co-Evolution Interface: ${{targetGene}} (aa ${{profile.hotspot_start}}–${{profile.hotspot_end}}) ↔ ${{partnerGene}}
+                        Co-Evolution Interface: ${{targetGene}} (aa ${{currentBounds.start}}–${{currentBounds.end}}) ↔ ${{partnerGene}}
                     </strong>
                     <span style="font-size:11px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.2); border:1px solid rgba(56,189,248,0.4); padding:2px 8px; border-radius:10px;">
                         Delta Gap Spike: ${{profile.delta_pct}}%
@@ -4240,13 +4331,13 @@ function renderEdgeAlignmentModalContent() {{
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span style="font-size:11.5px; font-weight:600; color:#94a3b8;">Focus Region:</span>
                     <button class="btn ${{viewMode === 'hotspot' ? 'active' : ''}}" style="font-size:11px; padding:3px 10px;" onclick="setModalViewMode('hotspot')">
-                        Candidate Hotspot (aa ${{profile.hotspot_start}}–${{profile.hotspot_end}})
+                        Candidate Hotspot (aa ${{hotspotBounds.start}}–${{hotspotBounds.end}})
                     </button>
                     <button class="btn ${{viewMode === 'domain' ? 'active' : ''}}" style="font-size:11px; padding:3px 10px;" onclick="setModalViewMode('domain')">
-                        Flanking Domain
+                        Flanking Domain (aa ${{domainBounds.start}}–${{domainBounds.end}})
                     </button>
                     <button class="btn ${{viewMode === 'full' ? 'active' : ''}}" style="font-size:11px; padding:3px 10px;" onclick="setModalViewMode('full')">
-                        Full Track
+                        Full Track (aa ${{fullBounds.start}}–${{fullBounds.end}})
                     </button>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; font-size:11px;">
@@ -4259,6 +4350,7 @@ function renderEdgeAlignmentModalContent() {{
             </div>
             
             <div id="ea-alignment-rows" style="background:#0f172a; border-radius:8px; padding:14px; border:1px solid #1e293b; max-height:340px; overflow-y:auto;">
+                ${{alignmentHeaderHtml}}
                 ${{rowsHtml}}
             </div>
             
