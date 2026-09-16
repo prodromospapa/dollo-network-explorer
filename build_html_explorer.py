@@ -2736,11 +2736,14 @@ function renderCircularTree() {{
     }}
 
     const svgParts = [];
+    const taxLabel = TREE_TAX_LEVEL === 'tcs' ? 'TCS Clades' : (TREE_TAX_LEVEL === 'detailed' ? 'Phylum' : TREE_TAX_LEVEL.charAt(0).toUpperCase() + TREE_TAX_LEVEL.slice(1));
     const titleText = TREE_SELECTED_GENES.length > 0
         ? (TREE_BRANCH_MODE === 'taxonomy'
             ? `${{TREE_SELECTED_GENES.join(', ')}} presence across eukaryotes (${{TREE_TAX_LEVEL.toUpperCase()}} taxonomy)`
+            ? `${{TREE_SELECTED_GENES.join(', ')}} presence across eukaryotes (${{taxLabel}} taxonomy)`
             : `${{TREE_SELECTED_GENES.join(', ')}} presence across eukaryotes`)
         : `Eukaryotic Species Tree (196 species • ${{TREE_TAX_LEVEL.toUpperCase()}} taxonomy)`;
+        : `Eukaryotic Species Tree (196 species • ${{taxLabel}} taxonomy)`;
     const titleColor = isDark ? '#f8fafc' : '#111827';
     svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="${{titleColor}}">${{titleText}}</text>`);
 
@@ -2887,6 +2890,7 @@ function renderCircularTree() {{
     svgParts.push('<g transform="translate(35, 45)">');
     if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {{
         svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Taxonomy: ${{TREE_TAX_LEVEL.toUpperCase()}}</text>`);
+        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Taxonomy: ${{taxLabel}}</text>`);
         svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(clade color coding)</text>`);
 
         const seenClades = new Set();
@@ -2906,6 +2910,8 @@ function renderCircularTree() {{
     }} else {{
         svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">branch colour = genes present</text>`);
         svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(mix of the gene colours)</text>`);
+        svgParts.push(`<text x="0" y="0" font-size="11" font-weight="700" fill="${{legTitleCol}}">Branch Color: Gene Presence</text>`);
+        svgParts.push(`<text x="0" y="14" font-size="9" fill="${{legSubCol}}">(presence combinations)</text>`);
 
         const noneCol = isDark ? '#334155' : '#cbd5e1';
         const allCol = isDark ? '#ffffff' : '#111827';
@@ -2916,16 +2922,30 @@ function renderCircularTree() {{
             uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0] + ' only');
             uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1] + ' only');
             uniqueCols.set(TREE_PALETTE[2], TREE_SELECTED_GENES[2] + ' only');
+        uniqueCols.set(noneCol, 'None present');
+        if (TREE_SELECTED_GENES.length === 1) {{
+            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0]);
+        }} else if (TREE_SELECTED_GENES.length === 2) {{
+            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0]);
+            uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1]);
+            uniqueCols.set(allCol, `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[1]}}`);
+        }} else if (TREE_SELECTED_GENES.length === 3) {{
+            uniqueCols.set(TREE_PALETTE[0], TREE_SELECTED_GENES[0]);
+            uniqueCols.set(TREE_PALETTE[1], TREE_SELECTED_GENES[1]);
+            uniqueCols.set(TREE_PALETTE[2], TREE_SELECTED_GENES[2]);
             uniqueCols.set('#a855f7', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[1]}}`);
             uniqueCols.set('#f97316', `${{TREE_SELECTED_GENES[0]}} + ${{TREE_SELECTED_GENES[2]}}`);
             uniqueCols.set('#06b6d4', `${{TREE_SELECTED_GENES[1]}} + ${{TREE_SELECTED_GENES[2]}}`);
             uniqueCols.set(allCol, 'all three');
+            uniqueCols.set(allCol, 'All 3 genes');
         }} else {{
             TREE_SELECTED_GENES.forEach((g, idx) => {{
                 uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g + ' only');
+                uniqueCols.set(TREE_PALETTE[idx % TREE_PALETTE.length], g);
             }});
             if (TREE_SELECTED_GENES.length > 1) {{
                 uniqueCols.set(allCol, 'all ' + TREE_SELECTED_GENES.length);
+                uniqueCols.set(allCol, `All ${{TREE_SELECTED_GENES.length}} genes`);
             }}
         }}
 
@@ -3049,8 +3069,10 @@ function setupTreeTooltips() {{
             const absCol = isDark ? '#94a3b8' : '#64748b';
 
             let html = `<strong style="color:${{titleCol}}; font-size:12px;">${{taxInfo.sci_name || sp.replace(/_/g, ' ')}}</strong><br>`;
+            const taxName = TREE_TAX_LEVEL === 'tcs' ? 'TCS CLADE' : (TREE_TAX_LEVEL === 'detailed' ? 'PHYLUM' : TREE_TAX_LEVEL.toUpperCase());
             if (curVal) {{
                 html += `<span style="color:${{taxCol}}; font-size:10.5px;">${{TREE_TAX_LEVEL.toUpperCase()}}: <strong>${{curVal}}</strong></span><br>`;
+                html += `<span style="color:${{taxCol}}; font-size:10.5px;">${{taxName}}: <strong>${{curVal}}</strong></span><br>`;
             }}
             if (taxInfo.supergroup && taxInfo.phylum) {{
                 html += `<span style="color:${{subCol}}; font-size:10px;">${{taxInfo.supergroup}} &rarr; ${{taxInfo.kingdom}} &rarr; ${{taxInfo.phylum}}</span><br>`;
