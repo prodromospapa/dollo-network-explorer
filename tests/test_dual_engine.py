@@ -4,9 +4,6 @@ import time
 from playwright.async_api import async_playwright
 
 async def main():
-    server = subprocess.Popen(['python3', '-m', 'http.server', '8888'], cwd='/home/prodromosp/dollo-network-explorer')
-    time.sleep(1.5)
-    
     async with async_playwright() as p:
         browser = await p.chromium.launch(
             headless=True,
@@ -19,8 +16,8 @@ async def main():
         page.on("console", lambda msg: errors.append(f"ConsoleError: {msg.text}") if msg.type == "error" else None)
         
         try:
-            print("1. Loading index.html...")
-            await page.goto('http://localhost:8888/index.html', wait_until='networkidle')
+            print("1. Loading GitHub Pages index.html...")
+            await page.goto('https://prodromospapa.github.io/dollo-network-explorer/index.html', wait_until='networkidle')
             await page.wait_for_timeout(2000)
             
             # Check WebGL Whole Network mode
@@ -90,7 +87,6 @@ async def main():
             print("==========================================")
                 
         finally:
-            server.terminate()
             await browser.close()
 
 asyncio.run(main())

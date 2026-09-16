@@ -1,29 +1,7 @@
 import asyncio
-import http.server
-import socketserver
-import threading
-import time
 from playwright.async_api import async_playwright
 
-PORT = 8098
-DIRECTORY = "/home/prodromosp/dollo-network-explorer"
-
-class Handler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=DIRECTORY, **kwargs)
-
-def start_server():
-    try:
-        with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            httpd.serve_forever()
-    except Exception:
-        pass
-
 async def verify():
-    server_thread = threading.Thread(target=start_server, daemon=True)
-    server_thread.start()
-    time.sleep(1)
-
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page(viewport={"width": 1440, "height": 950})
@@ -32,8 +10,8 @@ async def verify():
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.on("console", lambda msg: errors.append(f"Console error: {msg.text}") if msg.type == "error" else None)
 
-        print(f"1. Loading http://localhost:{PORT}/index.html ...")
-        await page.goto(f"http://localhost:{PORT}/index.html", wait_until="domcontentloaded")
+        print("1. Loading https://prodromospapa.github.io/dollo-network-explorer/index.html ...")
+        await page.goto("https://prodromospapa.github.io/dollo-network-explorer/index.html", wait_until="domcontentloaded")
         await page.wait_for_selector("#btn-view-tree")
         
         print("2. Opening Tree View modal...")
