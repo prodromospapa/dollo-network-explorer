@@ -932,7 +932,7 @@ body.light-theme #tree-toast {
                 <!-- Partner Count -->
                 <div style="display:flex; align-items:center; gap:5px;">
                     <span style="color:#94a3b8; font-weight:500;">Partners:</span>
-                    <select id="export-partner-count" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;" onchange="refreshExportSlidePreview()">
+                    <select id="export-partner-count" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;" onchange="onExportPartnerCountChange()">
                         <option value="10">Top 10</option>
                         <option value="15">Top 15</option>
                         <option value="20">Top 20</option>
@@ -3197,15 +3197,20 @@ function handleClusterMemberClick(geneId) {
     }
 }
 
-function renderEgoNetwork(geneName) {
-    if (!cy || !geneName) return;
+function renderEgoNetwork(geneName, overrideTopN, layoutOptions = {}) {
+    if (!cy || !geneName) return Promise.resolve();
     unfocusClusterGene();
     const info = getGeneData(geneName);
-    if (!info) return;
+    if (!info) return Promise.resolve();
 
     const thresh = parseFloat(document.getElementById('thresh').value);
-    let topn = parseInt(document.getElementById('topn').value);
-    if (document.getElementById('toggle-topn-max').checked) topn = Infinity;
+    let topn;
+    if (overrideTopN !== undefined && overrideTopN !== null) {
+        topn = overrideTopN;
+    } else {
+        topn = parseInt(document.getElementById('topn').value);
+        if (document.getElementById('toggle-topn-max')?.checked) topn = Infinity;
+    }
     const activeSet = getActiveGeneSet();
 
     const qualifying = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n))).slice(0, topn);
@@ -3278,23 +3283,25 @@ function renderEgoNetwork(geneName) {
         cy.elements().remove();
         cy.add(elements);
     });
-    runLayout(true);
+    const layoutPromise = runLayout(true, layoutOptions);
 
     updateStatus();
+    return layoutPromise;
 }
 
 
-function runLayout(randomize) {
+function runLayout(randomize, options = {}) {
     if (randomize === undefined) randomize = true;
-    if (!cy || cy.nodes().length === 0) return;
+    if (!cy || cy.nodes().length === 0) return Promise.resolve();
 
+    const immediate = Boolean(options && options.immediate);
     const layoutMode = document.getElementById('layout-select') ? document.getElementById('layout-select').value : 'cose';
 
     if (layoutMode === 'concentric') {
         const concentricConfig = {
             name: 'concentric',
-            animate: true,
-            animationDuration: 500,
+            animate: !immediate,
+            animationDuration: immediate ? 0 : 500,
             fit: randomize,
             padding: 60,
             startAngle: 3/2 * Math.PI,
@@ -3308,13 +3315,17 @@ function runLayout(randomize) {
             levelWidth: function() { return 1; }
         };
         const layout = cy.layout(concentricConfig);
-        if (randomize) {
-            layout.promiseOn('layoutstop').then(() => {
-                cy.animate({ fit: { padding: 60 } }, { duration: 300 });
-            });
-        }
+        const p = layout.promiseOn('layoutstop').then(() => {
+            if (randomize) {
+                if (immediate) {
+                    cy.fit(undefined, 60);
+                } else {
+                    cy.animate({ fit: { padding: 60 } }, { duration: 300 });
+                }
+            }
+        });
         layout.run();
-        return;
+        return p;
     }
 
     // Force-directed (cose) - organic spread layout with label awareness
@@ -3351,7 +3362,7 @@ function runLayout(randomize) {
         edgeElasticity: function(edge) { return isEgo ? 25 : 15; },
         nestingFactor: 1.0,
         gravity: isEgo ? 0.04 : 0.06,
-        numIter: 1400,
+        numIter: immediate ? 800 : 1400,
         initialTemp: 1000,
         coolingFactor: 0.98,
         minTemp: 1.0,
@@ -3360,14 +3371,7 @@ function runLayout(randomize) {
     };
 
     const layout = cy.layout(layoutConfig);
-    if (randomize) {
-        layout.promiseOn('layoutstop').then(() => {
-            cy.animate({
-                fit: { padding: 60 }
-            }, { duration: 300 });
-        });
-    }
-    layout.promiseOn('layoutstop').then(() => {
+    const p = layout.promiseOn('layoutstop').then(() => {
         if (isEgo && intraData && intraData.length > 0) {
             cy.add(intraData);
             // Re-apply subtle styling to restored intra-partner edges
@@ -3382,9 +3386,18 @@ function runLayout(randomize) {
                 }
             });
         }
-        cy.animate({ fit: { padding: 60 } }, { duration: 300 });
+        if (randomize) {
+            if (immediate) {
+                cy.fit(undefined, 60);
+            } else {
+                cy.animate({
+                    fit: { padding: 60 }
+                }, { duration: 300 });
+            }
+        }
     });
     layout.run();
+    return p;
 }
 
 function showSingleCluster(cid, highlightGene) {
@@ -4442,6 +4455,10 @@ function exportTreeSvg() {
 // ---- Presentation Slide Export Engine ----
 let EXPORT_SLIDE_THEME = 'light';
 let EXPORT_RENDERING = false;
+let EXPORT_QUEUED = false;
+let MODAL_ORIG_TOPN = null;
+let MODAL_ORIG_MAX = null;
+let EXPORT_PARTNER_COUNT_CHANGED = false;
 
 function setExportSlideTheme(theme) {
     EXPORT_SLIDE_THEME = theme;
@@ -4470,8 +4487,19 @@ function openExportModal() {
         titleInput.value = '';
     }
 
-    // Automatically adapt slide partner count to match interactive view Top-N
+    EXPORT_PARTNER_COUNT_CHANGED = false;
+    MODAL_ORIG_TOPN = parseInt(document.getElementById('topn')?.value || 25);
+    MODAL_ORIG_MAX = Boolean(document.getElementById('toggle-topn-max')?.checked);
+
     const partnerSelect = document.getElementById('export-partner-count');
+    const partnerWrap = partnerSelect?.parentElement;
+    const isTreeMatrix = (currentMode === 'tree' && TREE_SELECTED_GENES.length >= 2);
+    const isAllClusters = (currentMode === 'all_clusters');
+    if (partnerWrap) {
+        partnerWrap.style.display = (isTreeMatrix || isAllClusters) ? 'none' : 'flex';
+    }
+
+    // Automatically adapt slide partner count to match interactive view Top-N
     if (partnerSelect) {
         const isMax = document.getElementById('toggle-topn-max')?.checked;
         const curTopN = isMax ? 30 : parseInt(document.getElementById('topn')?.value || 25);
@@ -4496,6 +4524,50 @@ function openExportModal() {
 function closeExportModal() {
     const modal = document.getElementById('export-slide-modal');
     if (modal) modal.style.display = 'none';
+
+    // If the user did NOT explicitly change partner count in the modal,
+    // and cy was temporarily altered to fit slide options, restore previous interactive topN
+    if (!EXPORT_PARTNER_COUNT_CHANGED && MODAL_ORIG_TOPN !== null) {
+        const topnSlider = document.getElementById('topn');
+        const topnVal = document.getElementById('topn-val');
+        const maxToggle = document.getElementById('toggle-topn-max');
+        if (topnSlider) topnSlider.value = MODAL_ORIG_TOPN;
+        if (topnVal) topnVal.textContent = MODAL_ORIG_MAX ? 'Max' : String(MODAL_ORIG_TOPN);
+        if (maxToggle) {
+            maxToggle.checked = MODAL_ORIG_MAX;
+            if (topnSlider) topnSlider.disabled = MODAL_ORIG_MAX;
+        }
+        if (selectedGene && (currentMode === 'gene' || currentMode === 'network')) {
+            const curNodes = cy ? cy.nodes().filter(n => n.id() !== selectedGene).length : 0;
+            const targetN = MODAL_ORIG_MAX ? Infinity : MODAL_ORIG_TOPN;
+            if (curNodes !== targetN) {
+                renderSidebar(selectedGene);
+                renderEgoNetwork(selectedGene);
+            }
+        }
+    }
+}
+
+async function onExportPartnerCountChange() {
+    EXPORT_PARTNER_COUNT_CHANGED = true;
+    const partnerSelect = document.getElementById('export-partner-count');
+    if (!partnerSelect) return;
+    const partnerLimit = parseInt(partnerSelect.value || 15);
+
+    if (selectedGene && (currentMode === 'gene' || currentMode === 'network')) {
+        const topnSlider = document.getElementById('topn');
+        const topnVal = document.getElementById('topn-val');
+        const maxToggle = document.getElementById('toggle-topn-max');
+        if (topnSlider) topnSlider.value = partnerLimit;
+        if (topnVal) topnVal.textContent = String(partnerLimit);
+        if (maxToggle) {
+            maxToggle.checked = false;
+            if (topnSlider) topnSlider.disabled = false;
+        }
+        renderSidebar(selectedGene);
+        await renderEgoNetwork(selectedGene, partnerLimit, { immediate: true });
+    }
+    await refreshExportSlidePreview();
 }
 
 let MODAL_STATE = {
@@ -5009,6 +5081,20 @@ async function generatePresentationSlideCanvas(options = {}) {
         const dy = vy + (vh - dh) / 2;
         ctx.drawImage(treeImg, dx, dy, dw, dh);
     } else if (cy && cy.nodes().length > 0) {
+        // Ensure ego network nodes match the slide partnerLimit
+        const isEgo = Boolean(selectedGene && (currentMode === 'gene' || currentMode === 'network'));
+        if (isEgo) {
+            const info = getGeneData(selectedGene);
+            const activeSet = getActiveGeneSet();
+            const thresh = parseFloat(document.getElementById('thresh')?.value || 0.20);
+            const totalQualifying = info && info.p ? info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n))).length : 0;
+            const expectedPartnerCount = Math.min(totalQualifying, partnerLimit);
+            const curPartnerNodes = cy.nodes().filter(n => n.id() !== selectedGene).length;
+            if (curPartnerNodes !== expectedPartnerCount) {
+                await renderEgoNetwork(selectedGene, partnerLimit, { immediate: true });
+            }
+        }
+
         // Cytoscape network
         const cyPngUri = cy.png({
             full: true,
@@ -5567,7 +5653,10 @@ async function refreshExportSlidePreview() {
     const previewCanvas = document.getElementById('export-preview-canvas');
     const spinner = document.getElementById('export-loading-spinner');
     if (!previewCanvas) return;
-    if (EXPORT_RENDERING) return;
+    if (EXPORT_RENDERING) {
+        EXPORT_QUEUED = true;
+        return;
+    }
     EXPORT_RENDERING = true;
     if (spinner) spinner.style.display = 'flex';
 
@@ -5582,6 +5671,10 @@ async function refreshExportSlidePreview() {
     } finally {
         if (spinner) spinner.style.display = 'none';
         EXPORT_RENDERING = false;
+        if (EXPORT_QUEUED) {
+            EXPORT_QUEUED = false;
+            refreshExportSlidePreview();
+        }
     }
 }
 
