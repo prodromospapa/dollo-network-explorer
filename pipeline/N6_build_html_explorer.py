@@ -34,12 +34,12 @@ def hsl_to_hex(h, s, l):
 
 def main():
     parser = argparse.ArgumentParser(description="Build interactive Dual-Engine HTML network explorer")
-    parser.add_argument("--top-k", type=int, default=100,
-                        help="Max partners to store per gene in network_partners.bin (default: 100)")
+    parser.add_argument("--top-k", type=int, default=500,
+                        help="Max partners to store per gene in network_partners.bin (default: 500)")
     parser.add_argument("--min-loss", type=int, default=5,
                         help="Minimum losses for a gene to be included (default: 5)")
-    parser.add_argument("--jaccard-floor", type=float, default=0.05,
-                        help="Minimum Jaccard to include as partner (default: 0.05)")
+    parser.add_argument("--jaccard-floor", type=float, default=0.08,
+                        help="Minimum Jaccard to include as partner (default: 0.08)")
     parser.add_argument("--output", type=str, default=None,
                         help="Output HTML file path (default: ./index.html)")
     args = parser.parse_args()
@@ -1119,7 +1119,7 @@ body.light-theme #tree-toast {{
         </div>
 
         <label>Show Top <span id="topn-val">25</span></label>
-        <input type="range" id="topn" min="5" max="100" step="5" value="25">
+        <input type="range" id="topn" min="5" max="300" step="5" value="25">
         <label><input type="checkbox" id="toggle-topn-max"> Max</label>
 
         <label style="margin-left:4px;">Layout:</label>
@@ -1424,9 +1424,9 @@ function updateControlsForMode(isLeiden) {{
         }}
     }});
     const scaleBar = document.getElementById('jaccard-scale-bar');
-    if (scaleBar) scaleBar.style.opacity = isLeiden ? '0.35' : '1';
+    if (scaleBar) scaleBar.style.opacity = (currentMode === 'tree') ? '0.35' : '1';
     const cyLegend = document.getElementById('cy-edge-legend');
-    if (cyLegend) cyLegend.style.display = isLeiden ? 'none' : 'flex';
+    if (cyLegend) cyLegend.style.display = (currentMode === 'tree') ? 'none' : 'flex';
 }}
 
 function switchView(mode) {{
@@ -2220,7 +2220,7 @@ function showSingleCluster(cid, highlightGene) {{
                         jaccard: p.j,
                         width: 0.8 + p.j * 3.5,
                         opacity: Math.min(0.80, 0.20 + p.j * 0.8),
-                        color: color
+                        color: getJaccardColor(p.j)
                     }}
                 }});
             }}
@@ -2352,7 +2352,7 @@ function showAllClusters() {{
                             jaccard: p.j,
                             width: 0.6 + p.j * 2.5,
                             opacity: Math.min(0.75, 0.18 + p.j * 0.7),
-                            color: color
+                            color: getJaccardColor(p.j)
                         }}
                     }});
                 }}
