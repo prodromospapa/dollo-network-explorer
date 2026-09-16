@@ -196,7 +196,7 @@ def load_ciliary_annotations(base):
     if ciliacarta_path and ciliacarta_path.exists():
         with open(ciliacarta_path, newline="") as f:
             for row in csv.DictReader(f):
-                sym = (row.get("Associated Gene Name") or "").strip()
+                sym = (row.get("Associated Gene Name") or row.get("Gene Name") or "").strip()
                 if sym:
                     cc_genes.add(sym)
 
@@ -213,17 +213,20 @@ def load_ciliary_annotations(base):
                 is_first = (row.get("First order") or "").strip().lower() == "x"
                 is_second = (row.get("Second order") or "").strip().lower() == "x"
                 is_v1 = (row.get("In SCGSv1") or "").strip().lower() == "x" or (row.get("Predicted in SCGSv1 paper") or "").strip().lower() == "x"
+                is_cc = (row.get("Predicted in CiliaCarta") or "").strip().lower() == "x"
                 loc = (row.get("Localisation") or "").strip()
 
                 if is_first or is_second:
                     v2_genes.add(gene)
                 if is_v1:
                     v1_genes.add(gene)
+                if is_cc:
+                    cc_genes.add(gene)
 
                 v2_order = "First order" if is_first else ("Second order" if is_second else "")
                 cilia_info[gene] = {
                     "v2": v2_order,
-                    "cc": gene in cc_genes,
+                    "cc": is_cc or (gene in cc_genes),
                     "loc": loc
                 }
 
@@ -232,11 +235,12 @@ def load_ciliary_annotations(base):
             cilia_info[gene] = {"v2": "", "cc": True, "loc": ""}
 
     all_ciliary = v2_genes | cc_genes
+    shared_core = v2_genes & cc_genes
     ciliary_sets = {
         "syscilia_v2": sorted(v2_genes),
         "ciliacarta": sorted(cc_genes),
         "ciliacarta_full": sorted(cc_genes),
-        "shared_core": sorted(v2_genes & cc_genes),
+        "shared_core": sorted(shared_core),
         "both": sorted(all_ciliary),
         "all_ciliary": sorted(all_ciliary),
         "syscilia": sorted(v2_genes),
@@ -333,11 +337,17 @@ def annotate_clusters_with_go(cluster_data, base_dir):
 
 
 def build_html(all_names, cluster_data=None, cluster_names=None, cluster_colors=None, ciliary_sets=None, cilia_info=None):
+    ciliary_sets = ciliary_sets or {}
+    len_all_ciliary = len(ciliary_sets.get("all_ciliary", []))
+    len_cc = len(ciliary_sets.get("ciliacarta", []))
+    len_v2 = len(ciliary_sets.get("syscilia_v2", []))
+    len_core = len(ciliary_sets.get("shared_core", []))
+
     names_json = json.dumps(all_names, separators=(",", ":"))
     clusters_json = json.dumps(cluster_data or {}, separators=(",", ":"))
     cluster_names_json = json.dumps(cluster_names or {}, separators=(",", ":"))
     cluster_colors_json = json.dumps(cluster_colors or {}, separators=(",", ":"))
-    ciliary_sets_json = json.dumps(ciliary_sets or {}, separators=(",", ":"))
+    ciliary_sets_json = json.dumps(ciliary_sets, separators=(",", ":"))
     cilia_info_json = json.dumps(cilia_info or {}, separators=(",", ":"))
 
     html_code = f"""<!DOCTYPE html>
@@ -1131,10 +1141,10 @@ body.light-theme #tree-toast {{
         <label>Filter:</label>
         <select id="gene-filter">
             <option value="all">All Genes</option>
-            <option value="all_ciliary">All Union (SCGSv2 ∪ CiliaCarta)</option>
-            <option value="ciliacarta">CiliaCarta</option>
-            <option value="syscilia_v2">SYSCILIA v2</option>
-            <option value="shared_core">Merged / Core (SCGSv2 ∩ CiliaCarta)</option>
+            <option value="all_ciliary">All Union (SCGSv2 ∪ CiliaCarta) ({len_all_ciliary})</option>
+            <option value="ciliacarta">CiliaCarta ({len_cc})</option>
+            <option value="syscilia_v2">SYSCILIA v2 ({len_v2})</option>
+            <option value="shared_core">Merged / Core (SCGSv2 ∩ CiliaCarta) ({len_core})</option>
         </select>
 
         <label style="margin-left:4px;">Labels:</label>
@@ -1283,9 +1293,10 @@ body.light-theme #tree-toast {{
                     <span style="color:#94a3b8; font-weight:500;">Partners:</span>
                     <select id="export-partner-count" style="background:#161d31; border:1px solid #334155; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;" onchange="refreshExportSlidePreview()">
                         <option value="10">Top 10</option>
-                        <option value="15" selected>Top 15</option>
+                        <option value="15">Top 15</option>
                         <option value="20">Top 20</option>
-                        <option value="25">Top 25</option>
+                        <option value="25" selected>Top 25</option>
+                        <option value="30">Top 30</option>
                     </select>
                 </div>
                 <!-- Custom Title -->
@@ -1465,10 +1476,13 @@ function getUniProtUrl(gene) {{
 
 function getCiliaBadgeHtml(geneName) {{
     if (!ALL_CILIARY.has(geneName)) return '';
-    const info = CILIA_INFO[geneName];
+    const info = CILIA_INFO[geneName] || {{}};
     let title = 'Curated ciliary component';
-    if (info && info.v2) title += ` (SYSCILIA ${{info.v2}})`;
-    if (info && info.loc) title += `\\nLocalization: ${{info.loc}}`;
+    const parts = [];
+    if (info.v2) parts.push(`SYSCILIA ${{info.v2}}`);
+    if (info.cc) parts.push('CiliaCarta');
+    if (parts.length > 0) title += ` (${{parts.join(' ∩ ')}})`;
+    if (info.loc) title += `\\nLocalization: ${{info.loc}}`;
     return `<span class="cilia-badge" title="${{title.replace(/"/g, '&quot;')}}">cilia</span>`;
 }}
 
@@ -1615,8 +1629,10 @@ function selectGene(name) {{
 
 function renderClusterDirectory() {{
     const sortedCids = Object.keys(CLUSTERS).map(Number).sort((a, b) => CLUSTERS[b].length - CLUSTERS[a].length);
+    const activeSet = getActiveGeneSet();
+    const filterTitle = (geneFilterMode !== 'all') ? ` • Filter: ${{geneFilterMode.replace(/_/g, ' ')}}` : '';
     document.getElementById('gene-info').innerHTML = `
-        <h2>🔬 Leiden Modules <span style="font-size:11px;color:#8892b0;font-weight:400;">(80 clusters)</span></h2>
+        <h2>🔬 Leiden Modules <span style="font-size:11px;color:#8892b0;font-weight:400;">(80 clusters${{filterTitle}})</span></h2>
         <div class="meta">Click a cluster to zoom in • Click "View Cluster →" to explore all members</div>
     `;
 
@@ -1626,6 +1642,8 @@ function renderClusterDirectory() {{
         const color = getClusterColor(cid);
         const cname = CLUSTER_NAMES[cid] || ('Cluster ' + cid);
         const cilCount = members.filter(m => ALL_CILIARY.has(m)).length;
+        const matchingCount = activeSet ? members.filter(m => activeSet.has(m)).length : members.length;
+        const sizeLabel = activeSet ? `${{matchingCount}} / ${{members.length}} genes` : `${{members.length}} genes`;
 
         html += `
         <div class="cluster-entry" data-cluster-id="${{cid}}" onclick="zoomToCluster(${{cid}})" ondblclick="showSingleCluster(${{cid}})" title="C${{cid}}: ${{cname}}">
@@ -1634,7 +1652,7 @@ function renderClusterDirectory() {{
                 <strong style="color:#7eb8ff;">C${{cid}}:</strong> ${{cname}}
             </div>
             ${{cilCount > 0 ? `<span class="cilia-badge">${{cilCount}} cil</span>` : ''}}
-            <span class="csize">${{members.length}} genes</span>
+            <span class="csize">${{sizeLabel}}</span>
             <button class="btn btn-accent" style="padding:2px 7px; font-size:10.5px; white-space:nowrap; margin-left:4px;" onclick="event.stopPropagation(); showSingleCluster(${{cid}});">View →</button>
         </div>`;
     }});
@@ -1697,28 +1715,55 @@ function renderSidebar(name) {{
     const ciliaBadge = getCiliaBadgeHtml(name);
     const uniprotUrl = getUniProtUrl(name);
 
-    document.getElementById('gene-info').innerHTML = `
-        <a class="back-to-clusters" onclick="renderClusterDirectory();">← All Leiden Clusters</a>
-        <h2>
-            <span style="overflow:hidden; text-overflow:ellipsis;">${{name}} ${{ciliaBadge}}</span>
-            <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-                <button class="btn btn-tree-add" onclick="addTreeGene('${{name}}')" title="Add ${{name}} to Species Tree">🌳 Add to Tree</button>
-                <button class="btn btn-accent" style="padding:2px 8px; font-size:11px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with graph & sidebar results">📊 Export Slide</button>
-                <a href="${{uniprotUrl}}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open in UniProt">UniProt ↗</a>
-            </div>
-        </h2>
-        <div class="meta">
-            Independent loss events: <strong>${{info.l}}</strong>
-        </div>
-        ${{clusterBadge}}
-    `;
-
     const thresh = parseFloat(document.getElementById('thresh').value);
     let topn = parseInt(document.getElementById('topn').value);
     if (document.getElementById('toggle-topn-max').checked) topn = Infinity;
     const activeSet = getActiveGeneSet();
 
     const qualifying = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n))).slice(0, topn);
+
+    let ciliaryHtml = '';
+    if (ALL_CILIARY.has(name)) {{
+        const cInfo = CILIA_INFO[name] || {{}};
+        const sources = [];
+        if (cInfo.v2) sources.push(`SYSCILIA v2 (${{cInfo.v2}})`);
+        if (cInfo.cc) sources.push('CiliaCarta');
+        const sourceStr = sources.length > 1 ? `Core (Intersection): ${{sources.join(' ∩ ')}}` : sources.join('');
+        ciliaryHtml = `
+        <div class="meta" style="color:#38bdf8; font-size:11px; margin-top:3px;">
+            ✨ Ciliary: <strong>${{sourceStr}}</strong>${{cInfo.loc ? ` • Loc: <em>${{cInfo.loc}}</em>` : ''}}
+        </div>`;
+    }}
+
+    const filterNotice = geneFilterMode !== 'all'
+        ? `<span style="font-size:10px; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); padding:1px 6px; border-radius:3px;">Filter: ${{geneFilterMode.replace(/_/g, ' ')}}</span>`
+        : '';
+    const partnerCountMeta = `
+        <div class="meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <span>Partners: <strong>${{qualifying.length}}</strong> qualifying</span>
+            ${{filterNotice}}
+        </div>`;
+
+    document.getElementById('gene-info').innerHTML = `
+        <a class="back-to-clusters" onclick="renderClusterDirectory();">← All Leiden Clusters</a>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:2px;">
+            <h2 style="margin-bottom:0; display:flex; align-items:center; gap:6px; font-size:18px;">
+                <span>${{name}}</span>
+                ${{ciliaBadge}}
+            </h2>
+            <a href="${{uniprotUrl}}" target="_blank" rel="noopener noreferrer" class="gene-ext-link" title="Open in UniProt">UniProt ↗</a>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:6px; margin-bottom:4px;">
+            <button class="btn btn-tree-add" onclick="addTreeGene('${{name}}')" title="Add ${{name}} to Species Tree" style="font-size:11px; padding:3px 8px;">🌳 Add to Tree</button>
+            <button class="btn btn-accent" style="padding:3px 8px; font-size:11px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with graph & sidebar results">📊 Export Slide</button>
+        </div>
+        <div class="meta">
+            Independent loss events: <strong>${{info.l}}</strong>
+        </div>
+        ${{clusterBadge}}
+        ${{ciliaryHtml}}
+        ${{partnerCountMeta}}
+    `;
 
     let html = '';
     qualifying.forEach((p, idx) => {{
@@ -1738,7 +1783,8 @@ function renderSidebar(name) {{
     }});
 
     if (qualifying.length === 0) {{
-        html = '<div style="padding:16px; color:#556; text-align:center;">No partners meeting current filter criteria.</div>';
+        const fName = (geneFilterMode !== 'all') ? ` under ${{geneFilterMode.replace(/_/g, ' ')}} filter` : '';
+        html = `<div style="padding:16px; color:#8892b0; text-align:center;">No partners meeting current criteria${{fName}}. Try lowering the Jaccard threshold or changing the filter.</div>`;
     }}
 
     document.getElementById('partner-list').innerHTML = html;
@@ -2253,10 +2299,11 @@ function showSingleCluster(cid, highlightGene) {{
     const shown = members.filter(n => GM[n] !== undefined && (!activeSet || activeSet.has(n)));
     const shownSet = new Set(shown);
 
+    const filterText = (geneFilterMode !== 'all') ? ` • Filter: ${{geneFilterMode.replace(/_/g, ' ')}}` : '';
     document.getElementById('gene-info').innerHTML = `
         <a class="back-to-clusters" onclick="showAllClusters();">← All Leiden Clusters</a>
         <h2 style="color:${{color}};">C${{cid}}: ${{cname}}</h2>
-        <div class="meta">${{shown.length}} genes • Jaccard &amp; Top-N filters inactive for clusters</div>
+        <div class="meta">${{shown.length}} / ${{members.length}} genes${{filterText}} • Jaccard &amp; Top-N filters inactive for clusters</div>
         <div style="display:flex; align-items:center; gap:6px; margin-top:7px;">
             <button class="btn btn-tree-add" onclick="addClusterGenesToTree(${{cid}})" title="Add top members of this cluster to Species Tree">🌳 Add Cluster to Tree</button>
             <button class="btn btn-accent" style="font-size:11px; padding:2px 8px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with cluster graph & members">📊 Export Slide</button>
@@ -2320,6 +2367,9 @@ function showSingleCluster(cid, highlightGene) {{
             <a href="${{getUniProtUrl(m)}}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" onclick="event.stopPropagation();">↗</a>
         </div>`;
     }});
+    if (shown.length === 0) {{
+        sideHtml = `<div style="padding:16px; color:#8892b0; text-align:center;">No genes in Cluster ${{cid}} match filter (${{geneFilterMode.replace(/_/g, ' ')}}).</div>`;
+    }}
     document.getElementById('partner-list').innerHTML = sideHtml;
     updateStatus();
 
@@ -2461,19 +2511,26 @@ function showAllClusters() {{
 function updateStatus() {{
     const status = document.getElementById('graph-status');
     if (!status) return;
+    const filterNames = {{
+        'all_ciliary': 'Union (SCGSv2 ∪ CiliaCarta)',
+        'ciliacarta': 'CiliaCarta',
+        'syscilia_v2': 'SYSCILIA v2',
+        'shared_core': 'Core (SCGSv2 ∩ CiliaCarta)'
+    }};
+    const filterSuffix = (geneFilterMode !== 'all') ? ` • Filter: ${{filterNames[geneFilterMode] || geneFilterMode.replace(/_/g, ' ')}}` : '';
     if (currentMode === 'tree') {{
         const geneCount = TREE_SELECTED_GENES.length;
         status.innerHTML = `Mode: Species Tree • 196 species • ${{geneCount}} gene${{geneCount === 1 ? '' : 's'}} on tree (${{TREE_TAX_LEVEL.toUpperCase()}} taxonomy)`;
     }} else if (currentMode === 'all_clusters') {{
-        status.textContent = 'Mode: Leiden Modules • 80 clusters • ' + (cy ? cy.nodes().length : 0) + ' nodes';
+        status.textContent = 'Mode: Leiden Modules • 80 clusters • ' + (cy ? cy.nodes().length : 0) + ' nodes' + filterSuffix;
     }} else if (currentMode === 'single_cluster') {{
-        status.textContent = `Mode: Leiden Cluster C${{currentClusterId}} • ${{cy ? cy.nodes().length : 0}} nodes • ${{cy ? cy.edges().length : 0}} edges (click gene to focus, 2nd click opens interactors)`;
+        status.textContent = `Mode: Leiden Cluster C${{currentClusterId}} • ${{cy ? cy.nodes().length : 0}} nodes • ${{cy ? cy.edges().length : 0}} edges (click gene to focus, 2nd click opens interactors)` + filterSuffix;
     }} else if (cy && selectedGene) {{
         const cid = GENE_CL[selectedGene];
         const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${{cid}}`) : '';
-        status.innerHTML = `Mode: Network View • Focus: <strong>${{selectedGene}}</strong> (Cluster C${{cid}}: ${{cname}}) • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges`;
+        status.innerHTML = `Mode: Network View • Focus: <strong>${{selectedGene}}</strong> (Cluster C${{cid}}: ${{cname}}) • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges` + filterSuffix;
     }} else if (cy) {{
-        status.textContent = `Mode: Network View • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges`;
+        status.textContent = `Mode: Network View • ${{cy.nodes().length}} nodes • ${{cy.edges().length}} edges` + filterSuffix;
     }}
 }}
 
@@ -3203,6 +3260,27 @@ function openExportModal() {{
     if (titleInput) {{
         titleInput.value = '';
     }}
+
+    // Automatically adapt slide partner count to match interactive view Top-N
+    const partnerSelect = document.getElementById('export-partner-count');
+    if (partnerSelect) {{
+        const isMax = document.getElementById('toggle-topn-max')?.checked;
+        const curTopN = isMax ? 30 : parseInt(document.getElementById('topn')?.value || 25);
+        const optValues = Array.from(partnerSelect.options).map(o => parseInt(o.value));
+        if (optValues.includes(curTopN)) {{
+            partnerSelect.value = String(curTopN);
+        }} else {{
+            let closest = optValues[0];
+            let minDiff = Math.abs(curTopN - closest);
+            for (const v of optValues) {{
+                if (Math.abs(curTopN - v) < minDiff) {{
+                    minDiff = Math.abs(curTopN - v);
+                    closest = v;
+                }}
+            }}
+            partnerSelect.value = String(closest);
+        }}
+    }}
     refreshExportSlidePreview();
 }}
 
@@ -3340,13 +3418,25 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         const thresh = parseFloat(document.getElementById('thresh')?.value || 0.20).toFixed(2);
         const topn = document.getElementById('toggle-topn-max')?.checked ? 'Max' : (document.getElementById('topn')?.value || 25);
         badges.push(`Jaccard ≥ ${{thresh}}`);
-        badges.push(`Showing Top ${{topn}}`);
-        badges.push(`Filter: ${{geneFilterMode.replace(/_/g, ' ').toUpperCase()}}`);
+        badges.push(`Showing Top ${{partnerLimit}}`);
+        const filterNames = {{
+            'all_ciliary': 'ALL UNION (SCGSv2 ∪ CILIACARTA)',
+            'ciliacarta': 'CILIACARTA',
+            'syscilia_v2': 'SYSCILIA V2',
+            'shared_core': 'CORE (SCGSv2 ∩ CILIACARTA)'
+        }};
+        if (geneFilterMode !== 'all') badges.push(`Filter: ${{filterNames[geneFilterMode] || geneFilterMode.replace(/_/g, ' ').toUpperCase()}}`);
         badges.push(`Layout: ${{document.getElementById('layout-select')?.value === 'cose' ? 'Force (Spread)' : 'Radial'}}`);
     }} else if (currentMode === 'single_cluster') {{
         badges.push('Leiden Module');
         badges.push(`${{(CLUSTERS[currentClusterId] || []).length}} Genes`);
-        badges.push(`Filter: ${{geneFilterMode.replace(/_/g, ' ').toUpperCase()}}`);
+        const filterNames = {{
+            'all_ciliary': 'ALL UNION (SCGSv2 ∪ CILIACARTA)',
+            'ciliacarta': 'CILIACARTA',
+            'syscilia_v2': 'SYSCILIA V2',
+            'shared_core': 'CORE (SCGSv2 ∩ CILIACARTA)'
+        }};
+        if (geneFilterMode !== 'all') badges.push(`Filter: ${{filterNames[geneFilterMode] || geneFilterMode.replace(/_/g, ' ').toUpperCase()}}`);
     }} else {{
         badges.push('80 Leiden Modules');
         badges.push('11,236 Genes');
@@ -3564,7 +3654,8 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         if (ALL_CILIARY.has(selectedGene)) {{
             const cInfo = CILIA_INFO[selectedGene];
             let cilText = 'CILIARY GENE';
-            if (cInfo && cInfo.v2) cilText = `SYSCILIA ${{cInfo.v2.toUpperCase()}}`;
+            if (cInfo && cInfo.v2 && cInfo.cc) cilText = `CORE CILIARY (${{cInfo.v2.toUpperCase()}} ∩ CILIACARTA)`;
+            else if (cInfo && cInfo.v2) cilText = `SYSCILIA ${{cInfo.v2.toUpperCase()}}`;
             else if (cInfo && cInfo.cc) cilText = 'CILIACARTA';
             drawCanvasPill(ctx, cilText, sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true);
         }}
@@ -3681,76 +3772,102 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
     // Table Rows
     const rowsToDraw = Math.min(qualifying.length, partnerLimit);
-    const rowH = 46;
-    let rowY = thY + thH + 6;
+    
+    // Dynamically calculate row height to fit all requested rows cleanly within the slide card
+    const rowStartY = thY + thH + 6;
+    const cardBottomMargin = 22;
+    const maxAvailableH = (sy + sh - cardBottomMargin) - rowStartY;
+    const hasOverflowNote = (qualifying.length > rowsToDraw);
+    const reservedFooterH = hasOverflowNote ? 28 : 0;
+    const spaceForRows = maxAvailableH - reservedFooterH;
+    const idealRowH = Math.floor(spaceForRows / Math.max(1, rowsToDraw));
+    const rowH = Math.max(26, Math.min(46, idealRowH));
+
+    // Dynamic typography and element sizing scaled to row height
+    const rankFontSize = rowH < 33 ? '10.5px' : (rowH < 39 ? '11.5px' : '12.5px');
+    const geneFontSize = rowH < 33 ? '12px' : (rowH < 39 ? '13px' : '14.5px');
+    const jaccardFontSize = rowH < 33 ? '11px' : (rowH < 39 ? '12px' : '13px');
+    const lossesFontSize = rowH < 33 ? '11px' : (rowH < 39 ? '12px' : '13px');
+    const barH = rowH < 33 ? 6 : (rowH < 39 ? 8 : 10);
+    const pillFontSize = rowH < 33 ? 8 : (rowH < 39 ? 9 : 10);
+
+    let rowY = rowStartY;
 
     for (let i = 0; i < rowsToDraw; i++) {{
         const p = qualifying[i];
         const isAlt = (i % 2 === 1);
         if (isAlt) {{
-            drawCanvasRoundedRect(ctx, sx + 25, rowY, sw - 50, rowH - 4, 4);
+            drawCanvasRoundedRect(ctx, sx + 25, rowY + 1, sw - 50, rowH - 2, 4);
             ctx.fillStyle = P.tableRowAlt;
             ctx.fill();
         }}
 
+        const midY = rowY + rowH / 2;
+
         // Rank
-        ctx.font = '600 12.5px ui-monospace, SFMono-Regular, monospace';
+        ctx.font = `600 ${{rankFontSize}} ui-monospace, SFMono-Regular, monospace`;
         ctx.fillStyle = P.textMuted;
-        ctx.fillText(`#${{i + 1}}`, sx + 42, rowY + 26);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`#${{i + 1}}`, sx + 42, midY);
 
         // Gene Name
-        ctx.font = 'bold 14.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.font = `bold ${{geneFontSize}} -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         ctx.fillStyle = isDark ? '#7eb8ff' : '#0284c7';
-        ctx.fillText(p.n, sx + 115, rowY + 26);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.n, sx + 115, midY);
         const gnW = ctx.measureText(p.n).width;
 
         // Cilia tag
         if (ALL_CILIARY.has(p.n)) {{
-            drawCanvasPill(ctx, 'CILIA', sx + 125 + gnW, rowY + 21, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 10, true);
+            drawCanvasPill(ctx, 'CILIA', sx + 124 + gnW, midY, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, pillFontSize, true);
         }}
 
         // Jaccard Bar + Value
         if (currentMode !== 'single_cluster') {{
             const bX = sx + 340;
-            const bY = rowY + 16;
+            const bY = midY - barH / 2;
             const bW = 140;
-            const bH = 10;
-            drawCanvasRoundedRect(ctx, bX, bY, bW, bH, 5);
+            drawCanvasRoundedRect(ctx, bX, bY, bW, barH, barH / 2);
             ctx.fillStyle = P.barBg;
             ctx.fill();
 
             const fillW = Math.max(4, Math.min(bW, p.j * bW));
-            drawCanvasRoundedRect(ctx, bX, bY, fillW, bH, 5);
+            drawCanvasRoundedRect(ctx, bX, bY, fillW, barH, barH / 2);
             ctx.fillStyle = getJaccardColor(p.j);
             ctx.fill();
 
-            ctx.font = 'bold 13px ui-monospace, SFMono-Regular, monospace';
+            ctx.font = `bold ${{jaccardFontSize}} ui-monospace, SFMono-Regular, monospace`;
             ctx.fillStyle = P.textPrimary;
-            ctx.fillText(p.j.toFixed(2), bX + bW + 14, rowY + 25);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(p.j.toFixed(2), bX + bW + 14, midY);
         }} else {{
             ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.fillStyle = P.textSecondary;
-            ctx.fillText(`Cluster C${{currentClusterId}}`, sx + 340, rowY + 25);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`Cluster C${{currentClusterId}}`, sx + 340, midY);
         }}
 
         // Losses
         const pLoss = GM[p.n] !== undefined ? GM[p.n] : (p.l || 0);
-        ctx.font = '600 13px ui-monospace, SFMono-Regular, monospace';
+        ctx.font = `600 ${{lossesFontSize}} ui-monospace, SFMono-Regular, monospace`;
         ctx.fillStyle = P.textSecondary;
-        ctx.fillText(`${{pLoss}}L`, sx + 680, rowY + 25);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${{pLoss}}L`, sx + 680, midY);
 
         rowY += rowH;
     }}
+
+    ctx.textBaseline = 'alphabetic';
 
     // Overflow message or Empty notice
     if (qualifying.length === 0) {{
         ctx.font = 'italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textMuted;
-        ctx.fillText('No qualifying partners meeting current criteria', sx + sw / 2 - 130, rowY + 30);
-    }} else if (qualifying.length > partnerLimit) {{
-        ctx.font = '500 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('No qualifying partners meeting current criteria', sx + sw / 2 - 130, rowY + 28);
+    }} else if (hasOverflowNote) {{
+        ctx.font = '500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillStyle = P.textMuted;
-        ctx.fillText(`+ ${{qualifying.length - partnerLimit}} more qualifying partners in interactive explorer (Jaccard ≥ ${{thresh.toFixed(2)}})`, sx + 30, rowY + 20);
+        ctx.fillText(`+ ${{qualifying.length - rowsToDraw}} more qualifying partners in interactive explorer (Jaccard ≥ ${{thresh.toFixed(2)}})`, sx + 30, rowY + 18);
     }}
 
     // 5. Slide Footer Bar
