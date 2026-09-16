@@ -14,11 +14,9 @@ async def main():
             await page.goto('https://prodromospapa.github.io/dollo-network-explorer/index.html', wait_until='networkidle')
             print("Page loaded")
             
-            # set threshold to 0.05 and topn to 200
-            await page.fill('#thresh', '0.05')
-            await page.fill('#topn', '200')
-            await page.evaluate("document.getElementById('thresh').dispatchEvent(new Event('input'))")
-            await page.evaluate("document.getElementById('topn').dispatchEvent(new Event('input'))")
+            # set threshold to 0.20 and topn to 25
+            await page.evaluate("document.getElementById('thresh').value = '0.20'; document.getElementById('thresh').dispatchEvent(new Event('input'))")
+            await page.evaluate("document.getElementById('topn').value = '25'; document.getElementById('topn').dispatchEvent(new Event('input'))")
             
             # test search SCAPER
             await page.fill('#search', 'SCAPER')
