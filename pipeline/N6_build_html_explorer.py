@@ -2995,6 +2995,56 @@ function runLayout(randomize, options = {{}}) {{
     return p;
 }}
 
+// Weighted label propagation: quickly splits a single Leiden module's genes into
+// visually distinguishable sub-groups based on their own co-loss connectivity, since
+// a 2000-gene module rendered as one flat color is unreadable. Not a rigorous
+// community-detection algorithm — just enough structure to make the layout legible.
+function detectSubClusters(nodeNames, edges) {{
+    const idx = new Map();
+    nodeNames.forEach((n, i) => idx.set(n, i));
+    const n = nodeNames.length;
+    const adj = Array.from({{ length: n }}, () => []);
+    edges.forEach(({{ a, b, j }}) => {{
+        const ia = idx.get(a), ib = idx.get(b);
+        if (ia === undefined || ib === undefined) return;
+        adj[ia].push([ib, j]);
+        adj[ib].push([ia, j]);
+    }});
+
+    const labels = new Array(n);
+    for (let i = 0; i < n; i++) labels[i] = i;
+    const order = Array.from({{ length: n }}, (_, i) => i);
+
+    const MAX_ITERS = 12;
+    for (let iter = 0; iter < MAX_ITERS; iter++) {{
+        for (let i = order.length - 1; i > 0; i--) {{
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+        }}
+        let changed = 0;
+        for (const i of order) {{
+            const neighbors = adj[i];
+            if (neighbors.length === 0) continue;
+            const scoreByLabel = new Map();
+            for (const [nb, w] of neighbors) {{
+                const lbl = labels[nb];
+                scoreByLabel.set(lbl, (scoreByLabel.get(lbl) || 0) + w);
+            }}
+            let bestLabel = labels[i];
+            let bestScore = -1;
+            scoreByLabel.forEach((score, lbl) => {{
+                if (score > bestScore) {{ bestScore = score; bestLabel = lbl; }}
+            }});
+            if (bestLabel !== labels[i]) {{ labels[i] = bestLabel; changed++; }}
+        }}
+        if (changed === 0) break;
+    }}
+
+    const labelOf = new Map();
+    nodeNames.forEach((name, i) => labelOf.set(name, labels[i]));
+    return labelOf;
+}}
+
 function showSingleCluster(cid, highlightGene) {{
     if (!CLUSTERS[cid]) return;
     currentClusterId = cid;
@@ -3015,6 +3065,76 @@ function showSingleCluster(cid, highlightGene) {{
     const shown = members.filter(n => GM[n] !== undefined && (!activeSet || activeSet.has(n)));
     const shownSet = new Set(shown);
 
+    // Gather intra-cluster co-loss pairs once — used both for sub-group detection
+    // (on the full set) and for the rendered edges (capped below for legibility/perf).
+    const edgeCandidates = [];
+    shown.forEach(name => {{
+        const d = getGeneData(name);
+        if (!d) return;
+        for (const p of d.p) {{
+            if (p.j > 0 && shownSet.has(p.n) && name < p.n) {{
+                edgeCandidates.push({{ a: name, b: p.n, j: p.j }});
+            }}
+        }}
+    }});
+
+    // A single flat color across 100s-2000+ genes is unreadable once force-spread —
+    // split the module into its own tighter-knit sub-groups and color those instead,
+    // so the layout the physics already produces is actually legible.
+    // Label propagation over every nonzero-Jaccard pair collapses into one giant
+    // community on these densely-connected modules (everything is a little bit
+    // connected to everything), so detect structure on a sparser, top-K-strongest-
+    // partner-per-gene graph instead — that's what actually reveals sub-groups.
+    const K_NEAREST = 10;
+    const lpaEdgeMap = new Map();
+    shown.forEach(name => {{
+        const d = getGeneData(name);
+        if (!d) return;
+        const topPartners = d.p
+            .filter(p => p.j > 0 && p.n !== name && shownSet.has(p.n))
+            .sort((x, y) => y.j - x.j)
+            .slice(0, K_NEAREST);
+        topPartners.forEach(p => {{
+            const a = name < p.n ? name : p.n;
+            const b = name < p.n ? p.n : name;
+            const key = a + '\\u0000' + b;
+            const existing = lpaEdgeMap.get(key);
+            if (!existing || p.j > existing.j) lpaEdgeMap.set(key, {{ a, b, j: p.j }});
+        }});
+    }});
+    const lpaEdges = Array.from(lpaEdgeMap.values());
+
+    // Dedicated palette (not TREE_PALETTE, which has a repeated color) so all 10
+    // sub-group slots stay visually distinct from each other and from the gray "Other".
+    const SUBCLUSTER_PALETTE = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990'];
+    const MIN_SUBCLUSTER_SIZE = 3;
+    const MAX_SUBCLUSTER_COLORS = SUBCLUSTER_PALETTE.length;
+    const OTHER_COLOR = '#64748b';
+    const subLabelOf = shown.length > 2 ? detectSubClusters(shown, lpaEdges) : new Map(shown.map(n => [n, 0]));
+    const sizeByLabel = new Map();
+    subLabelOf.forEach(lbl => sizeByLabel.set(lbl, (sizeByLabel.get(lbl) || 0) + 1));
+    const rankedLabels = Array.from(sizeByLabel.entries())
+        .filter(([, size]) => size >= MIN_SUBCLUSTER_SIZE)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MAX_SUBCLUSTER_COLORS)
+        .map(([lbl]) => lbl);
+    const colorByLabel = new Map(rankedLabels.map((lbl, i) => [lbl, SUBCLUSTER_PALETTE[i % SUBCLUSTER_PALETTE.length]]));
+    const subColorOf = (name) => colorByLabel.get(subLabelOf.get(name)) ?? OTHER_COLOR;
+    const otherCount = shown.length - rankedLabels.reduce((sum, lbl) => sum + sizeByLabel.get(lbl), 0);
+
+    const legendHtml = rankedLabels.length > 1 ? `
+        <div style="display:flex; flex-wrap:wrap; gap:5px 10px; margin-top:8px; padding:7px 9px; background:rgba(255,255,255,0.04); border-radius:6px; font-size:10.5px;">
+            <span style="color:#8892b0; font-weight:600; width:100%;">Sub-groups (by co-loss connectivity):</span>
+            ${{rankedLabels.map((lbl, i) => `
+                <span style="display:inline-flex; align-items:center; gap:4px;">
+                    <span style="width:9px; height:9px; border-radius:2px; background:${{colorByLabel.get(lbl)}}; display:inline-block; flex-shrink:0;"></span>
+                    <span style="color:#cbd5e1;">Group ${{i + 1}} (${{sizeByLabel.get(lbl)}})</span>
+                </span>
+            `).join('')}}
+            ${{otherCount > 0 ? `<span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:9px; height:9px; border-radius:2px; background:${{OTHER_COLOR}}; display:inline-block; flex-shrink:0;"></span><span style="color:#8892b0;">Other (${{otherCount}})</span></span>` : ''}}
+        </div>
+    ` : '';
+
     const filterText = (geneFilterMode !== 'all') ? ` • Filter: ${{geneFilterMode.replace(/_/g, ' ')}}` : '';
     document.getElementById('gene-info').innerHTML = `
         <a class="back-to-clusters" onclick="showAllClusters();">← All Leiden Clusters</a>
@@ -3024,6 +3144,7 @@ function showSingleCluster(cid, highlightGene) {{
             <button class="btn btn-tree-add" onclick="addClusterGenesToTree(${{cid}})" title="Add top members of this cluster to Species Tree">+ Add Cluster to Tree</button>
             <button class="btn btn-accent" style="font-size:11px; padding:2px 8px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with cluster graph & members">Export Slide</button>
         </div>
+        ${{legendHtml}}
     `;
 
     const elements = [];
@@ -3033,7 +3154,7 @@ function showSingleCluster(cid, highlightGene) {{
             data: {{
                 id: name,
                 label: name,
-                color: color,
+                color: subColorOf(name),
                 size: Math.max(8, Math.min(20, 8 + Math.sqrt(GM[name] || 0) * 0.8)),
                 clusterId: cid
             }},
@@ -3046,16 +3167,6 @@ function showSingleCluster(cid, highlightGene) {{
     // what made big clusters appear to hang, so cap to the strongest edges once a
     // cluster is large enough for that to matter; small clusters are unaffected.
     const MAX_CLUSTER_EDGES = 4000;
-    const edgeCandidates = [];
-    shown.forEach(name => {{
-        const d = getGeneData(name);
-        if (!d) return;
-        for (const p of d.p) {{
-            if (p.j > 0 && shownSet.has(p.n) && name < p.n) {{
-                edgeCandidates.push({{ a: name, b: p.n, j: p.j }});
-            }}
-        }}
-    }});
     let edgeList = edgeCandidates;
     if (edgeCandidates.length > MAX_CLUSTER_EDGES) {{
         edgeCandidates.sort((x, y) => y.j - x.j);
