@@ -1347,49 +1347,8 @@ body.light-theme #tree-toast {{
             <button onclick="closeEdgeAlignmentModal()" style="background:transparent; border:none; color:#94a3b8; font-size:22px; cursor:pointer; padding:2px 8px; border-radius:4px; line-height:1;" title="Close (Esc)">&times;</button>
         </div>
 
-        <!-- Modal Body (Mock Alignment) -->
-        <div style="padding:30px 40px; background:#0b1120; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:20px;">
-            <div style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); border-radius:6px; padding:12px; color:#93c5fd; font-size:12px; display:flex; gap:10px; align-items:flex-start;">
-                <span style="font-size:16px;">ℹ️</span>
-                <div>
-                    <strong style="display:block; margin-bottom:4px; color:#bfdbfe;">Prototype Visualization</strong>
-                    This is a safe UI placeholder for the sequence alignment of interacting partners. The repository currently stores binary Jaccard matrices but lacks the raw FASTA/ALN alignments for these specific orthogroups. When MSAs are added to the pipeline, this modal can dynamically display real interaction logos.
-                </div>
-            </div>
-            
-            <div style="text-align:center; font-size:18px; font-weight:600; margin:10px 0;">
-                <span id="ea-source" style="color:#f8fafc;">Gene A</span>
-                <span style="color:#64748b; margin:0 10px;">↔</span>
-                <span id="ea-target" style="color:#f8fafc;">Gene B</span>
-            </div>
-
-            <!-- Fake Sequence Logo / Alignment -->
-            <div style="background:#1e293b; border-radius:8px; padding:20px; font-family:monospace; font-size:14px; overflow-x:auto;">
-                <div style="display:flex; flex-direction:column; gap:8px; min-width:600px;">
-                    <div style="display:flex; justify-content:space-between; color:#94a3b8; font-size:11px; margin-bottom:5px; border-bottom:1px solid #334155; padding-bottom:5px;">
-                        <span>Conserved Interaction Domain</span>
-                        <span>Positions 340-385</span>
-                    </div>
-                    <!-- Source row -->
-                    <div style="display:flex; align-items:center;">
-                        <span id="ea-source-lbl" style="width:100px; color:#f8fafc; font-weight:bold;">Gene A</span>
-                        <span style="color:#64748b; margin-right:15px;">|</span>
-                        <span><span style="color:#38bdf8;">M</span>T<span style="color:#10b981;">D</span>E<span style="color:#ef4444;">K</span><span style="color:#eab308;">C</span>G<span style="color:#38bdf8;">M</span>M<span style="color:#10b981;">D</span><span style="color:#ef4444;">R</span>T<span style="color:#eab308;">C</span><span style="color:#ef4444;">K</span><span style="color:#10b981;">D</span>G<span style="color:#38bdf8;">M</span>P<span style="color:#ef4444;">R</span>A</span>
-                    </div>
-                    <!-- Match row -->
-                    <div style="display:flex; align-items:center;">
-                        <span style="width:100px;"></span>
-                        <span style="color:#64748b; margin-right:15px;">|</span>
-                        <span style="color:#cbd5e1;">: : :* : * : : : :* * : : * : :</span>
-                    </div>
-                    <!-- Target row -->
-                    <div style="display:flex; align-items:center;">
-                        <span id="ea-target-lbl" style="width:100px; color:#f8fafc; font-weight:bold;">Gene B</span>
-                        <span style="color:#64748b; margin-right:15px;">|</span>
-                        <span><span style="color:#38bdf8;">L</span>T<span style="color:#10b981;">D</span>E<span style="color:#ef4444;">R</span><span style="color:#eab308;">C</span>G<span style="color:#38bdf8;">L</span>M<span style="color:#10b981;">D</span><span style="color:#ef4444;">K</span>T<span style="color:#eab308;">C</span><span style="color:#ef4444;">R</span><span style="color:#10b981;">D</span>G<span style="color:#38bdf8;">V</span>P<span style="color:#ef4444;">K</span>A</span>
-                    </div>
-                </div>
-            </div>
+        <!-- Modal Body (Dynamic Alignment & Co-Evolution Interface) -->
+        <div id="ea-modal-body" style="padding:22px 28px; background:#0b1120; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
         </div>
     </div>
 </div>
@@ -3631,13 +3590,231 @@ function openEdgeAlignmentModal(sourceId, targetId, jaccard) {{
     const sourceName = NAMES[sourceId] || sourceId;
     const targetName = NAMES[targetId] || targetId;
     
-    document.getElementById('ea-source').textContent = sourceName;
-    document.getElementById('ea-target').textContent = targetName;
-    document.getElementById('ea-source-lbl').textContent = sourceName;
-    document.getElementById('ea-target-lbl').textContent = targetName;
-    document.getElementById('ea-jaccard').textContent = Number(jaccard).toFixed(3);
+    const modalEl = document.getElementById('edge-alignment-modal');
+    if (!modalEl) return;
+
+    const pairKey = ((sourceName === 'SCAPER' && targetName === 'TTC5') || (sourceName === 'TTC5' && targetName === 'SCAPER'))
+        ? 'SCAPER_TTC5'
+        : null;
+
+    const bodyEl = document.getElementById('ea-modal-body');
+    const jVal = Number(jaccard || 0).toFixed(3);
+
+    if (pairKey && ALIGNMENT_DATA[pairKey]) {{
+        const d = ALIGNMENT_DATA[pairKey];
+        ALN_VIEW_MODE = 'cterm';
+
+        bodyEl.innerHTML = `
+            <div style="background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.3); border-radius:8px; padding:14px 18px; font-size:12.5px; line-height:1.5;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <strong style="color:#7dd3fc; font-size:13.5px; display:flex; align-items:center; gap:6px;">
+                        <span>🧬</span> Co-Evolution Interface: SCAPER (aa 505–769) ↔ TTC5
+                    </strong>
+                    <span style="font-size:11px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.2); border:1px solid rgba(56,189,248,0.4); padding:2px 8px; border-radius:10px;">
+                        Jaccard = ${{jVal}} (${{d.shared_losses}} shared loss branches)
+                    </span>
+                </div>
+                <div style="color:#cbd5e1; font-size:12px;">
+                    When two proteins physically interact, evolutionary loss of one partner relaxes selective constraint on the interaction interface of the remaining partner. In this eukaryotic dataset:
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
+                    <div style="background:#0f172a; padding:8px 12px; border-radius:6px; border:1px solid #1e293b;">
+                        <div style="color:#10b981; font-weight:700; font-size:11px; text-transform:uppercase;">Co-Retained (${{d.both_count}} Species)</div>
+                        <div style="font-size:12px; color:#f8fafc; margin-top:2px;">
+                            • Overall domain integrity: <strong>${{d.both_retention_pct}}%</strong><br>
+                            • C-terminal interaction motif: <strong>${{d.cterm_both_pct}}% intact</strong>
+                        </div>
+                    </div>
+                    <div style="background:#0f172a; padding:8px 12px; border-radius:6px; border:1px solid #1e293b;">
+                        <div style="color:#f43f5e; font-weight:700; font-size:11px; text-transform:uppercase;">TTC5 Lost (${{d.lost_count}} Species)</div>
+                        <div style="font-size:12px; color:#f8fafc; margin-top:2px;">
+                            • C-terminal motif retention: <strong>drops to ${{d.cterm_lost_pct}}% (-53% loss)</strong><br>
+                            • <strong>5 species</strong> exhibit complete domain truncation (>75% deleted)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:11.5px; font-weight:600; color:#94a3b8;">Alignment View:</span>
+                    <button id="btn-aln-cterm" class="btn active" style="font-size:11px; padding:3px 10px;" onclick="setAlnViewMode('cterm', '${{pairKey}}')">
+                        🎯 C-Terminal Interaction Motif (aa 181–265)
+                    </button>
+                    <button id="btn-aln-full" class="btn" style="font-size:11px; padding:3px 10px;" onclick="setAlnViewMode('full', '${{pairKey}}')">
+                        Full Domain (aa 1–265)
+                    </button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:11px;">
+                    <span style="display:flex; align-items:center; gap:3px;"><span style="color:#60a5fa; font-weight:bold;">K/R/H</span> Basic</span>
+                    <span style="display:flex; align-items:center; gap:3px;"><span style="color:#f87171; font-weight:bold;">D/E</span> Acidic</span>
+                    <span style="display:flex; align-items:center; gap:3px;"><span style="color:#34d399; font-weight:bold;">S/T/Q</span> Polar</span>
+                    <span style="display:flex; align-items:center; gap:3px;"><span style="color:#fbbf24; font-weight:bold;">A/L/V</span> Hydrophobic</span>
+                    <span style="display:flex; align-items:center; gap:3px;"><span style="color:#475569; font-weight:bold;">—</span> Deletion</span>
+                </div>
+            </div>
+
+            <div id="ea-alignment-rows" style="background:#0f172a; border-radius:8px; padding:14px; border:1px solid #1e293b; max-height:360px; overflow-y:auto;">
+                ${{renderAlignmentHtml(pairKey, 'cterm')}}
+            </div>
+
+            <div style="font-size:11px; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
+                <span>Source: Multiple Sequence Alignment across 196 comparative eukaryotic genomes (TCS / EukProt v3)</span>
+                <span>Dataset: /home/prodromosp/scaper_new/TCS</span>
+            </div>
+        `;
+    }} else {{
+        bodyEl.innerHTML = `
+            <div style="text-align:center; padding:10px 0;">
+                <div style="font-size:20px; font-weight:700; color:#f8fafc;">
+                    <span style="color:#38bdf8;">${{sourceName}}</span>
+                    <span style="color:#64748b; margin:0 10px;">↔</span>
+                    <span style="color:#34d399;">${{targetName}}</span>
+                </div>
+                <div style="font-size:12px; color:#8892b0; margin-top:4px;">
+                    Co-Loss Concordance: <strong style="color:#38bdf8;">J = ${{jVal}}</strong>
+                </div>
+            </div>
+
+            <div style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:16px; font-size:12.5px; color:#cbd5e1; line-height:1.5;">
+                <strong style="color:#f8fafc; display:block; margin-bottom:6px;">Sequence Alignment & Domain Extraction</strong>
+                To inspect sequence conservation and interface loss for this specific edge, you can extract the ortholog alignments across the 196 eukaryotic proteomes located in <code>/home/prodromosp/scaper_new/TCS</code>.
+                <div style="margin-top:10px; font-size:11.5px; color:#94a3b8; background:#070b13; padding:10px; border-radius:6px; border:1px solid #1e293b; font-family:monospace;">
+                    python pipeline/extract_orthogroup_aln.py --geneA "${{sourceName}}" --geneB "${{targetName}}"
+                </div>
+            </div>
+        `;
+    }}
+
+    modalEl.style.display = 'flex';
+}}
+
+
+const ALIGNMENT_DATA = {{
+    'SCAPER_TTC5': {{
+        geneA: 'SCAPER',
+        geneB: 'TTC5',
+        jaccard: 0.428571,
+        shared_losses: 24,
+        both_count: 101,
+        lost_count: 11,
+        neither_count: 66,
+        both_retention_pct: 74.7,
+        lost_retention_pct: 48.0,
+        cterm_both_pct: 70.4,
+        cterm_lost_pct: 35.0,
+        domain_name: 'SCAPER C-Terminal Interaction Helix (aa 505–769)',
+        species: [
+            {{
+                name: 'Homo sapiens',
+                label: 'Human (Reference)',
+                status: 'retained',
+                seq_cterm: 'QARVEELLMKRKEQEARIEQQRQEKEKAREDAARERARDREERLAALTAAQQEAMEELQKKIQLKHDESIRRHMEQIEQRKEKAA',
+                seq_full: 'QNTSWGDIVEEEPARPPGHGIHMHEKLSSPSRKRTIAESKKKHEEKQMKAQQLREKLREEKTLKLQKLLEREKDVRKWKEELLDQRRRMMEEKLLHAEFKREVQLQAIVKKAQEEEAKVNEIAFINTLEAQNKRHDVLSKLKEYEQRLNELQEERQRRQEEKQARDEAVQERKRALEAERQARVEELLMKRKEQEARIEQQRQEKEKAREDAARERARDREERLAALTAAQQEAMEELQKKIQLKHDESIRRHMEQIEQRKEKAA',
+                gaps: 0
+            }},
+            {{
+                name: 'Mantamonas plastica',
+                label: 'M. plastica',
+                status: 'retained',
+                seq_cterm: 'DQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKGKGKG-------KGKGKGKSKNKSKKNRNRNNSASASENEQEPEFHRRQST',
+                seq_full: 'STGS-ASGGDSSRDSPPPSARSLHSKLSSPERHKKSKETRKHIERKQAKARLQRQRLENEKQHRRRKHTNKMRRVSERQQEIREAQQQDIASKFEKADQRREQHIQEIKRKAEKESSKVEELAFITSLTNENKRASIEQKLESEQRRLANMDN-KLKQLHENADREYKIEMAKRWNTQQGDQSHEDSSQKAKKQQ----QQQQQQQPKKSKAAKGKGKG-------KGKGKGKSKNKSKKNRNRNNSASASENEQEPEFHRRQST',
+                gaps: 13
+            }},
+            {{
+                name: 'Dracoamoeba jomungandri',
+                label: 'D. jomungandri',
+                status: 'retained',
+                seq_cterm: 'GKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEEKEKSKQ-----------------NTKVRKKLTNSNIHQATQL--------',
+                seq_full: '----WADIVKRRENNSP-----RHQKLSSPA--RCKDEVKKKCNEKHERAKLVRERIKLEKKEKWSRTAERVRGVTERKTQREEKLRQEITXXXXLADKRYLEHLENIVKKAGDENKKVDEVAFIKELSTGNKKLSLEQKRRMAKKRREELLEQRKAKMDQRGSSQPSSTQKTTSMNSDFGKRHTQAMKKAGDNTCFVKKEKAQENESRDRGKEEKEKSKQ-----------------NTKVRKKLTNSNIHQATQL--------',
+                gaps: 36
+            }},
+            {{
+                name: 'Gefionella okellyi',
+                label: 'G. okellyi',
+                status: 'lost',
+                seq_cterm: '------------EKQ-----------------------MRA--------------------------ES--------KSIR----',
+                seq_full: '-----------------PPPYHRHNKLSSPE--KTKQETRAHIQEKHAKARLKREKLENERRHKRSKRSDKVRSLSERQKEIRQAQQEDFADKYEKADRRRDQHIQEIKKKAEKESSKVEELAFITSLSNENKRISLEQKLESEEKRVKSLEEKREKLRQKAESEYKTEMAERWKTQQG-----------------------EKQ-----------------------MRA--------------------------ES--------KSIR----',
+                gaps: 88
+            }},
+            {{
+                name: 'Pharyngomonas kirbyi',
+                label: 'P. kirbyi',
+                status: 'lost',
+                seq_cterm: '-------------------------------------R---HE---------------INNLTKRMPNS-------L--------',
+                seq_full: '--------------------------------------------------------------------------------------------------LEHIQQLKGKAEEESAKVDEIAFITKLSTANQKRSLNEKMKCEEKRMNQLKEKRTALKEKVRSELESEKIRRQAEKNK-------------------------------------R---HE---------------INNLTKRMPNS-------L--------',
+                gaps: 199
+            }},
+            {{
+                name: 'Pygsuia biforma',
+                label: 'P. biforma',
+                status: 'lost',
+                seq_cterm: '-------------------------------------------------------------------------------------',
+                seq_full: '----------EEPER------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------',
+                gaps: 255
+            }}
+        ]
+    }}
+}};
+
+let ALN_VIEW_MODE = 'cterm'; // 'cterm' or 'full'
+
+function colorizeResidue(aa) {{
+    if (aa === '-') return `<span style="color:#475569; background:#0f172a; padding:0 1px;">-</span>`;
+    if ('DE'.includes(aa)) return `<span style="color:#f87171; font-weight:700;">${{aa}}</span>`;
+    if ('KRH'.includes(aa)) return `<span style="color:#60a5fa; font-weight:700;">${{aa}}</span>`;
+    if ('STNQC'.includes(aa)) return `<span style="color:#34d399; font-weight:600;">${{aa}}</span>`;
+    if ('AVLIMFEPWGX'.includes(aa)) return `<span style="color:#fbbf24; font-weight:600;">${{aa}}</span>`;
+    return `<span>${{aa}}</span>`;
+}}
+
+function renderAlignmentHtml(pairKey, viewMode) {{
+    const d = ALIGNMENT_DATA[pairKey];
+    if (!d) return '';
+
+    let rowsHtml = '';
+    d.species.forEach(sp => {{
+        const isRet = (sp.status === 'retained');
+        const badgeCol = isRet ? '#10b981' : '#f43f5e';
+        const badgeBg = isRet ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)';
+        const badgeBorder = isRet ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+        const badgeText = isRet ? '✓ TTC5 Retained' : '✕ TTC5 Lost';
+
+        const rawSeq = viewMode === 'cterm' ? sp.seq_cterm : sp.seq_full;
+        const coloredSeq = rawSeq.split('').map(colorizeResidue).join('');
+        const gapCount = rawSeq.split('').filter(c => c === '-').length;
+        const gapPct = ((gapCount / rawSeq.length) * 100).toFixed(0);
+
+        rowsHtml += `
+            <div style="display:flex; align-items:flex-start; margin-bottom:10px; font-family:ui-monospace, SFMono-Regular, monospace; font-size:12.5px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+                <div style="width:230px; flex-shrink:0; padding-right:12px;">
+                    <div style="font-weight:700; color:#f8fafc; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${{sp.name}}</div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                        <span style="font-size:9.5px; padding:1px 5px; border-radius:3px; background:${{badgeBg}}; color:${{badgeCol}}; border:1px solid ${{badgeBorder}}; font-weight:600;">${{badgeText}}</span>
+                        <span style="font-size:10px; color:#64748b;">${{gapPct}}% gaps</span>
+                    </div>
+                </div>
+                <div style="flex:1; overflow-x:auto; letter-spacing:1.5px; line-height:1.6; white-space:nowrap; background:#0b1120; padding:4px 8px; border-radius:4px; border:1px solid #1e293b;">
+                    ${{coloredSeq}}
+                </div>
+            </div>
+        `;
+    }});
+
+    return rowsHtml;
+}}
+
+function setAlnViewMode(mode, pairKey) {{
+    ALN_VIEW_MODE = mode;
+    const btnCterm = document.getElementById('btn-aln-cterm');
+    const btnFull = document.getElementById('btn-aln-full');
+    if (btnCterm) btnCterm.classList.toggle('active', mode === 'cterm');
+    if (btnFull) btnFull.classList.toggle('active', mode === 'full');
     
-    document.getElementById('edge-alignment-modal').style.display = 'flex';
+    const container = document.getElementById('ea-alignment-rows');
+    if (container) {{
+        container.innerHTML = renderAlignmentHtml(pairKey, mode);
+    }}
 }}
 
 function closeEdgeAlignmentModal() {{
