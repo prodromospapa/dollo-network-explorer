@@ -1331,7 +1331,7 @@ function initCy() {
                 style: {
                     'width': 'data(width)',
                     'line-color': 'data(color)',
-                    'opacity': 0.35,
+                    'opacity': 'data(opacity)',
                     'curve-style': 'haystack'
                 }
             },
@@ -1424,6 +1424,15 @@ function initCy() {
         tipEl.style.display = 'block';
     });
     cy.on('mouseout', 'node', function() {
+        if (tipEl) tipEl.style.display = 'none';
+    });
+    cy.on('mouseover', 'edge', function(evt) {
+        const d = evt.target.data();
+        if (!tipEl || d.jaccard === undefined) return;
+        tipEl.innerHTML = `<strong>${d.source} ⟷ ${d.target}</strong><br>Jaccard Similarity: <strong>${d.jaccard.toFixed(2)}</strong>`;
+        tipEl.style.display = 'block';
+    });
+    cy.on('mouseout', 'edge', function() {
         if (tipEl) tipEl.style.display = 'none';
     });
     cy.on('pan zoom', function() {
@@ -1584,7 +1593,9 @@ function renderEgoNetwork(geneName) {
                 id: `${geneName}--${p.n}`,
                 source: geneName,
                 target: p.n,
-                width: 0.8 + p.j * 2.5,
+                jaccard: p.j,
+                width: 1.2 + p.j * 4.5,
+                opacity: Math.min(0.88, 0.25 + p.j * 0.9),
                 color: '#38bdf8'
             }
         });
@@ -1602,8 +1613,10 @@ function renderEgoNetwork(geneName) {
                         id: `${p.n}--${pp.n}`,
                         source: p.n,
                         target: pp.n,
-                        width: 0.4 + pp.j * 1.8,
-                        color: 'rgba(90, 142, 255, 0.25)'
+                        jaccard: pp.j,
+                        width: 0.8 + pp.j * 3.0,
+                        opacity: Math.min(0.65, 0.15 + pp.j * 0.7),
+                        color: 'rgba(90, 142, 255, 0.45)'
                     }
                 });
             }
@@ -1733,7 +1746,9 @@ function showSingleCluster(cid, highlightGene) {
                         id: `${name}--${p.n}`,
                         source: name,
                         target: p.n,
-                        width: 0.4 + p.j * 2.5,
+                        jaccard: p.j,
+                        width: 0.8 + p.j * 3.5,
+                        opacity: Math.min(0.80, 0.20 + p.j * 0.8),
                         color: color
                     }
                 });
@@ -1863,7 +1878,9 @@ function showAllClusters() {
                             id: `${m.n}--${p.n}`,
                             source: m.n,
                             target: p.n,
-                            width: 0.3 + p.j * 1.5,
+                            jaccard: p.j,
+                            width: 0.6 + p.j * 2.5,
+                            opacity: Math.min(0.75, 0.18 + p.j * 0.7),
                             color: color
                         }
                     });
@@ -2271,11 +2288,13 @@ function renderCircularTree() {
 
     // 1. Clade Background Wedges
     const wedgeOpacity = isDark ? '0.14' : '0.08';
+    const stepA = (TREE_LAYOUT.gap_deg && TREE_LAYOUT.gap_deg > 0) ? (SPAN / (nLeaves - 1)) : (SPAN / nLeaves);
+    const dA = stepA * 0.48;
+
     cladeBlocks.forEach(block => {
         const sIdx = block.start_idx;
         const eIdx = block.end_idx;
         const col = block.color || (isDark ? '#475569' : '#94a3b8');
-        const dA = (SPAN / (nLeaves - 1)) * 0.48;
         const a1 = TREE_LAYOUT.leaf_angles[sIdx] + dA;
         const a2 = TREE_LAYOUT.leaf_angles[eIdx] - dA;
 
@@ -2324,7 +2343,6 @@ function renderCircularTree() {
         const rOuter = rInner + TRACK_WIDTH;
         const col = TREE_PALETTE[gI % TREE_PALETTE.length];
         const pVec = presenceVectors[gI];
-        const dA = (SPAN / (nLeaves - 1)) * 0.48;
 
         TREE_LAYOUT.leaf_species.forEach((sp, leafI) => {
             const isPres = pVec[leafI] === 1;
@@ -2357,7 +2375,6 @@ function renderCircularTree() {
         const eIdx = block.end_idx;
         const cname = block.clade;
         const col = block.color || (isDark ? '#94a3b8' : '#64748b');
-        const dA = (SPAN / (nLeaves - 1)) * 0.48;
 
         const a1 = TREE_LAYOUT.leaf_angles[sIdx] + dA;
         const a2 = TREE_LAYOUT.leaf_angles[eIdx] - dA;
@@ -2450,17 +2467,6 @@ function renderCircularTree() {
         });
     }
     svgParts.push('</g>');
-
-    // 6. Bottom Track Labels (only if genes are selected)
-    if (TREE_SELECTED_GENES.length > 0) {
-        svgParts.push(`<g transform="translate(${CX - 40}, ${CY + R_TRACKS_START - 22})">`);
-        TREE_SELECTED_GENES.forEach((gName, i) => {
-            const col = TREE_PALETTE[i % TREE_PALETTE.length];
-            const y = i * 12;
-            svgParts.push(`<text x="0" y="${y}" font-size="9" font-weight="700" fill="${col}">${gName}</text>`);
-        });
-        svgParts.push('</g>');
-    }
 
     svg.innerHTML = svgParts.join('');
     setupTreeTooltips();

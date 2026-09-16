@@ -25,6 +25,9 @@ def main():
     if not tree_match:
         raise ValueError("Could not find tree block in TCS.tree")
     tree = Tree(tree_match.group(2), format=1)
+    outgroup_cand = [l for l in tree.get_leaves() if "Gefionella_okellyi" in l.name]
+    if outgroup_cand:
+        tree.set_outgroup(outgroup_cand[0])
 
     # Parse TCS taxlabels
     taxlabels_m = re.search(r"taxlabels\s+(.*?);", tree_text, re.S)
@@ -75,13 +78,13 @@ def main():
             raise ValueError(f"Species {sp} not found in EukProt!")
 
     # Circular angles
-    GAP_DEG = 24.0
-    TOTAL_SPAN_DEG = 360.0 - GAP_DEG
-    START_DEG = 90.0 - (GAP_DEG / 2.0)  # 78 degrees
+    GAP_DEG = 0.0
+    TOTAL_SPAN_DEG = 360.0
+    START_DEG = 90.0
 
     leaf_angles = []
     for i, leaf in enumerate(leaves):
-        ang = START_DEG - (i / (n_leaves - 1)) * TOTAL_SPAN_DEG
+        ang = START_DEG - (i / n_leaves) * TOTAL_SPAN_DEG
         leaf.add_feature("_ang", ang)
         leaf_angles.append(round(ang, 3))
 
