@@ -2910,6 +2910,32 @@ function runLayout(randomize, options = {{}}) {{
         return p;
     }}
 
+    // COSE's repulsion pass is O(n^2); above a few hundred nodes it takes tens of
+    // seconds and the view appears to hang (some Leiden clusters exceed 2000 genes).
+    // Fall back to a fast grid layout instead of running physics on graphs that big.
+    if (layoutMode !== 'concentric' && cy.nodes().length > 500) {{
+        const gridConfig = {{
+            name: 'grid',
+            animate: !immediate,
+            animationDuration: immediate ? 0 : 400,
+            fit: randomize,
+            padding: 60,
+            avoidOverlapPadding: 8
+        }};
+        const layout = cy.layout(gridConfig);
+        const p = layout.promiseOn('layoutstop').then(() => {{
+            if (randomize) {{
+                if (immediate) {{
+                    cy.fit(undefined, 60);
+                }} else {{
+                    cy.animate({{ fit: {{ padding: 60 }} }}, {{ duration: 300 }});
+                }}
+            }}
+        }});
+        layout.run();
+        return p;
+    }}
+
     // Force-directed (cose) - organic spread layout with label awareness
     const isEgo = Boolean(selectedGene && (currentMode === 'gene' || currentMode === 'network'));
     let intraEdges = null;
@@ -2922,6 +2948,14 @@ function runLayout(randomize, options = {{}}) {{
         intraData = intraEdges.map(e => e.json());
         intraEdges.remove();
     }}
+
+    // COSE's per-iteration repulsion pass is O(n^2); on the largest Leiden clusters
+    // (several exceed 1500-2000 genes) the default iteration count makes the layout
+    // take tens of seconds and the view appears to "not load". Scale iterations down
+    // as the graph grows so it still converges quickly.
+    const nodeCount = cy.nodes().length;
+    const baseIter = immediate ? 800 : 1400;
+    const numIter = nodeCount > 150 ? Math.max(40, Math.round(baseIter * 150 / nodeCount)) : baseIter;
 
     const layoutConfig = {{
         name: 'cose',
@@ -2944,7 +2978,7 @@ function runLayout(randomize, options = {{}}) {{
         edgeElasticity: function(edge) {{ return isEgo ? 25 : 15; }},
         nestingFactor: 1.0,
         gravity: isEgo ? 0.04 : 0.06,
-        numIter: immediate ? 800 : 1400,
+        numIter: numIter,
         initialTemp: 1000,
         coolingFactor: 0.98,
         minTemp: 1.0,
@@ -2986,7 +3020,12 @@ function showSingleCluster(cid, highlightGene) {{
     if (!CLUSTERS[cid]) return;
     currentClusterId = cid;
     clusterFocusedGene = null;
-    switchView('single_cluster');
+    // switchView('single_cluster') re-enters here via setSidebarTab('list') once currentMode
+    // is already 'single_cluster' — only drive the mode switch on the initial (outside) call,
+    // or it recurses forever and blows the call stack.
+    if (currentMode !== 'single_cluster') {{
+        switchView('single_cluster');
+    }}
     currentClusterId = cid;
 
     const members = CLUSTERS[cid];
@@ -3023,26 +3062,39 @@ function showSingleCluster(cid, highlightGene) {{
         }});
     }});
 
-    // Add all intra-cluster edges (no Jaccard threshold — show full community structure)
+    // Add intra-cluster edges. The largest Leiden clusters (2000+ genes) can have
+    // 100,000+ pairs at any nonzero Jaccard — rendering/laying out that many edges is
+    // what made big clusters appear to hang, so cap to the strongest edges once a
+    // cluster is large enough for that to matter; small clusters are unaffected.
+    const MAX_CLUSTER_EDGES = 4000;
+    const edgeCandidates = [];
     shown.forEach(name => {{
         const d = getGeneData(name);
         if (!d) return;
         for (const p of d.p) {{
             if (p.j > 0 && shownSet.has(p.n) && name < p.n) {{
-                elements.push({{
-                    group: 'edges',
-                    data: {{
-                        id: `${{name}}--${{p.n}}`,
-                        source: name,
-                        target: p.n,
-                        jaccard: p.j,
-                        width: 0.8 + p.j * 3.5,
-                        opacity: Math.min(0.80, 0.20 + p.j * 0.8),
-                        color: getJaccardColor(p.j)
-                    }}
-                }});
+                edgeCandidates.push({{ a: name, b: p.n, j: p.j }});
             }}
         }}
+    }});
+    let edgeList = edgeCandidates;
+    if (edgeCandidates.length > MAX_CLUSTER_EDGES) {{
+        edgeCandidates.sort((x, y) => y.j - x.j);
+        edgeList = edgeCandidates.slice(0, MAX_CLUSTER_EDGES);
+    }}
+    edgeList.forEach(({{a, b, j}}) => {{
+        elements.push({{
+            group: 'edges',
+            data: {{
+                id: `${{a}}--${{b}}`,
+                source: a,
+                target: b,
+                jaccard: j,
+                width: 0.8 + j * 3.5,
+                opacity: Math.min(0.80, 0.20 + j * 0.8),
+                color: getJaccardColor(j)
+            }}
+        }});
     }});
 
     cy.batch(() => {{
@@ -4570,8 +4622,8 @@ function drawCanvasRoundedRect(ctx, x, y, w, h, r) {{
     ctx.closePath();
 }}
 
-function drawCanvasPill(ctx, text, x, y, bg, color, border, fontSize = 13, bold = false) {{
-    const pillScale = EXPORT_SLIDE_SCALE || 1.0;
+function drawCanvasPill(ctx, text, x, y, bg, color, border, fontSize = 13, bold = false, scale = null) {{
+    const pillScale = scale != null ? scale : (EXPORT_SLIDE_SCALE || 1.0);
     const scaledFontSize = (fontSize * pillScale).toFixed(2);
     ctx.font = `${{bold ? 'bold ' : '600 '}}${{scaledFontSize}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     const metrics = ctx.measureText(text);
@@ -4712,21 +4764,10 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         badges.push('196 Eukaryotic Species');
     }}
 
-    // Draw Slide Title
-    ctx.font = fs('bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
-    ctx.fillStyle = P.textPrimary;
-    ctx.fillText(slideTitle, 52, 68);
-
-    // Draw Subtitle / Parameter Badges
-    let badgeX = 52;
-    badges.forEach(b => {{
-        const w = drawCanvasPill(ctx, b, badgeX, 108, P.badgeBg, P.badgeText, P.badgeBorder, 13, false);
-        badgeX += w + 8;
-    }});
-
-    // Draw Branding Watermark on Top Right
+    // Draw Branding Watermark on Top Right (measured first so the title knows how much room it can use)
     ctx.textAlign = 'right';
     ctx.font = fs('bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+    const watermarkWidth = ctx.measureText('DOLLO NETWORK EXPLORER').width;
     ctx.fillStyle = P.textPrimary;
     ctx.fillText('DOLLO NETWORK EXPLORER', SW - 52, 62);
     ctx.font = fs('12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
@@ -4734,11 +4775,31 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
     ctx.fillText('Dollo Parsimony Co-Loss Analysis • 196 Genomes', SW - 52, 82);
     ctx.textAlign = 'left';
 
+    // Draw Slide Title (auto-shrinks to fit so a long/scaled title never overlaps the watermark)
+    let titleFontPx = 34 * uiScale;
+    const titleMaxWidth = SW - 52 - watermarkWidth - 60;
+    ctx.font = `bold ${{titleFontPx.toFixed(1)}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    while (titleFontPx > 14 && ctx.measureText(slideTitle).width > titleMaxWidth) {{
+        titleFontPx -= 1;
+        ctx.font = `bold ${{titleFontPx.toFixed(1)}}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    }}
+    const titleBaselineY = 34 + titleFontPx * 0.55;
+    ctx.fillStyle = P.textPrimary;
+    ctx.fillText(slideTitle, 52, titleBaselineY);
+
+    // Draw Subtitle / Parameter Badges (stacked below the title's actual height, whatever scale/shrink it ended up at)
+    const badgeY = titleBaselineY + titleFontPx * 0.55 + 16 * uiScale;
+    let badgeX = 52;
+    badges.forEach(b => {{
+        const w = drawCanvasPill(ctx, b, badgeX, badgeY, P.badgeBg, P.badgeText, P.badgeBorder, 13, false, uiScale);
+        badgeX += w + 8 * uiScale;
+    }});
+
     // 3. Left Visualization Panel
     const vx = 48;
-    const vy = 145;
+    const vy = Math.max(145, Math.round(badgeY + 13 * uiScale + 20));
     const vw = 1570;
-    const vh = 1225;
+    const vh = SH - vy - 70;
     drawCanvasRoundedRect(ctx, vx, vy, vw, vh, 16);
     ctx.fillStyle = P.cardBg;
     ctx.fill();
@@ -5132,7 +5193,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
         // Cilia Badge if applicable
         if (ALL_CILIARY.has(selectedGene)) {{
-            drawCanvasPill(ctx, 'CILIA', sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true);
+            drawCanvasPill(ctx, 'CILIA', sx + 35 + nameW, sy + 34, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, 11.5, true, uiScale);
         }}
 
         // Loss Events
@@ -5294,7 +5355,7 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
 
         // Cilia tag
         if (ALL_CILIARY.has(p.n)) {{
-            drawCanvasPill(ctx, 'CILIA', sx + 124 + gnW, midY, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, pillFontSize, true);
+            drawCanvasPill(ctx, 'CILIA', sx + 124 + gnW, midY, P.ciliaBadgeBg, P.ciliaBadgeText, P.ciliaBadgeBorder, pillFontSize, true, uiScale);
         }}
 
         // Jaccard Bar + Value
