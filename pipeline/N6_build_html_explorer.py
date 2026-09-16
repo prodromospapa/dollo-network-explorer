@@ -1101,9 +1101,8 @@ body.light-theme #tree-toast {{
 
         <label style="margin-left:4px;">Layout:</label>
         <select id="layout-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; padding:3px 6px; border-radius:4px; font-size:11px;">
-            <option value="concentric" selected>Radial (Ego)</option>
-            <option value="cose">Force (Spread)</option>
-            <option value="circle">Circle</option>
+            <option value="cose" selected>Force (Spread)</option>
+            <option value="concentric">Concentric (Radial)</option>
         </select>
 
         <label>Filter:</label>
@@ -2009,9 +2008,8 @@ function runLayout(randomize) {{
 
     const layoutMode = document.getElementById('layout-select') ? document.getElementById('layout-select').value : 'cose';
 
-    let layoutConfig = {{}};
     if (layoutMode === 'concentric') {{
-        layoutConfig = {{
+        const concentricConfig = {{
             name: 'concentric',
             animate: true,
             animationDuration: 500,
@@ -2027,46 +2025,75 @@ function runLayout(randomize) {{
             }},
             levelWidth: function() {{ return 1; }}
         }};
-    }} else if (layoutMode === 'circle') {{
-        layoutConfig = {{
-            name: 'circle',
-            animate: true,
-            animationDuration: 500,
-            fit: randomize,
-            padding: 60,
-            spacingFactor: 1.2,
-        }};
-    }} else {{
-        // Force-directed (cose) - organic spread layout
-        layoutConfig = {{
-            name: 'cose',
-            animate: true,
-            animationDuration: 600,
-            randomize: randomize,
-            componentSpacing: 100,
-            nodeRepulsion: function(node) {{ return 1800000; }},
-            nodeOverlap: 40,
-            idealEdgeLength: function(edge) {{ return 160; }},
-            edgeElasticity: function(edge) {{ return 10; }},
-            nestingFactor: 1.2,
-            gravity: 0.08,
-            numIter: randomize ? 1000 : 500,
-            initialTemp: randomize ? 1000 : 200,
-            coolingFactor: 0.95,
-            minTemp: 1.0,
-            fit: randomize,
-            padding: 60,
-        }};
+        const layout = cy.layout(concentricConfig);
+        if (randomize) {{
+            layout.promiseOn('layoutstop').then(() => {{
+                cy.animate({{ fit: {{ padding: 60 }} }}, {{ duration: 300 }});
+            }});
+        }}
+        layout.run();
+        return;
     }}
 
-    const layout = cy.layout(layoutConfig);
-    if (randomize) {{
-        layout.promiseOn('layoutstop').then(() => {{
-            cy.animate({{
-                fit: {{ padding: 60 }}
-            }}, {{ duration: 300 }});
-        }});
+    // Force-directed (cose) - organic spread layout with label awareness
+    const isEgo = Boolean(selectedGene && (currentMode === 'gene' || currentMode === 'network'));
+    let intraEdges = null;
+    let intraData = null;
+
+    if (isEgo) {{
+        // In ego networks, temporarily detach intra-partner edges during physics calculation
+        // so the 180 secondary springs don't collapse nodes into an unreadable clump.
+        intraEdges = cy.edges().filter(e => e.data('source') !== selectedGene && e.data('target') !== selectedGene);
+        intraData = intraEdges.map(e => e.json());
+        intraEdges.remove();
     }}
+
+    const layoutConfig = {{
+        name: 'cose',
+        animate: false,
+        randomize: randomize,
+        nodeDimensionsIncludeLabels: true,
+        componentSpacing: isEgo ? 130 : 100,
+        nodeRepulsion: function(node) {{
+            if (isEgo) return node.id() === selectedGene ? 20000000 : 8000000;
+            return 2500000;
+        }},
+        nodeOverlap: 20,
+        idealEdgeLength: function(edge) {{
+            if (isEgo) {{
+                const j = edge.data('jaccard') || 0.2;
+                return Math.max(160, 310 - (j - 0.2) * 250);
+            }}
+            return 160;
+        }},
+        edgeElasticity: function(edge) {{ return isEgo ? 25 : 15; }},
+        nestingFactor: 1.0,
+        gravity: isEgo ? 0.04 : 0.06,
+        numIter: 1400,
+        initialTemp: 1000,
+        coolingFactor: 0.98,
+        minTemp: 1.0,
+        fit: randomize,
+        padding: 60
+    }};
+
+    const layout = cy.layout(layoutConfig);
+    layout.promiseOn('layoutstop').then(() => {{
+        if (isEgo && intraData && intraData.length > 0) {{
+            cy.add(intraData);
+            // Re-apply subtle styling to restored intra-partner edges
+            cy.edges().forEach(e => {{
+                if (e.data('source') !== selectedGene && e.data('target') !== selectedGene) {{
+                    e.style({{
+                        'opacity': Math.min(0.18, 0.06 + (e.data('jaccard') || 0.2) * 0.20),
+                        'width': 0.6 + (e.data('jaccard') || 0.2) * 1.5,
+                        'line-color': 'rgba(100, 140, 220, 0.35)'
+                    }});
+                }}
+            }});
+        }}
+        cy.animate({{ fit: {{ padding: 60 }} }}, {{ duration: 300 }});
+    }});
     layout.run();
 }}
 
