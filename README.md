@@ -47,6 +47,53 @@ flowchart TD
     I --> J["Self-Contained Interactive Web Explorer (Cytoscape.js)"]
 ```
 
+All of the above (Dollo reconstruction, Jaccard matrix, Leiden modules, GO
+naming, and this explorer itself) exists in **two parallel dataset
+variants**, built from the same 196-species tree but different presence/
+absence calls -- see the note right below.
+
+---
+
+## 1a. Two Datasets: Orthogroups vs. Pure Orthologs
+
+Every gene's presence/absence call for the whole pipeline above ultimately
+comes from one of two OrthoFinder outputs, and the explorer lets you switch
+between them (a **Data** dropdown in the header, or `?dataset=ortholog` in
+the URL):
+
+| Dataset | Question it answers | Genome-wide scale |
+|---|---|---|
+| **Orthogroups** (default) | "Does this species have *any* sequence similar enough to cluster with this human gene?" | 19,758 genes, 11,236 with >=5 losses, 80 Leiden clusters (Q=0.303) |
+| **Pure orthologs** (strict) | "Does this species have a *confirmed, reconciled* ortholog of this human gene?" | Same 19,758 genes, 13,493 with >=5 losses, 156 Leiden clusters (Q=0.167) |
+
+The **orthogroup** call is inclusive: OrthoFinder's own documentation
+describes an orthogroup as including both orthologues and ancient
+paralogues, so a `1` here can mean "true ortholog" or "shares a promiscuous
+domain but isn't otherwise related." The **ortholog** call is OrthoFinder's
+stricter, second-pass reconciliation (gene-tree speciation vs. duplication
+nodes), so it doesn't count same-species paralogs as if they were the gene
+-- but it can *undercount* true orthologs when a large, poorly-resolved gene
+tree misclassifies a real speciation event as a duplication. Concretely, for
+SCAPER (this project's original motivating case, see Section 7):
+**112 species** show up in the orthogroup call vs. **26** in the strict
+ortholog call -- the same divergence pattern holds across the genome (median
+gap ~13 species/gene, ~39% of genes with a gap >=50 species). Neither call
+is simply "more correct" across the board; a large gap between the two for
+a given gene is the signal to treat that gene's absence calls with caution
+rather than take either matrix at face value. Full methodology and the
+worked SCAPER example: `README_presence_matrices.md` in the source data
+directory.
+
+Practically, this also means the two datasets' Leiden clustering is *not*
+directly comparable in quality: the stricter ortholog data produces a
+noisier, more fragmented co-loss signal (156 clusters, one large
+4,889-gene megacluster plus many small fragments, modularity 0.167) than
+the orthogroup data's cleaner 80-module structure (modularity 0.303). Both
+were built with identical Leiden parameters (resolution=2.0, Jaccard
+floor=0.20) deliberately, so the difference in clustering quality is itself
+part of the comparison the toggle is meant to surface, not a tuning
+artifact.
+
 ---
 
 ## 2. Biological Foundation: Phylogenetic Profiling & Dollo Parsimony

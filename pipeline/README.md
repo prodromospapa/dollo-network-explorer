@@ -70,6 +70,38 @@ bash scripts_simple/03_concordance.sh SCAPER
 
 ---
 
+## 4a. Two Dataset Variants (Orthogroups vs. Pure Orthologs)
+
+Everything above runs against `cache/table.tsv`, derived from the
+inclusive **orthogroup**-membership matrix. A second, parallel run of the
+same steps 2-5 (N2 Dollo reconstruction through N5 Leiden clustering)
+exists for the stricter, reconciled **ortholog**-only matrix -- see
+`README.md`'s "Two Datasets" section at the project root for what the
+difference means biologically. Its outputs live in sibling directories
+rather than overwriting the orthogroup dataset's:
+
+| Orthogroup dataset (default) | Ortholog dataset (strict) |
+|---|---|
+| `cache/table.tsv`, `cache/events.tsv`, `cache/family_index.tsv` | `cache/ortholog/table.tsv`, `cache/ortholog/events.tsv`, `cache/ortholog/family_index.tsv` |
+| `results/jaccard_matrix.npy`, `leiden_clusters.tsv`, `leiden_summary.tsv` | `results/ortholog/jaccard_matrix.npy`, `leiden_clusters.tsv`, `leiden_summary.tsv` |
+| `network_partners.bin`, `data.json` | `network_partners.ortholog.bin`, `data.ortholog.json` |
+| `tree_presence.bin` | `tree_presence.ortholog.bin` |
+
+`cache/tree.newick` and `tree_layout.json` are shared/unsuffixed -- the
+196-species tree and gene ordering are identical between datasets; only
+presence values (and everything computed from them) differ. The gene-level
+ortholog presence matrix itself (`orthologs_corHMM.csv` /
+`orthologs.pkl`, siblings of the original `orthogroups_corHMM.csv` /
+`orthogroups.pkl` one level above this repo) is built by
+`helpers/build_ortholog_matrix.py`, and `tree_presence.ortholog.bin` by
+`helpers/build_tree_presence.py`. `build_html_explorer.py --dataset
+{orthogroup,ortholog}` builds each dataset's `network_partners*.bin` /
+`data*.json` and regenerates the shared `index.html` shell, which reads
+`?dataset=` from the URL (via the header's **Data** dropdown) to pick
+which files to fetch at load.
+
+---
+
 ## 5. Deferred: statistical significance
 
 A raw concordance score has no attached probability -- two genes can look

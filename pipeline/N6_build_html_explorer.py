@@ -42,13 +42,22 @@ def main():
                         help="Minimum Jaccard to include as partner (default: 0.08)")
     parser.add_argument("--output", type=str, default=None,
                         help="Output HTML file path (default: ./index.html)")
+    parser.add_argument("--dataset", choices=["orthogroup", "ortholog"], default="orthogroup",
+                        help="Which presence-matrix dataset to build data files for: "
+                             "'orthogroup' (default, inclusive OrthoFinder orthogroup "
+                             "membership -- may include paralogs) or 'ortholog' (strict, "
+                             "reconciled speciation-only ortholog calls). See "
+                             "README_presence_matrices.md. Run this script once per dataset; "
+                             "index.html itself is shared/identical, only the data siblings "
+                             "(network_partners.*.bin, data_*.json) differ per dataset.")
     args = parser.parse_args()
 
     website_dir = Path(__file__).resolve().parent
     base = website_dir
-    results = base / "results"
+    results = base / "results" if args.dataset == "orthogroup" else base / "results" / "ortholog"
+    suffix = "" if args.dataset == "orthogroup" else f".{args.dataset}"
 
-    print("1. Loading gene and matrix data...")
+    print(f"1. Loading gene and matrix data (dataset={args.dataset})...")
     J = np.load(results / "jaccard_matrix.npy", mmap_mode="r")
     loss_counts = np.load(results / "loss_counts.npy")
 
@@ -101,23 +110,53 @@ def main():
         h = (i * 360.0 / n_cl + 15.0) % 360.0
         cluster_colors[cid] = hsl_to_hex(h, 75, 60)
 
-    # Load curated ciliary gene sets
+    # Load curated ciliary gene sets (dataset-agnostic -- shared across both datasets)
     ciliary_sets, cilia_info = load_ciliary_annotations(base)
 
-    # 2. Build or verify network_partners.bin (Partner lists for Ego/Pathways)
-    partners_bin_path = website_dir / "network_partners.bin"
+    # Coevolution profiles are a small, hand-curated set of specific gene-pair
+    # writeups (with alignment sequences) built separately from the N1-N5
+    # pipeline; not regenerated per dataset. Shared as-is across both datasets.
+    coev_path = base / "results" / "coevolution_profiles.json"
+    if not coev_path.exists():
+        coev_path = base / "data" / "coevolution_profiles.json"
+    if coev_path.exists():
+        with open(coev_path) as f:
+            coevolution_profiles = json.load(f)
+    else:
+        coevolution_profiles = {}
+
+    # 2. Build or verify network_partners.<dataset>.bin (Partner lists for Ego/Pathways)
+    partners_bin_path = website_dir / f"network_partners{suffix}.bin"
     if not partners_bin_path.exists():
-        print("2. Generating network_partners.bin...")
+        print(f"2. Generating {partners_bin_path.name}...")
         generate_partners_binary(partners_bin_path, J, all_names, name_to_id,
                                  name_to_orig_idx, idx_to_name, loss_counts,
                                  args.top_k, args.jaccard_floor)
     else:
         print(f"2. Using existing {partners_bin_path}")
 
-    # 3. Generate index.html
-    print("3. Generating index.html...")
+    # 3. Write this dataset's data_<dataset>.json (fetched by index.html at
+    # load time based on the ?dataset= URL param -- see build_html's JS).
+    data_path = website_dir / f"data{suffix}.json"
+    print(f"3. Writing {data_path.name}...")
+    data_blob = {
+        "names": all_names,
+        "coevolution_profiles": coevolution_profiles,
+        "clusters": cluster_data,
+        "cluster_names": cluster_names,
+        "cluster_colors": cluster_colors,
+        "ciliary_sets": ciliary_sets,
+        "cilia_info": cilia_info,
+    }
+    with open(data_path, "w") as f:
+        json.dump(data_blob, f, separators=(",", ":"))
+    print(f"  -> {data_path.stat().st_size / 1024:.1f} KB")
+
+    # 4. Generate index.html (shared shell -- identical regardless of which
+    # dataset was built; regenerating on every run is harmless/idempotent).
+    print("4. Generating index.html...")
     output_path = Path(args.output or str(website_dir / "index.html"))
-    html = build_html(all_names, cluster_data, cluster_names, cluster_colors, ciliary_sets, cilia_info)
+    html = build_html()
 
     with open(output_path, "w") as f:
         f.write(html)
@@ -336,30 +375,19 @@ def annotate_clusters_with_go(cluster_data, base_dir):
     return cluster_names
 
 
-def build_html(all_names, cluster_data=None, cluster_names=None, cluster_colors=None, ciliary_sets=None, cilia_info=None):
-    ciliary_sets = ciliary_sets or {}
+def build_html():
+    """Build the shared, dataset-agnostic HTML/CSS/JS shell. All per-dataset
+    data (gene names, clusters, ciliary sets, coevolution profiles, etc.) is
+    fetched at runtime from data<suffix>.json -- see the '?dataset=' loader
+    at the top of the <script> block below -- so this shell is identical
+    regardless of which dataset was built most recently; regenerating it on
+    every run is harmless."""
+    base = Path(__file__).resolve().parent
+    ciliary_sets, _cilia_info = load_ciliary_annotations(base)
     len_all_ciliary = len(ciliary_sets.get("all_ciliary", []))
     len_cc = len(ciliary_sets.get("ciliacarta", []))
     len_v2 = len(ciliary_sets.get("syscilia_v2", []))
     len_core = len(ciliary_sets.get("shared_core", []))
-
-    names_json = json.dumps(all_names, separators=(",", ":"))
-    clusters_json = json.dumps(cluster_data or {}, separators=(",", ":"))
-    cluster_names_json = json.dumps(cluster_names or {}, separators=(",", ":"))
-    cluster_colors_json = json.dumps(cluster_colors or {}, separators=(",", ":"))
-    ciliary_sets_json = json.dumps(ciliary_sets, separators=(",", ":"))
-    cilia_info_json = json.dumps(cilia_info or {}, separators=(",", ":"))
-    base = Path(__file__).resolve().parent
-    results = base / "results"
-    coev_path = results / "coevolution_profiles.json"
-    if not coev_path.exists():
-        coev_path = base / "data" / "coevolution_profiles.json"
-    if coev_path.exists():
-        with open(coev_path) as f:
-            coevolution_profiles_json = f.read().strip()
-    else:
-        coevolution_profiles_json = "{}"
-
 
     html_code = f"""<!DOCTYPE html>
 <html lang="en">
@@ -425,6 +453,27 @@ body {{
     background: #2563eb;
     color: #ffffff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}}
+.dataset-toggle {{
+    display: inline-flex;
+    align-items: center;
+    background: #0d1220;
+    border: 1px solid #3a4570;
+    border-radius: 6px;
+    padding: 3px 8px;
+}}
+.dataset-toggle select {{
+    background: #131a2e;
+    color: #e2e8f0;
+    border: 1px solid #3a4570;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 6px;
+    cursor: pointer;
+}}
+.dataset-toggle select:hover {{
+    border-color: #38bdf8;
 }}
 .btn-clusters-header {{
     background: #1e293b;
@@ -1172,6 +1221,14 @@ body.light-theme #tree-toast {{
         <button id="btn-view-tree" class="view-btn" onclick="switchView('tree')" title="Species tree and gene presence tracks">Species Tree</button>
     </div>
 
+    <div class="dataset-toggle" title="Which presence/absence calls the whole analysis is built from. Orthogroups (default): a species counts as 'has this gene' if it has ANY sequence in the same OrthoFinder cluster -- inclusive, may count paralogs as if they were the gene. Pure orthologs: only species where OrthoFinder's gene-tree step confirmed a true speciation-derived ortholog count as present -- stricter, but a large/poorly-resolved gene tree can miss real orthologs (false negatives). See README_presence_matrices.md.">
+        <label for="dataset-select" style="font-size:11px; color:#8892b0; font-weight:600; margin-right:4px;">Data:</label>
+        <select id="dataset-select" onchange="switchDataset(this.value)">
+            <option value="orthogroup">Orthogroups (inclusive)</option>
+            <option value="ortholog">Pure orthologs (strict)</option>
+        </select>
+    </div>
+
     <div class="search-box">
         <input type="text" id="search" placeholder="Search gene (e.g. SCAPER, CEP290)…" autocomplete="off">
         <div id="suggestions"></div>
@@ -1417,14 +1474,30 @@ body.light-theme #tree-toast {{
 </div>
 
 <script>
-// ---- Static Inlined Metadata ----
-const NAMES = {names_json};
-const COEVOLUTION_PROFILES = {coevolution_profiles_json};
-const CLUSTERS = {clusters_json};
-const CLUSTER_NAMES = {cluster_names_json};
-const CLUSTER_COLORS = {cluster_colors_json};
-const CILIARY_SETS = {ciliary_sets_json};
-const CILIA_INFO = {cilia_info_json};
+(async function() {{
+
+// ---- Dataset selection (?dataset=orthogroup|ortholog, default orthogroup) ----
+// The two datasets are built from different presence/absence matrices --
+// see README_presence_matrices.md. "orthogroup" (default) is OrthoFinder's
+// inclusive orthogroup membership (may include paralogs); "ortholog" is the
+// stricter, reconciled speciation-only ortholog calls. Switching datasets
+// reloads the page against a different data_<dataset>.json /
+// network_partners.<dataset>.bin / tree_presence.<dataset>.bin file set --
+// see DATASET_SUFFIX below and loadPartnersGraph()/the tree loader.
+const DATASET = (new URLSearchParams(location.search).get('dataset') === 'ortholog') ? 'ortholog' : 'orthogroup';
+window.CURRENT_DATASET = DATASET;
+const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
+
+const DATA = await (await fetch('data' + DATASET_SUFFIX + '.json')).json();
+
+// ---- Static Metadata (fetched per-dataset, see DATA above) ----
+const NAMES = DATA.names;
+const COEVOLUTION_PROFILES = DATA.coevolution_profiles;
+const CLUSTERS = DATA.clusters;
+const CLUSTER_NAMES = DATA.cluster_names;
+const CLUSTER_COLORS = DATA.cluster_colors;
+const CILIARY_SETS = DATA.ciliary_sets;
+const CILIA_INFO = DATA.cilia_info;
 const ALL_CILIARY = new Set(CILIARY_SETS["all_ciliary"] || CILIARY_SETS["both"] || []);
 const HAS_CLUSTERS = Object.keys(CLUSTERS).length > 0;
 
@@ -1723,7 +1796,7 @@ function switchView(mode) {{
 
 async function loadPartnersGraph() {{
     try {{
-        const resp = await fetch('network_partners.bin');
+        const resp = await fetch('network_partners' + DATASET_SUFFIX + '.bin');
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const buf = await resp.arrayBuffer();
 
@@ -1803,7 +1876,7 @@ function renderClusterDirectory() {{
     const activeSet = getActiveGeneSet();
     const filterTitle = (geneFilterMode !== 'all') ? ` • Filter: ${{geneFilterMode.replace(/_/g, ' ')}}` : '';
     document.getElementById('gene-info').innerHTML = `
-        <h2>Leiden Modules <span style="font-size:11px;color:#8892b0;font-weight:400;">(80 clusters${{filterTitle}})</span></h2>
+        <h2>Leiden Modules <span style="font-size:11px;color:#8892b0;font-weight:400;">(${{Object.keys(CLUSTERS).length}} clusters${{filterTitle}})</span></h2>
         <div class="meta">Click a cluster to zoom in • Click "View Cluster →" to explore all members</div>
     `;
 
@@ -3398,7 +3471,7 @@ function updateStatus() {{
         const geneCount = TREE_SELECTED_GENES.length;
         status.innerHTML = `Mode: Species Tree • 196 species • ${{geneCount}} gene${{geneCount === 1 ? '' : 's'}} on tree (${{TREE_TAX_LEVEL.toUpperCase()}} taxonomy)`;
     }} else if (currentMode === 'all_clusters') {{
-        status.textContent = 'Mode: Leiden Modules • 80 clusters • ' + (cy ? cy.nodes().length : 0) + ' nodes' + filterSuffix;
+        status.textContent = 'Mode: Leiden Modules • ' + Object.keys(CLUSTERS).length + ' clusters • ' + (cy ? cy.nodes().length : 0) + ' nodes' + filterSuffix;
     }} else if (currentMode === 'single_cluster') {{
         status.textContent = `Mode: Leiden Cluster C${{currentClusterId}} • ${{cy ? cy.nodes().length : 0}} nodes • ${{cy ? cy.edges().length : 0}} edges (click gene to focus, 2nd click opens interactors)` + filterSuffix;
     }} else if (cy && selectedGene) {{
@@ -3619,7 +3692,7 @@ async function initTreeView() {{
         try {{
             const [layoutResp, presenceResp] = await Promise.all([
                 fetch('tree_layout.json'),
-                fetch('tree_presence.bin')
+                fetch('tree_presence' + DATASET_SUFFIX + '.bin')
             ]);
             if (!layoutResp.ok || !presenceResp.ok) throw new Error('Failed to load tree assets');
             TREE_LAYOUT = await layoutResp.json();
@@ -4902,8 +4975,8 @@ async function generatePresentationSlideCanvas(options = {{}}) {{
         }};
         if (geneFilterMode !== 'all') badges.push(`Filter: ${{filterNames[geneFilterMode] || geneFilterMode.replace(/_/g, ' ').toUpperCase()}}`);
     }} else {{
-        badges.push('80 Leiden Modules');
-        badges.push('11,236 Genes');
+        badges.push(`${{Object.keys(CLUSTERS).length}} Leiden Modules`);
+        badges.push(`${{NAMES.length.toLocaleString()}} Genes`);
         badges.push('196 Eukaryotic Species');
     }}
 
@@ -5686,14 +5759,39 @@ document.getElementById('gene-filter').addEventListener('change', function() {{
     applyGeneFilterChange(this.value);
 }});
 
+// Switch between the orthogroup (inclusive) and pure-ortholog (strict)
+// datasets -- see the DATASET/DATASET_SUFFIX loader at the top of this
+// script. A full reload is used deliberately rather than a live in-page
+// swap: the app's state (NAMES, CLUSTERS, GENE_IDX, PARTNER_* buffers,
+// tree presence, current view) is threaded through many call sites, and a
+// reload against a different ?dataset= is far lower-risk than auditing
+// every one of them to reset cleanly.
+function switchDataset(value) {{
+    const url = new URL(location.href);
+    if (value === 'orthogroup') {{
+        url.searchParams.delete('dataset');
+    }} else {{
+        url.searchParams.set('dataset', value);
+    }}
+    location.href = url.toString();
+}}
+
 // Init
-window.addEventListener('DOMContentLoaded', () => {{
+function initApp() {{
+    const sel = document.getElementById('dataset-select');
+    if (sel) sel.value = DATASET;
     applySiteTheme(SITE_THEME);
     initCy();
     loadPartnersGraph();
     showAllClusters();
-}});
+}}
+if (document.readyState === 'loading') {{
+    window.addEventListener('DOMContentLoaded', initApp);
+}} else {{
+    initApp();
+}}
 
+}})();
 </script>
 </body>
 </html>
