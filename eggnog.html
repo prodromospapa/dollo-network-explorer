@@ -833,9 +833,9 @@ body.light-theme #tree-toast {
     <div class="dataset-toggle" title="Which presence/absence calls the whole analysis is built from. Orthogroups (default): a species counts as 'has this gene' if it has ANY sequence in the same OrthoFinder cluster -- inclusive, may count paralogs as if they were the gene. Pure orthologs: only species where OrthoFinder's gene-tree step confirmed a true speciation-derived ortholog count as present -- stricter, but a large/poorly-resolved gene tree can miss real orthologs (false negatives). See README_presence_matrices.md.">
         <label for="dataset-select" style="font-size:11px; color:#8892b0; font-weight:600; margin-right:4px;">Data:</label>
         <select id="dataset-select" onchange="switchDataset(this.value)">
-            <option value="orthogroup" selected>TCS Orthogroups (196 species)</option>
+            <option value="orthogroup" >TCS Orthogroups (196 species)</option>
             <option value="ortholog">TCS Pure orthologs (196 species)</option>
-            <option value="eggnog" >EggNOG Filtered (250 species)</option>
+            <option value="eggnog" selected>EggNOG Filtered (250 species)</option>
         </select>
     </div>
 
@@ -1184,11 +1184,11 @@ window.zoomTree = zoomTree;
 // reloads the page against a different data_<dataset>.json /
 // network_partners.<dataset>.bin / tree_presence.<dataset>.bin file set --
 // see DATASET_SUFFIX below and loadPartnersGraph()/the tree loader.
-const DATASET = (new URLSearchParams(location.search).get('dataset') === 'ortholog') ? 'ortholog' : 'orthogroup';
+const DATASET = 'eggnog';
 window.CURRENT_DATASET = DATASET;
 const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
 
-const DATA = await (await fetch('data' + DATASET_SUFFIX + '.json')).json();
+const DATA = await (await fetch('data_eggnog.json')).json();
 
 // ---- Static Metadata (fetched per-dataset, see DATA above) ----
 const NAMES = DATA.names;
@@ -1496,7 +1496,7 @@ function switchView(mode) {
 
 async function loadPartnersGraph() {
     try {
-        const resp = await fetch('network_partners' + DATASET_SUFFIX + '.bin');
+        const resp = await fetch('network_partners_eggnog.bin');
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const buf = await resp.arrayBuffer();
 
@@ -3391,8 +3391,8 @@ async function initTreeView() {
         document.getElementById('tree-loading').style.display = 'flex';
         try {
             const [layoutResp, presenceResp] = await Promise.all([
-                fetch('tree_layout.json'),
-                fetch('tree_presence' + DATASET_SUFFIX + '.bin')
+                fetch('tree_layout_eggnog.json'),
+                fetch('tree_presence_eggnog.bin')
             ]);
             if (!layoutResp.ok || !presenceResp.ok) throw new Error('Failed to load tree assets');
             TREE_LAYOUT = await layoutResp.json();
