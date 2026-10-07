@@ -1,6 +1,7 @@
 # ── Large data / results (not tracked in git) ───────────────────────────────
 results/
 cache/
+cache_*/
 
 # ── Third-party binary tools ─────────────────────────────────────────────────
 tools/
@@ -27,3 +28,4 @@ build/
 .idea/
 .vscode/
 
+junk/

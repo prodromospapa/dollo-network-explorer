@@ -42,7 +42,7 @@ def main():
                         help="Minimum Jaccard to include as partner (default: 0.08)")
     parser.add_argument("--output", type=str, default=None,
                         help="Output HTML file path (default: ./index.html)")
-    parser.add_argument("--dataset", choices=["orthogroup", "ortholog"], default="orthogroup",
+    parser.add_argument("--dataset", choices=["orthogroup", "ortholog", "eggnog"], default="orthogroup",
                         help="Which presence-matrix dataset to build data files for: "
                              "'orthogroup' (default, inclusive OrthoFinder orthogroup "
                              "membership -- may include paralogs) or 'ortholog' (strict, "
@@ -54,8 +54,14 @@ def main():
 
     website_dir = Path(__file__).resolve().parent
     base = website_dir
-    results = base / "results" if args.dataset == "orthogroup" else base / "results" / "ortholog"
-    suffix = "" if args.dataset == "orthogroup" else f".{args.dataset}"
+    if args.dataset == "eggnog":
+        results = base / "cache_eggnog"
+        dataset_dir = base / "data" / "eggnog_dataset"
+        suffix = "_eggnog"
+    else:
+        results = base / "results" if args.dataset == "orthogroup" else base / "results" / "ortholog"
+        dataset_dir = base / "data"
+        suffix = "" if args.dataset == "orthogroup" else f".{args.dataset}"
 
     print(f"1. Loading gene and matrix data (dataset={args.dataset})...")
     J = np.load(results / "jaccard_matrix.npy", mmap_mode="r")
@@ -79,7 +85,7 @@ def main():
     # Load Leiden clusters
     cluster_data = {}
     gene_to_cluster = {}
-    leiden_path = results / "leiden_clusters.tsv"
+    leiden_path = dataset_dir / "leiden_clusters.tsv" if args.dataset == "eggnog" else results / "leiden_clusters.tsv"
     if leiden_path.exists():
         print("Loading Leiden cluster assignments...")
         from collections import defaultdict
@@ -1475,6 +1481,96 @@ body.light-theme #tree-toast {{
 
 <script>
 (async function() {{
+// Expose all functions to global scope for HTML event handlers
+window.addClusterGenesToTree = addClusterGenesToTree;
+window.addTreeGene = addTreeGene;
+window.applyGeneFilterChange = applyGeneFilterChange;
+window.applySiteTheme = applySiteTheme;
+window.applyTreeTransform = applyTreeTransform;
+window.blendTreeColors = blendTreeColors;
+window.closeEdgeAlignmentModal = closeEdgeAlignmentModal;
+window.closeExportModal = closeExportModal;
+window.closeTreeView = closeTreeView;
+window.colorizeResidue = colorizeResidue;
+window.copyExportSlideToClipboard = copyExportSlideToClipboard;
+window.detectSubClusters = detectSubClusters;
+window.downloadExportSlidePng = downloadExportSlidePng;
+window.drawCanvasPill = drawCanvasPill;
+window.drawCanvasRoundedRect = drawCanvasRoundedRect;
+window.exportTreeSvg = exportTreeSvg;
+window.focusGeneInCluster = focusGeneInCluster;
+window.generatePresentationSlideCanvas = generatePresentationSlideCanvas;
+window.getActiveGeneSet = getActiveGeneSet;
+window.getCiliaBadgeHtml = getCiliaBadgeHtml;
+window.getClusterColor = getClusterColor;
+window.getEffectiveTreeTheme = getEffectiveTreeTheme;
+window.getGeneData = getGeneData;
+window.getJaccardColor = getJaccardColor;
+window.getModalRegionBounds = getModalRegionBounds;
+window.getPairwiseJaccard = getPairwiseJaccard;
+window.getPairwiseTreeDistance = getPairwiseTreeDistance;
+window.getTreeDistanceColor = getTreeDistanceColor;
+window.getTreeGenePresence = getTreeGenePresence;
+window.getUniProtUrl = getUniProtUrl;
+window.handleClusterMemberClick = handleClusterMemberClick;
+window.handleTreeSidebarSearch = handleTreeSidebarSearch;
+window.handleTreeSidebarSearchSubmit = handleTreeSidebarSearchSubmit;
+window.initApp = initApp;
+window.initCy = initCy;
+window.initTreeView = initTreeView;
+window.loadCurrentNetworkGenesInTree = loadCurrentNetworkGenesInTree;
+window.loadPartnersGraph = loadPartnersGraph;
+window.onExportPartnerCountChange = onExportPartnerCountChange;
+window.openEdgeAlignmentModal = openEdgeAlignmentModal;
+window.openExportModal = openExportModal;
+window.openTreeView = openTreeView;
+window.refreshExportSlidePreview = refreshExportSlidePreview;
+window.removeTreeGene = removeTreeGene;
+window.renderCircularTree = renderCircularTree;
+window.renderClusterDirectory = renderClusterDirectory;
+window.renderEdgeAlignmentModalContent = renderEdgeAlignmentModalContent;
+window.renderEgoNetwork = renderEgoNetwork;
+window.renderSidebar = renderSidebar;
+window.renderSingleClusterContent = renderSingleClusterContent;
+window.renderTreeCandidatePartnersHtml = renderTreeCandidatePartnersHtml;
+window.renderTreeChips = renderTreeChips;
+window.renderTreeCoevolutionCard = renderTreeCoevolutionCard;
+window.renderTreeSidebar = renderTreeSidebar;
+window.renderTreeSingleGeneCoevolutionCard = renderTreeSingleGeneCoevolutionCard;
+window.resetTreeGenes = resetTreeGenes;
+window.resetTreeZoom = resetTreeZoom;
+window.runLayout = runLayout;
+window.selectGene = selectGene;
+window.setExportSlideScale = setExportSlideScale;
+window.setExportSlideTheme = setExportSlideTheme;
+window.setModalPerspective = setModalPerspective;
+window.setModalViewMode = setModalViewMode;
+window.setSidebarTab = setSidebarTab;
+window.setTreeActiveCoevPair = setTreeActiveCoevPair;
+window.setTreeBranchLength = setTreeBranchLength;
+window.setTreeBranchMode = setTreeBranchMode;
+window.setTreeMatrixMetric = setTreeMatrixMetric;
+window.setTreePartnerFocusGene = setTreePartnerFocusGene;
+window.setTreeTaxLevel = setTreeTaxLevel;
+window.setTreeTheme = setTreeTheme;
+window.setupTreePanZoom = setupTreePanZoom;
+window.setupTreeSearch = setupTreeSearch;
+window.setupTreeTooltips = setupTreeTooltips;
+window.showAllClusters = showAllClusters;
+window.showSingleCluster = showSingleCluster;
+window.showTreeToast = showTreeToast;
+window.switchDataset = switchDataset;
+window.switchView = switchView;
+window.toggleSiteTheme = toggleSiteTheme;
+window.unfocusClusterGene = unfocusClusterGene;
+window.updateControlsForMode = updateControlsForMode;
+window.updateCyTheme = updateCyTheme;
+window.updateStatus = updateStatus;
+window.updateTreeModalTheme = updateTreeModalTheme;
+window.zoomToCluster = zoomToCluster;
+window.zoomTree = zoomTree;
+
+
 
 // ---- Dataset selection (?dataset=orthogroup|ortholog, default orthogroup) ----
 // The two datasets are built from different presence/absence matrices --
@@ -5790,6 +5886,7 @@ if (document.readyState === 'loading') {{
 }} else {{
     initApp();
 }}
+
 
 }})();
 </script>
