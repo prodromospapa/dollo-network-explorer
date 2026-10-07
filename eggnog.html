@@ -1512,6 +1512,7 @@ async function loadPresenceBits() {
         PRES_BITS = new Uint8Array(buf, 10);
         PRES_NAME_IDX = {};
         NAMES.slice(0, nGenes).forEach((n, i) => { PRES_NAME_IDX[n] = i; });
+        if (selectedGene && (currentMode === 'gene' || currentMode === 'network') && CURRENT_SIDEBAR_TAB === 'list') renderSidebar(selectedGene);
     } catch (err) {
         console.error('Failed to load presence bits:', err);
     }
@@ -1529,6 +1530,31 @@ function exactPresenceJaccard(gA, gB) {
     return uni ? inter / uni : 0.0;
 }
 window.exactPresenceJaccard = exactPresenceJaccard;
+
+// Every partner of a gene (presence Jaccard > 0), exact and uncapped; used by the
+// sidebar list so any pair can be found. Graph building keeps the top-500 file.
+const FULL_PARTNER_CACHE = {};
+function getFullPartners(name) {
+    if (FULL_PARTNER_CACHE[name]) return FULL_PARTNER_CACHE[name];
+    if (!PRES_BITS || PRES_NAME_IDX[name] === undefined) return null;
+    const bpg = PRES_BYTES_PER_GENE, oA = PRES_NAME_IDX[name] * bpg;
+    const nGenes = Math.min(NAMES.length, PRES_BITS.length / bpg);
+    const out = [];
+    for (let g = 0; g < nGenes; g++) {
+        if (NAMES[g] === name) continue;
+        const oB = g * bpg;
+        let inter = 0, uni = 0;
+        for (let k = 0; k < bpg; k++) {
+            const a = PRES_BITS[oA + k], b = PRES_BITS[oB + k];
+            inter += POPCOUNT8[a & b];
+            uni += POPCOUNT8[a | b];
+        }
+        if (inter > 0) out.push({ n: NAMES[g], j: inter / uni, l: GM[NAMES[g]] || 0 });
+    }
+    out.sort((x, y) => y.j - x.j);
+    FULL_PARTNER_CACHE[name] = out;
+    return out;
+}
 
 async function loadPartnersGraph() {
     try {
@@ -2206,7 +2232,9 @@ function renderSidebar(name) {
     const sbSearchWrap = document.getElementById('sidebar-search-wrap');
     if (sbSearchWrap) sbSearchWrap.style.display = 'block';
 
-    const info = getGeneData(name) || { l: GM[name] || 0, p: [] };
+    const info = { ...(getGeneData(name) || { l: GM[name] || 0, p: [] }) };
+    const fullPartners = getFullPartners(name);
+    if (fullPartners) info.p = fullPartners;
     const cid = GENE_CL[name];
     const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${cid}`) : null;
     const color = getClusterColor(cid);
@@ -2231,7 +2259,14 @@ function renderSidebar(name) {
     if (document.getElementById('toggle-topn-max').checked) topn = Infinity;
     const activeSet = getActiveGeneSet();
 
-    const qualifying = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n))).slice(0, topn);
+    const filtered = info.p.filter(p => p.j >= thresh && (!activeSet || activeSet.has(p.n)));
+    const rankOf = new Map(filtered.map((p, i) => [p.n, i + 1]));
+    const qualifying = filtered.slice(0, topn);
+    // A gene typed in the sidebar filter is shown even if it ranks below the top-N cut
+    const sbq = ((document.getElementById('sidebar-search') || {}).value || '').trim().toLowerCase();
+    if (sbq) {
+        filtered.slice(qualifying.length).forEach(p => { if (p.n.toLowerCase().includes(sbq)) qualifying.push(p); });
+    }
 
     let ciliaryHtml = '';
     if (ALL_CILIARY.has(name)) {
@@ -2282,7 +2317,7 @@ function renderSidebar(name) {
         const pLoss = GM[p.n] !== undefined ? GM[p.n] : (p.l || 0);
         html += `
         <div class="partner" onclick="selectGene('${p.n}')">
-            <span class="rank">#${idx + 1}</span>
+            <span class="rank">#${rankOf.get(p.n) || idx + 1}</span>
             <span class="pname in-graph">${p.n}</span>
             ${isCil ? getCiliaBadgeHtml(p.n) : ''}
             <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%; background: ${getJaccardColor(p.j)};"></div></div>
@@ -3313,7 +3348,11 @@ document.addEventListener('click', (e) => {
             return;
         }
 
-        // Partner rows
+        // Partner rows (re-render first so matches below the top-N cut are included)
+        if (selectedGene && (currentMode === 'gene' || currentMode === 'network') && CURRENT_SIDEBAR_TAB === 'list'
+            && document.querySelector('#partner-list .partner, #partner-list .meta')) {
+            renderSidebar(selectedGene);
+        }
         const partnerRows = document.querySelectorAll('#partner-list .partner');
         if (partnerRows.length) {
             partnerRows.forEach(row => {
