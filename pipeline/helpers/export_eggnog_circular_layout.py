@@ -9,6 +9,13 @@ Outputs (repo root):
   tree_presence_eggnog.bin  "DLTP" | uint32 n_genes | uint16 n_leaves |
                             ceil(n_leaves/8) bytes per gene, LSB-first,
                             genes in data_eggnog.json "names" order
+  tree_events_eggnog.bin    Dollo (COUNT) events per gene, as layout node ids:
+                            "DLTE" | uint32 n_genes | uint32 offsets[n_genes+1] |
+                            uint16 gain_node[n_genes] (0xFFFF = none) |
+                            uint16 loss_nodes[...]  (loss = on branch INTO node)
+
+Unary nodes are collapsed so the tree matches COUNT's: COUNT numbers leaves
+first (newick order), then internal nodes in postorder.
 
 Nodes carry a contiguous leaf range [l0, l1] instead of an explicit leaf list
 (12.5k leaves would make per-node lists tens of MB).
@@ -32,6 +39,8 @@ CACHE_DIR = ROOT / "cache_eggnog_full"
 LAYOUT_OUT = ROOT / "tree_layout_eggnog.json"
 PRESENCE_OUT = ROOT / "tree_presence_eggnog.bin"
 DATA_JSON = ROOT / "data_eggnog.json"
+EVENTS_OUT = ROOT / "tree_events_eggnog.bin"
+HISTORY_BITS = CACHE_DIR / "history_bits.npz"
 
 START_DEG = 90.0
 GAP_DEG = 0.0
@@ -106,6 +115,8 @@ def clade_blocks(leaf_species, leaf_tax, level, leaf_angles):
 
 def main():
     tree = Tree(str(CACHE_DIR / "tree.newick"), format=1)
+    for x in [x for x in tree.traverse() if len(x.children) == 1 and x.up is not None]:
+        x.delete(prevent_nondicotomic=False, preserve_branch_length=True)
     leaves = tree.get_leaves()
     n = len(leaves)
     leaf_species = [str(l.name) for l in leaves]
@@ -136,6 +147,14 @@ def main():
             depth[id(c)] = depth[id(node)] + 1
     max_depth = max(depth.values()) or 1
 
+    # COUNT node index: leaves 0..n-1, then internal nodes in postorder.
+    count_idx = {id(l): i for i, l in enumerate(leaves)}
+    for node in tree.traverse("postorder"):
+        if not node.is_leaf():
+            count_idx[id(node)] = len(count_idx)
+    internal_ids = [int(x.name) for x in tree.traverse() if not x.is_leaf() and str(x.name).isdigit()]
+    clade_names = ncbi.get_taxid_translator(internal_ids)
+
     rng = {}
     for node in tree.traverse("postorder"):
         if node.is_leaf():
@@ -161,6 +180,8 @@ def main():
             "sp": leaf_species[l0] if is_leaf else None,
             "l0": l0,
             "l1": l1,
+            "ci": count_idx[id(node)],
+            "name": None if is_leaf else clade_names.get(int(node.name)) if str(node.name).isdigit() else None,
         })
 
     gene_names = json.loads(DATA_JSON.read_text())["names"]
@@ -182,6 +203,8 @@ def main():
     LAYOUT_OUT.write_text(json.dumps(layout, separators=(",", ":")))
     print(f"Wrote {LAYOUT_OUT} ({LAYOUT_OUT.stat().st_size / 1e6:.1f} MB, {len(nodes)} nodes)")
 
+    write_events(gene_names, nodes)
+
     # Presence bitmap in gene_names x leaf order
     print("Loading presence table...")
     table = pd.read_csv(CACHE_DIR / "table.tsv", sep="\t", index_col=0)
@@ -197,6 +220,38 @@ def main():
         f.write(bits.tobytes())
     print(f"Wrote {PRESENCE_OUT} ({PRESENCE_OUT.stat().st_size / 1e6:.1f} MB; "
           f"{len(gene_names)} genes, {missing} with no presence)")
+
+
+def write_events(gene_names, nodes):
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from count_bits import load_npz, unpack
+
+    hist_genes, n_nodes, bits = load_npz(str(HISTORY_BITS))
+    if n_nodes != len(nodes):
+        raise SystemExit(f"COUNT has {n_nodes} nodes, layout has {len(nodes)}")
+    ci_to_layout = np.empty(n_nodes, dtype=np.int64)
+    for nd in nodes:
+        ci_to_layout[nd["ci"]] = nd["id"]
+    row = {g: i for i, g in enumerate(hist_genes)}
+    loss = unpack(bits["loss"], n_nodes).astype(bool)
+    gain = unpack(bits["gain"], n_nodes).astype(bool)
+
+    offsets, gains, flat = [0], [], []
+    for g in gene_names:
+        i = row.get(g)
+        lost = [] if i is None else sorted(int(x) for x in ci_to_layout[np.flatnonzero(loss[i])])
+        gn = [] if i is None else ci_to_layout[np.flatnonzero(gain[i])]
+        gains.append(int(gn[0]) if len(gn) else 0xFFFF)
+        flat.extend(lost)
+        offsets.append(len(flat))
+    with open(EVENTS_OUT, "wb") as f:
+        f.write(b"DLTE")
+        f.write(struct.pack("<I", len(gene_names)))
+        f.write(np.asarray(offsets, dtype="<u4").tobytes())
+        f.write(np.asarray(gains, dtype="<u2").tobytes())
+        f.write(np.asarray(flat, dtype="<u2").tobytes())
+    print(f"Wrote {EVENTS_OUT} ({EVENTS_OUT.stat().st_size / 1e6:.1f} MB; {len(flat)} losses)")
 
 
 if __name__ == "__main__":

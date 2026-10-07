@@ -929,7 +929,7 @@ body.light-theme #tree-toast {
         <div id="cy-edge-legend" style="position:absolute; bottom:16px; left:16px; background:rgba(13, 18, 32, 0.85); backdrop-filter:blur(6px); border:1px solid #2a3558; border-radius:6px; padding:6px 10px; z-index:5; display:flex; flex-direction:column; gap:4px; pointer-events:none; box-shadow:0 4px 12px rgba(0,0,0,0.4); transition:opacity 0.2s;">
             <div style="font-size:10px; font-weight:600; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
                 <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#38bdf8;"></span>
-                Co-Loss Strength (Jaccard)
+                Presence Similarity (Jaccard)
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:9.5px; color:#94a3b8; font-family:ui-monospace, monospace;">0.20</span>
@@ -1617,6 +1617,17 @@ function zoomToCluster(cid) {
 function getPairwiseJaccard(gA, gB) {
     if (!gA || !gB) return 0;
     if (gA === gB) return 1.0;
+    // Exact presence/absence Jaccard across species when the tree data is loaded
+    try {
+        if (TREE_LAYOUT && TREE_PRESENCE_BUFFER && TREE_GENE_IDX[gA] !== undefined && TREE_GENE_IDX[gB] !== undefined) {
+            const pA = getTreeGenePresence(gA), pB = getTreeGenePresence(gB);
+            let inter = 0, uni = 0;
+            for (let i = 0; i < pA.length; i++) {
+                if (pA[i] || pB[i]) { uni++; if (pA[i] && pB[i]) inter++; }
+            }
+            return uni ? inter / uni : 0.0;
+        }
+    } catch (e) { /* tree globals not initialised yet: fall back to partner list */ }
     const dataA = getGeneData(gA);
     if (dataA && dataA.p) {
         const found = dataA.p.find(p => p.n === gB);
@@ -1921,8 +1932,8 @@ function renderTreeSidebar() {
     const n = TREE_SELECTED_GENES.length;
     const countBadge = `<span style="font-size:11px; color:#38bdf8; font-weight:600; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:10px;">${n} Gene${n === 1 ? '' : 's'} on Tree</span>`;
     
-    const matrixTitle = 'Pairwise Co-Loss Matrix';
-    const matrixDesc = 'Pairwise Jaccard co-loss values between genes loaded on the tree.';
+    const matrixTitle = 'Pairwise Presence Similarity Matrix';
+    const matrixDesc = 'Pairwise presence/absence Jaccard across species for genes loaded on the tree.';
 
     geneInfoEl.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -2100,7 +2111,7 @@ function renderTreeSidebar() {
         <div style="padding:12px 10px;">
             <div style="margin-bottom:6px;">
                 <div style="font-size:10px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px;">
-                    Pairwise Co-Loss Matrix
+                    Pairwise Presence Similarity Matrix
                 </div>
             </div>
             
@@ -2114,7 +2125,7 @@ function renderTreeSidebar() {
             <div style="margin-bottom:14px; padding:6px 10px; background:${isDark ? '#161d31' : '#f1f5f9'}; border-radius:6px; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'};">
                 <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
                     <span>0.20 (Low)</span>
-                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">Co-Loss Scale (Jaccard)</span>
+                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">Presence Similarity (Jaccard)</span>
                     <span>&ge;0.65 (Coupled)</span>
                 </div>
                 <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
@@ -3309,6 +3320,9 @@ document.getElementById('layout-select').addEventListener('change', function() {
 // ---- Circular Species Tree Visualizer (TCS Cladogram) ----
 let TREE_LAYOUT = null;
 let TREE_PRESENCE_BUFFER = null;
+// Dollo (COUNT) events per gene: where each gene was gained / lost on the tree.
+let TREE_EVENTS = null;
+let TREE_SHOW_LOSSES = true;
 let TREE_GENE_IDX = {};
 let TREE_SELECTED_GENES = [];
 let TREE_TAX_LEVEL = 'kingdom';
@@ -3399,6 +3413,22 @@ async function initTreeView() {
             const pBuf = await presenceResp.arrayBuffer();
             // Header: "DLTP", uint32 n_genes, uint16 n_leaves (10 bytes)
             TREE_PRESENCE_BUFFER = new Uint8Array(pBuf, 10);
+            try {
+                const eResp = await fetch('tree_events_eggnog.bin');
+                if (eResp.ok) {
+                    const eBuf = await eResp.arrayBuffer();
+                    const nG = new DataView(eBuf).getUint32(4, true);
+                    const offsets = new Uint32Array(eBuf, 8, nG + 1);
+                    const gainStart = 8 + (nG + 1) * 4;
+                    TREE_EVENTS = {
+                        offsets,
+                        gains: new Uint16Array(eBuf, gainStart, nG),
+                        losses: new Uint16Array(eBuf, gainStart + nG * 2, offsets[nG]),
+                    };
+                }
+            } catch (e) {
+                console.warn('Loss events unavailable:', e);
+            }
             TREE_LAYOUT.gene_names.forEach((name, i) => { TREE_GENE_IDX[name] = i; });
             
             setupTreePanZoom();
@@ -3412,6 +3442,32 @@ async function initTreeView() {
     document.getElementById('tree-loading').style.display = 'none';
     renderTreeChips();
     renderCircularTree();
+}
+
+function getTreeGeneEvents(geneName) {
+    const gi = TREE_GENE_IDX[geneName];
+    if (!TREE_EVENTS || gi === undefined) return { gain: null, losses: [] };
+    const g = TREE_EVENTS.gains[gi];
+    return {
+        gain: g === 0xFFFF ? null : g,
+        losses: Array.from(TREE_EVENTS.losses.subarray(TREE_EVENTS.offsets[gi], TREE_EVENTS.offsets[gi + 1])),
+    };
+}
+window.getTreeGeneEvents = getTreeGeneEvents;
+
+function toggleTreeLosses(on) {
+    TREE_SHOW_LOSSES = on;
+    renderCircularTree();
+}
+window.toggleTreeLosses = toggleTreeLosses;
+
+function treeNodeLabel(node) {
+    if (node.leaf) {
+        const t = TREE_LAYOUT.leaf_taxonomies[node.leaf_idx] || {};
+        return t.sci_name || node.sp;
+    }
+    const n = node.l1 - node.l0 + 1;
+    return `${node.name || 'Unnamed clade'} (${n.toLocaleString()} species)`;
 }
 
 function getTreeGenePresence(geneName) {
@@ -3691,6 +3747,37 @@ function renderCircularTree(scaleOptions = {}) {
         svgParts.push(`<path d="${pathD}" fill="none" stroke="${col}" stroke-width="${branchWidth}" stroke-linecap="round" />`);
     });
 
+    // 2b. Dollo events: X = inferred loss on the branch into that node, dot = single gain (origin)
+    if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
+        const markR = (3.2 * Math.min(1.4, Math.sqrt(textScale)));
+        const outline = isDark ? '#0b1120' : '#ffffff';
+        const radiusOf = nd => (TREE_BRANCH_LEN_MODE === 'phylogram' && nd.r_phylo !== undefined) ? nd.r_phylo : (nd.r_clad !== undefined ? nd.r_clad : nd.r);
+        TREE_SELECTED_GENES.forEach((gName, gI) => {
+            const col = TREE_PALETTE[gI % TREE_PALETTE.length];
+            const ev = getTreeGeneEvents(gName);
+            // Spread markers of different genes along the branch so they don't overlap
+            const frac = Math.max(0.15, Math.min(0.85, 0.5 + (gI - (TREE_SELECTED_GENES.length - 1) / 2) * 0.12));
+            ev.losses.forEach(nid => {
+                const node = idToNode[nid];
+                if (!node || node.p === null || node.p === undefined) return;
+                const rP = radiusOf(idToNode[node.p]), rC = radiusOf(node);
+                const [x, y] = pt(rP + (rC - rP) * frac, node.a);
+                const d = markR;
+                svgParts.push(`<g class="tree-loss-mark"><title>${gName} lost on branch to ${treeNodeLabel(node)}</title>` +
+                    `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(d * 1.25).toFixed(2)}" fill="${outline}" fill-opacity="0.85" />` +
+                    `<path d="M ${(x - d).toFixed(2)} ${(y - d).toFixed(2)} L ${(x + d).toFixed(2)} ${(y + d).toFixed(2)} M ${(x - d).toFixed(2)} ${(y + d).toFixed(2)} L ${(x + d).toFixed(2)} ${(y - d).toFixed(2)}" stroke="${col}" stroke-width="1.8" stroke-linecap="round" /></g>`);
+            });
+            if (ev.gain !== null && idToNode[ev.gain]) {
+                const node = idToNode[ev.gain];
+                const hasParent = node.p !== null && node.p !== undefined;
+                const r = hasParent ? radiusOf(idToNode[node.p]) + (radiusOf(node) - radiusOf(idToNode[node.p])) * 0.5 : radiusOf(node);
+                const [x, y] = pt(r, node.a);
+                svgParts.push(`<g class="tree-gain-mark"><title>${gName} origin (single Dollo gain) at ${treeNodeLabel(node)}</title>` +
+                    `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(markR * 1.3).toFixed(2)}" fill="${col}" stroke="${outline}" stroke-width="1.2" /></g>`);
+            }
+        });
+    }
+
     // 3. Concentric Tracks
     const absentFill = isDark ? '#151d30' : '#f8fafc';
     const absentStroke = isDark ? '#263350' : '#e2e8f0';
@@ -3838,6 +3925,18 @@ function renderCircularTree(scaleOptions = {}) {
             svgParts.push(`<rect x="0" y="${y}" width="${rectW}" height="${rectH}" rx="2" fill="${col}" />`);
             svgParts.push(`<text x="${rectW + 6}" y="${y + rectH - 1}" font-size="${legItemSz}" fill="${legTextCol}">${label}</text>`);
             lI++;
+        });
+    }
+    if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
+        let y = Math.round((TREE_BRANCH_MODE === 'taxonomy' ? 250 : 150) * textScale);
+        svgParts.push(`<text x="0" y="${y}" font-size="${legTitleSz}" font-weight="700" fill="${legTitleCol}">Dollo events</text>`);
+        y += Math.round(14 * textScale);
+        svgParts.push(`<text x="0" y="${y}" font-size="${legSubSz}" fill="${legSubCol}">&#x2715; inferred loss &#8226; &#9679; origin (hover for clade)</text>`);
+        TREE_SELECTED_GENES.forEach((g, gI) => {
+            const n = getTreeGeneEvents(g).losses.length;
+            y += lineGap;
+            svgParts.push(`<text x="0" y="${y}" font-size="${legItemSz}" font-weight="700" fill="${TREE_PALETTE[gI % TREE_PALETTE.length]}">&#x2715;</text>`);
+            svgParts.push(`<text x="${rectW + 6}" y="${y}" font-size="${legItemSz}" fill="${legTextCol}">${g}: ${n} loss${n === 1 ? '' : 'es'}</text>`);
         });
     }
     svgParts.push('</g>');
@@ -4888,7 +4987,7 @@ async function generatePresentationSlideCanvas(options = {}) {
         // ---- Species Tree Pairwise Matrix Slide Panel ----
         ctx.font = fs('bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textPrimary;
-        ctx.fillText('Pairwise Co-Loss Matrix', sx + 35, sy + 44);
+        ctx.fillText('Pairwise Presence Similarity Matrix', sx + 35, sy + 44);
 
         ctx.font = fs('13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
