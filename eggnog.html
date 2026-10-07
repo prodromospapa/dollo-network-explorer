@@ -1188,7 +1188,9 @@ const DATASET = 'eggnog';
 window.CURRENT_DATASET = DATASET;
 const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
 
-const DATA = await (await fetch('data_eggnog.json')).json();
+// Bumped on every data rebuild so browsers never mix cached old data files with a new page.
+const DATA_VERSION = '20261007-1545';
+const DATA = await (await fetch('data_eggnog.json?v=' + DATA_VERSION)).json();
 
 // ---- Static Metadata (fetched per-dataset, see DATA above) ----
 const NAMES = DATA.names;
@@ -1494,9 +1496,43 @@ function switchView(mode) {
     }
 }
 
+// Species presence bits for every gene (tree_presence_eggnog.bin, genes in NAMES order),
+// loaded in the background so pairwise Jaccard is exact everywhere on the page.
+let PRES_BITS = null, PRES_BYTES_PER_GENE = 0, PRES_NAME_IDX = null;
+const POPCOUNT8 = new Uint8Array(256).map((_, i) => { let c = 0; for (let v = i; v; v >>= 1) c += v & 1; return c; });
+
+async function loadPresenceBits() {
+    try {
+        const resp = await fetch('tree_presence_eggnog.bin?v=' + DATA_VERSION);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const buf = await resp.arrayBuffer();
+        const dv = new DataView(buf);
+        const nGenes = dv.getUint32(4, true), nLeaves = dv.getUint16(8, true);
+        PRES_BYTES_PER_GENE = Math.ceil(nLeaves / 8);
+        PRES_BITS = new Uint8Array(buf, 10);
+        PRES_NAME_IDX = {};
+        NAMES.slice(0, nGenes).forEach((n, i) => { PRES_NAME_IDX[n] = i; });
+    } catch (err) {
+        console.error('Failed to load presence bits:', err);
+    }
+}
+
+function exactPresenceJaccard(gA, gB) {
+    if (!PRES_BITS || PRES_NAME_IDX[gA] === undefined || PRES_NAME_IDX[gB] === undefined) return null;
+    const oA = PRES_NAME_IDX[gA] * PRES_BYTES_PER_GENE, oB = PRES_NAME_IDX[gB] * PRES_BYTES_PER_GENE;
+    let inter = 0, uni = 0;
+    for (let k = 0; k < PRES_BYTES_PER_GENE; k++) {
+        const a = PRES_BITS[oA + k], b = PRES_BITS[oB + k];
+        inter += POPCOUNT8[a & b];
+        uni += POPCOUNT8[a | b];
+    }
+    return uni ? inter / uni : 0.0;
+}
+window.exactPresenceJaccard = exactPresenceJaccard;
+
 async function loadPartnersGraph() {
     try {
-        const resp = await fetch('network_partners_eggnog.bin');
+        const resp = await fetch('network_partners_eggnog.bin?v=' + DATA_VERSION);
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const buf = await resp.arrayBuffer();
 
@@ -1617,17 +1653,9 @@ function zoomToCluster(cid) {
 function getPairwiseJaccard(gA, gB) {
     if (!gA || !gB) return 0;
     if (gA === gB) return 1.0;
-    // Exact presence/absence Jaccard across species when the tree data is loaded
-    try {
-        if (TREE_LAYOUT && TREE_PRESENCE_BUFFER && TREE_GENE_IDX[gA] !== undefined && TREE_GENE_IDX[gB] !== undefined) {
-            const pA = getTreeGenePresence(gA), pB = getTreeGenePresence(gB);
-            let inter = 0, uni = 0;
-            for (let i = 0; i < pA.length; i++) {
-                if (pA[i] || pB[i]) { uni++; if (pA[i] && pB[i]) inter++; }
-            }
-            return uni ? inter / uni : 0.0;
-        }
-    } catch (e) { /* tree globals not initialised yet: fall back to partner list */ }
+    // Exact presence/absence Jaccard across species (works for every pair, not just top partners)
+    const exact = exactPresenceJaccard(gA, gB);
+    if (exact !== null) return exact;
     const dataA = getGeneData(gA);
     if (dataA && dataA.p) {
         const found = dataA.p.find(p => p.n === gB);
@@ -3405,8 +3433,8 @@ async function initTreeView() {
         document.getElementById('tree-loading').style.display = 'flex';
         try {
             const [layoutResp, presenceResp] = await Promise.all([
-                fetch('tree_layout_eggnog.json'),
-                fetch('tree_presence_eggnog.bin')
+                fetch('tree_layout_eggnog.json?v=' + DATA_VERSION),
+                fetch('tree_presence_eggnog.bin?v=' + DATA_VERSION)
             ]);
             if (!layoutResp.ok || !presenceResp.ok) throw new Error('Failed to load tree assets');
             TREE_LAYOUT = await layoutResp.json();
@@ -3414,7 +3442,7 @@ async function initTreeView() {
             // Header: "DLTP", uint32 n_genes, uint16 n_leaves (10 bytes)
             TREE_PRESENCE_BUFFER = new Uint8Array(pBuf, 10);
             try {
-                const eResp = await fetch('tree_events_eggnog.bin');
+                const eResp = await fetch('tree_events_eggnog.bin?v=' + DATA_VERSION);
                 if (eResp.ok) {
                     const eBuf = await eResp.arrayBuffer();
                     const nG = new DataView(eBuf).getUint32(4, true);
@@ -5597,6 +5625,7 @@ function initApp() {
     applySiteTheme(SITE_THEME);
     initCy();
     loadPartnersGraph();
+    loadPresenceBits();
     showAllClusters();
 }
 if (document.readyState === 'loading') {

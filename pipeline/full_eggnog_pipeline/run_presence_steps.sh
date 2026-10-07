@@ -16,4 +16,8 @@ python3 pipeline/helpers/export_eggnog_circular_layout.py
 echo "[3/3] Presence/absence Jaccard partner lists -> network_partners_eggnog.bin..."
 python3 pipeline/helpers/build_presence_partners.py
 
+
+
+# Cache-bust: browsers must not reuse old data files with the new page
+sed -i "s/^const DATA_VERSION = '[^']*';/const DATA_VERSION = '$(date +%Y%m%d-%H%M)';/" eggnog.html
 echo "Done."
