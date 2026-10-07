@@ -55,8 +55,8 @@ def main():
     website_dir = Path(__file__).resolve().parent
     base = website_dir
     if args.dataset == "eggnog":
-        results = base.parent / "cache_eggnog_filtered"
-        dataset_dir = base / "data" / "eggnog_dataset"
+        results = base.parent / "cache_eggnog_full"
+        dataset_dir = base.parent / "data" / "eggnog_full_dataset"
         suffix = "_eggnog"
     else:
         results = base / "results" if args.dataset == "orthogroup" else base / "results" / "ortholog"

@@ -835,7 +835,7 @@ body.light-theme #tree-toast {
         <select id="dataset-select" onchange="switchDataset(this.value)">
             <option value="orthogroup" >TCS Orthogroups (196 species)</option>
             <option value="ortholog">TCS Pure orthologs (196 species)</option>
-            <option value="eggnog" selected>EggNOG Filtered (250 species)</option>
+            <option value="eggnog" selected>EggNOG Full (12,525 species)</option>
         </select>
     </div>
 
@@ -1969,7 +1969,7 @@ function renderTreeSidebar() {
         const pVec = getTreeGenePresence(g);
         let presCount = 0;
         for (let i = 0; i < pVec.length; i++) if (pVec[i] === 1) presCount++;
-        const presPct = ((presCount / 196) * 100).toFixed(0);
+        const presPct = ((presCount / pVec.length) * 100).toFixed(0);
 
         const gData = getGeneData(g);
         const topPartners = (gData && gData.p) ? gData.p.slice(0, 5) : [];
@@ -2006,7 +2006,7 @@ function renderTreeSidebar() {
                     </div>
                     <div style="margin-top:6px; font-size:11.5px; color:#94a3b8; display:flex; flex-direction:column; gap:3px;">
                         <span>• <strong>${losses}</strong> Dollo loss events</span>
-                        <span>• Present in <strong>${presCount}/196</strong> species (${presPct}%)</span>
+                        <span>• Present in <strong>${presCount}/${pVec.length}</strong> species (${presPct}%)</span>
                     </div>
                 </div>
 
@@ -2082,14 +2082,14 @@ function renderTreeSidebar() {
         const pVec = getTreeGenePresence(g);
         let presCount = 0;
         for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
-        const presPct = ((presCount / 196) * 100).toFixed(0);
+        const presPct = ((presCount / pVec.length) * 100).toFixed(0);
 
         return `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; background:${isDark ? '#161d31' : '#f8fafc'}; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'}; border-radius:6px; margin-bottom:5px; font-size:11.5px;">
                 <div style="display:flex; align-items:center; gap:6px; min-width:0;">
                     <span style="width:8px; height:8px; border-radius:50%; background:${col}; flex-shrink:0;"></span>
                     <strong style="color:${isDark ? '#f8fafc' : '#0f172a'}; overflow:hidden; text-overflow:ellipsis;">${g}</strong>
-                    <span style="color:#8892b0; font-size:10.5px;">(${losses}L, ${presCount}/196)</span>
+                    <span style="color:#8892b0; font-size:10.5px;">(${losses}L, ${presCount}/${pVec.length})</span>
                 </div>
                 <span style="cursor:pointer; color:#8892b0; font-weight:700; padding:0 4px;" onclick="removeTreeGene('${g}')" title="Remove gene">&times;</span>
             </div>
@@ -3169,7 +3169,7 @@ function updateStatus() {
     const filterSuffix = (geneFilterMode !== 'all') ? ` • Filter: ${filterNames[geneFilterMode] || geneFilterMode.replace(/_/g, ' ')}` : '';
     if (currentMode === 'tree') {
         const geneCount = TREE_SELECTED_GENES.length;
-        status.innerHTML = `Mode: Species Tree • 196 species • ${geneCount} gene${geneCount === 1 ? '' : 's'} on tree (${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`;
+        status.innerHTML = `Mode: Species Tree • ${(TREE_LAYOUT ? TREE_LAYOUT.n_leaves : 12525).toLocaleString()} species • ${geneCount} gene${geneCount === 1 ? '' : 's'} on tree (${TREE_TAX_LEVEL.toUpperCase()} taxonomy)`;
     } else if (currentMode === 'all_clusters') {
         status.textContent = 'Mode: Leiden Modules • ' + Object.keys(CLUSTERS).length + ' clusters • ' + (cy ? cy.nodes().length : 0) + ' nodes' + filterSuffix;
     } else if (currentMode === 'single_cluster') {
@@ -3325,8 +3325,8 @@ function getPairwiseTreeDistance(gA, gB) {
     if (typeof getTreeGenePresence === 'function') {
         const pA = getTreeGenePresence(gA);
         const pB = getTreeGenePresence(gB);
-        if (pA && pB && pA.length === 196 && pB.length === 196) {
-            for (let k = 0; k < 196; k++) {
+        if (pA && pB && pA.length > 0 && pA.length === pB.length) {
+            for (let k = 0; k < pA.length; k++) {
                 if (pA[k] === 1 && pB[k] === 1) both++;
                 else if (pA[k] === 1 && pB[k] === 0) { onlyA++; hamming++; }
                 else if (pA[k] === 0 && pB[k] === 1) { onlyB++; hamming++; }
@@ -3420,7 +3420,7 @@ function getTreeGenePresence(geneName) {
     if (TREE_GENE_IDX[geneName] === undefined || !TREE_PRESENCE_BUFFER) {
         return new Uint8Array(nLeaves);
     }
-    const offset = TREE_GENE_IDX[geneName] * 25;
+    const offset = TREE_GENE_IDX[geneName] * Math.ceil(nLeaves / 8);
     const res = new Uint8Array(nLeaves);
     for (let i = 0; i < nLeaves; i++) {
         const byteI = offset + Math.floor(i / 8);
@@ -3576,13 +3576,13 @@ function renderCircularTree(scaleOptions = {}) {
             } else {
                 const counts = {};
                 const colors = {};
-                node.leaves.forEach(lIdx => {
+                for (let lIdx = node.l0; lIdx <= node.l1; lIdx++) {
                     const lInfo = TREE_LAYOUT.leaf_taxonomies ? TREE_LAYOUT.leaf_taxonomies[lIdx] : null;
-                    if (!lInfo) return;
+                    if (!lInfo) continue;
                     const c = lInfo[TREE_TAX_LEVEL];
                     counts[c] = (counts[c] || 0) + 1;
                     colors[c] = lInfo[TREE_TAX_LEVEL + '_color'] || defaultNodeCol;
-                });
+                }
                 let maxCount = 0;
                 let domClade = null;
                 for (const [c, cnt] of Object.entries(counts)) {
@@ -3591,7 +3591,7 @@ function renderCircularTree(scaleOptions = {}) {
                         domClade = c;
                     }
                 }
-                if (domClade && (maxCount / node.leaves.length >= 0.70)) {
+                if (domClade && (maxCount / (node.l1 - node.l0 + 1) >= 0.70)) {
                     nodeColors[node.id] = colors[domClade];
                 } else {
                     nodeColors[node.id] = defaultNodeCol;
@@ -3600,11 +3600,17 @@ function renderCircularTree(scaleOptions = {}) {
         });
     } else {
         // Color branches by gene presence combinations (Dollo parsimony)
+        // Prefix sums give O(1) "any leaf in [l0, l1] has the gene" per node.
+        const prefixSums = presenceVectors.map(pVec => {
+            const ps = new Uint32Array(pVec.length + 1);
+            for (let i = 0; i < pVec.length; i++) ps[i + 1] = ps[i] + pVec[i];
+            return ps;
+        });
         TREE_LAYOUT.nodes.forEach(node => {
             const presentIndices = [];
-            for (let gI = 0; gI < presenceVectors.length; gI++) {
-                const pVec = presenceVectors[gI];
-                if (node.leaves.some(lIdx => pVec[lIdx] === 1)) {
+            for (let gI = 0; gI < prefixSums.length; gI++) {
+                const ps = prefixSums[gI];
+                if (ps[node.l1 + 1] - ps[node.l0] > 0) {
                     presentIndices.push(gI);
                 }
             }
@@ -3618,7 +3624,7 @@ function renderCircularTree(scaleOptions = {}) {
         ? (TREE_BRANCH_MODE === 'taxonomy'
             ? `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes (${taxLabel} taxonomy)`
             : `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes`)
-        : `Eukaryotic Species Tree (196 species • ${taxLabel} taxonomy)`;
+        : `EggNOG Species Tree (${nLeaves.toLocaleString()} species • ${taxLabel} taxonomy)`;
     const titleColor = isDark ? '#f8fafc' : '#111827';
     svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="${titleColor}">${titleText}</text>`);
     const titleFontSize = Math.round(16 * textScale);
@@ -3743,7 +3749,7 @@ function renderCircularTree(scaleOptions = {}) {
 
         // Skip label for tiny single-species sectors to avoid crowded/isolated labels
         const blockSize = (eIdx - sIdx) + 1;
-        if (blockSize < 2) return;
+        if (blockSize < Math.max(2, nLeaves * 0.005)) return;
 
         const midAng = (a1 + a2) / 2.0;
         const rLabel = R_CLADE_ARC + 14;
@@ -4231,8 +4237,8 @@ function renderEdgeAlignmentModalContent() {
     if (typeof getTreeGenePresence === 'function' && TREE_LAYOUT && TREE_LAYOUT.leaf_species) {
         const pT = getTreeGenePresence(targetGene);
         const pP = getTreeGenePresence(partnerGene);
-        if (pT && pP && pT.length === 196) {
-            for (let i = 0; i < 196; i++) {
+        if (pT && pP && pT.length > 0 && pT.length === pP.length) {
+            for (let i = 0; i < pT.length; i++) {
                 const sp = TREE_LAYOUT.leaf_species[i];
                 const hasT = pT[i] === 1;
                 const hasP = pP[i] === 1;
@@ -4404,7 +4410,7 @@ function renderEdgeAlignmentModalContent() {
                     </span>
                 </div>
                 <div style="color:#cbd5e1;">
-                    When <strong>${partnerGene}</strong> is lost in a lineage while <strong>${targetGene}</strong> survives, selective constraint on its physical contact interface is relaxed. Multiple sequence alignment across 196 eukaryotic genomes shows:
+                    When <strong>${partnerGene}</strong> is lost in a lineage while <strong>${targetGene}</strong> survives, selective constraint on its physical contact interface is relaxed. Multiple sequence alignment across 12,525 EggNOG genomes shows:
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
                     <div style="background:#0f172a; padding:8px 12px; border-radius:6px; border:1px solid #1e293b;">
@@ -4494,7 +4500,7 @@ function renderEdgeAlignmentModalContent() {
                                 ${sp.replace(/_/g, ' ')}
                             </span>
                         `).join('')
-                        : '<span style="color:#64748b; font-style:italic;">No discordant lineages detected for this pair in the 196-species tree.</span>'
+                        : '<span style="color:#64748b; font-style:italic;">No discordant lineages detected for this pair in the 12,525-species tree.</span>'
                     }
                 </div>
             </div>
@@ -4635,7 +4641,7 @@ async function generatePresentationSlideCanvas(options = {}) {
     } else if (isTree) {
         slideTitle = TREE_SELECTED_GENES.length > 0
             ? `${TREE_SELECTED_GENES.join(', ')} • Eukaryotic Species Tree`
-            : 'Eukaryotic Species Tree (196 Species)';
+            : 'EggNOG Species Tree (12,525 Species)';
     } else if (selectedGene) {
         slideTitle = `${selectedGene} • Gene Co-Loss Ego Network`;
     } else if (currentMode === 'single_cluster') {
@@ -4650,7 +4656,7 @@ async function generatePresentationSlideCanvas(options = {}) {
         badges.push(`Taxonomy: ${taxLabel}`);
         badges.push(`Branches: ${TREE_BRANCH_MODE === 'taxonomy' ? 'Taxonomy Clade' : 'Gene Parsimony'}`);
         badges.push(`Lengths: ${TREE_BRANCH_LEN_MODE === 'phylogram' ? 'Phylogram' : 'Cladogram'}`);
-        badges.push('196 Eukaryotic Species');
+        badges.push('12,525 EggNOG Species');
     } else if (selectedGene || currentMode === 'network' || currentMode === 'gene') {
         const thresh = parseFloat(document.getElementById('thresh')?.value || 0.20).toFixed(2);
         const topn = document.getElementById('toggle-topn-max')?.checked ? 'Max' : (document.getElementById('topn')?.value || 25);
@@ -4677,7 +4683,7 @@ async function generatePresentationSlideCanvas(options = {}) {
     } else {
         badges.push(`${Object.keys(CLUSTERS).length} Leiden Modules`);
         badges.push(`${NAMES.length.toLocaleString()} Genes`);
-        badges.push('196 Eukaryotic Species');
+        badges.push('12,525 EggNOG Species');
     }
 
     // Draw Branding Watermark on Top Right (measured first so the title knows how much room it can use)
@@ -4688,7 +4694,7 @@ async function generatePresentationSlideCanvas(options = {}) {
     ctx.fillText('DOLLO NETWORK EXPLORER', SW - 52, 62);
     ctx.font = fs('12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.textMuted;
-    ctx.fillText('Dollo Parsimony Co-Loss Analysis • 196 Genomes', SW - 52, 82);
+    ctx.fillText('Dollo Parsimony Co-Loss Analysis • 12,525 Genomes', SW - 52, 82);
     ctx.textAlign = 'left';
 
     // Draw Slide Title (auto-shrinks to fit so a long/scaled title never overlaps the watermark)
@@ -5032,7 +5038,7 @@ async function generatePresentationSlideCanvas(options = {}) {
                 const pVec = getTreeGenePresence(g);
                 let presCount = 0;
                 for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
-                const presPct = ((presCount / 196) * 100).toFixed(1);
+                const presPct = ((presCount / pVec.length) * 100).toFixed(1);
 
                 if (idx % 2 === 1) {
                     drawCanvasRoundedRect(ctx, sx + 35, rowY, sw - 70, rowH, 4);
@@ -5054,7 +5060,7 @@ async function generatePresentationSlideCanvas(options = {}) {
                 ctx.font = fs('600 12.5px ui-monospace, monospace');
                 ctx.fillStyle = P.textSecondary;
                 ctx.fillText(`${losses} losses`, sx + 250, midY);
-                ctx.fillText(`${presCount} / 196 species (${presPct}%)`, sx + 450, midY);
+                ctx.fillText(`${presCount} / ${pVec.length} species (${presPct}%)`, sx + 450, midY);
 
                 rowY += rowH;
             });
@@ -5067,7 +5073,7 @@ async function generatePresentationSlideCanvas(options = {}) {
             const pVec = getTreeGenePresence(g);
             let presCount = 0;
             for (let pi = 0; pi < pVec.length; pi++) if (pVec[pi] === 1) presCount++;
-            const presPct = ((presCount / 196) * 100).toFixed(1);
+            const presPct = ((presCount / pVec.length) * 100).toFixed(1);
 
             const cardY = sy + 150;
             drawCanvasRoundedRect(ctx, sx + 35, cardY, sw - 70, 180, 12);
@@ -5089,7 +5095,7 @@ async function generatePresentationSlideCanvas(options = {}) {
             ctx.font = fs('14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
             ctx.fillText(`• Dollo Loss Events: ${losses} independent branch losses`, sx + 65, cardY + 88);
-            ctx.fillText(`• Genome Presence: ${presCount}/196 species (${presPct}%)`, sx + 65, cardY + 116);
+            ctx.fillText(`• Genome Presence: ${presCount}/${pVec.length} species (${presPct}%)`, sx + 65, cardY + 116);
 
             ctx.font = fs('italic 13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textMuted;
@@ -5327,7 +5333,7 @@ async function generatePresentationSlideCanvas(options = {}) {
     // 5. Slide Footer Bar
     ctx.font = fs('11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     ctx.fillStyle = P.footerText;
-    ctx.fillText('Dollo Network Explorer • Dollo Parsimony Co-Loss Analysis Across 196 Eukaryotic Species • Presentation Slide Export', 52, SH - 28);
+    ctx.fillText('Dollo Network Explorer • Dollo Parsimony Co-Loss Analysis Across 12,525 EggNOG Species • Presentation Slide Export', 52, SH - 28);
 
     ctx.textAlign = 'right';
     const todayStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -5379,7 +5385,7 @@ async function downloadExportSlidePng() {
             const slug = customTitle
                 ? customTitle.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
                 : (currentMode === 'tree'
-                    ? `species_tree_${TREE_SELECTED_GENES.join('_') || '196'}`
+                    ? `species_tree_${TREE_SELECTED_GENES.join('_') || 'eggnog'}`
                     : (selectedGene ? `gene_${selectedGene}_network` : 'dollo_network_slide'));
             a.href = url;
             a.download = `dollo_presentation_${slug}_${EXPORT_SLIDE_THEME}.png`;
