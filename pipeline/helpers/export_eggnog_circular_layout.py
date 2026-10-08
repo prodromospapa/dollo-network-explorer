@@ -84,8 +84,14 @@ def leaf_taxonomy(ncbi, taxids):
 
 def main():
     tree = Tree(str(CACHE_DIR / "tree.newick"), format=1)
-    for x in [x for x in tree.traverse() if len(x.children) == 1 and x.up is not None]:
-        x.delete(prevent_nondicotomic=False, preserve_branch_length=True)
+    # Splice each unary node's child into the node's own slot. ete3's delete()
+    # appends the child at the END of the parent's children instead, which
+    # reorders leaves relative to COUNT and shifts every COUNT index after it.
+    for x in [x for x in tree.traverse("preorder") if len(x.children) == 1 and x.up is not None]:
+        p, c = x.up, x.children[0]
+        c.dist += x.dist
+        c.up = p
+        p.children[p.children.index(x)] = c
     leaves = tree.get_leaves()
     n = len(leaves)
     leaf_species = [str(l.name) for l in leaves]
@@ -175,7 +181,8 @@ def main():
     table = table.reindex(columns=leaf_species, fill_value=0)
     table = table.reindex(index=gene_names, fill_value=0)
     missing = int((table.sum(axis=1) == 0).sum())
-    bits = np.packbits(table.to_numpy(dtype=np.uint8) > 0, axis=1, bitorder="little")
+    check_count_leaf_order(table, nodes)
+    bits =np.packbits(table.to_numpy(dtype=np.uint8) > 0, axis=1, bitorder="little")
     assert bits.shape[1] == math.ceil(n / 8)
     with open(PRESENCE_OUT, "wb") as f:
         f.write(b"DLTP")
@@ -183,6 +190,25 @@ def main():
         f.write(bits.tobytes())
     print(f"Wrote {PRESENCE_OUT} ({PRESENCE_OUT.stat().st_size / 1e6:.1f} MB; "
           f"{len(gene_names)} genes, {missing} with no presence)")
+
+
+def check_count_leaf_order(table, nodes):
+    """COUNT's leaf presence must equal the table at every mapped leaf, or the
+    ci mapping is off and events would land on the wrong branches."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from count_bits import load_npz, unpack
+
+    hist_genes, n_nodes, bits = load_npz(str(HISTORY_BITS))
+    pres = unpack(bits["presence"], n_nodes)
+    rows = [i for i, g in enumerate(hist_genes) if g in table.index]
+    leaves = [nd for nd in nodes if nd["leaf"]]
+    count_cols = pres[np.ix_(rows, [nd["ci"] for nd in leaves])]
+    table_cols = table.loc[[hist_genes[i] for i in rows]].to_numpy()[:, [nd["leaf_idx"] for nd in leaves]] > 0
+    bad = np.flatnonzero((count_cols != table_cols).any(axis=0))
+    if len(bad):
+        raise SystemExit(f"{len(bad)} leaves disagree with COUNT presence "
+                         f"(e.g. {leaves[bad[0]]['sp']}): COUNT node order mismatch")
+    print(f"COUNT leaf order verified ({len(leaves)} leaves, {len(rows)} genes)")
 
 
 def write_events(gene_names, nodes):

@@ -1209,7 +1209,7 @@ window.CURRENT_DATASET = DATASET;
 const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
 
 // Bumped on every data rebuild so browsers never mix cached old data files with a new page.
-const DATA_VERSION = '20261008-0900';
+const DATA_VERSION = '20261008-1400';
 const DATA = await (await fetch('data_eggnog.json?v=' + DATA_VERSION)).json();
 
 // ---- Static Metadata (fetched per-dataset, see DATA above) ----
@@ -4131,7 +4131,8 @@ function renderCircularTree(scaleOptions = {}) {
     });
 
     // 2b. Dollo events: X = inferred loss on the branch into that node, dot = single gain (origin).
-    // Markers take the colour of the branch they sit on, so they follow the branch colouring mode.
+    // Markers use the branch colour scheme: a loss takes the colour of the branch leading into it
+    // (the state being lost), an origin takes the colour of the branch it starts.
     const lossesInView = {};
     if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
         const markR = (3.2 * Math.min(1.4, Math.sqrt(textScale)));
@@ -4144,15 +4145,33 @@ function renderCircularTree(scaleOptions = {}) {
             lossesInView[gName] = 0;
             ev.losses.forEach(lossId => {
                 const node = byId[lossId];
+                if (!node) return;
                 // Merged unary nodes put their marker on the branch that absorbed them
-                const nid = node ? view.drawId[lossId] : -1;
-                if (nid < 0 || nid === view.rootId) return;
+                let nid = view.drawId[lossId];
+                let x, y, col, where = `on branch to ${treeNodeLabel(node)}`;
+                if (nid < 0 && view.keep) {
+                    // Union filter pruned the lost lineage: mark where it branched off
+                    let a = node.p;
+                    while (a !== null && a !== undefined && view.drawId[a] < 0) a = byId[a].p;
+                    if (a === null || a === undefined) return;
+                    nid = view.drawId[a];
+                    if (nid === a) {
+                        [x, y] = pt(view.nodeR[a], view.nodeA[a]);
+                        col = nodeColors[a] || geneCol;
+                        where = `in a hidden lineage (${treeNodeLabel(node)}) branching off ${treeNodeLabel(byId[a])}`;
+                    }
+                }
+                if (nid < 0 || (x === undefined && nid === view.rootId)) return;
                 lossesInView[gName]++;
-                const col = nodeColors[nid] || geneCol;
-                const rP = view.nodeR[view.parent[nid]], rC = view.nodeR[nid];
-                const [x, y] = pt(rP + (rC - rP) * frac, view.nodeA[nid]);
+                if (x === undefined) {
+                    // The branch below a loss is already drawn in the post-loss colour, so mark the
+                    // loss in the parent branch's colour: the state that ends at this X.
+                    col = nodeColors[view.parent[nid]] || geneCol;
+                    const rP = view.nodeR[view.parent[nid]], rC = view.nodeR[nid];
+                    [x, y] = pt(rP + (rC - rP) * frac, view.nodeA[nid]);
+                }
                 const d = markR;
-                svgParts.push(`<g class="tree-loss-mark"><title>${gName} lost on branch to ${treeNodeLabel(node)}</title>` +
+                svgParts.push(`<g class="tree-loss-mark"><title>${gName} lost ${where}</title>` +
                     `<circle cx="${f(x)}" cy="${f(y)}" r="${f(d * 1.25)}" fill="${outline}" fill-opacity="0.85" />` +
                     `<path d="M ${f(x - d)} ${f(y - d)} L ${f(x + d)} ${f(y + d)} M ${f(x - d)} ${f(y + d)} L ${f(x + d)} ${f(y - d)}" stroke="${col}" stroke-width="1.8" stroke-linecap="round" /></g>`);
             });
