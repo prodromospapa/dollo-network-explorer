@@ -4381,8 +4381,13 @@ function setupTreePanZoom() {
 
     viewport.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const factor = e.deltaY < 0 ? 1.15 : 0.85;
-        zoomTree(factor);
+        // Scale zoom by the actual scroll distance so trackpads (many tiny
+        // events) and mouse wheels (few large notches) both zoom smoothly.
+        let dy = e.deltaY;
+        if (e.deltaMode === 1) dy *= 16;        // lines -> px
+        else if (e.deltaMode === 2) dy *= 400;  // pages -> px
+        dy = Math.max(-100, Math.min(100, dy));
+        zoomTree(Math.exp(-dy * 0.001));
     }, { passive: false });
 
     viewport.addEventListener('mousedown', (e) => {
