@@ -4104,9 +4104,11 @@ function renderCircularTree(scaleOptions = {}) {
 
     // 2a. Collapsed clades: one wedge from the clade's node out to the leaf circle
     const wedgeLabelCol = isDark ? '#e2e8f0' : '#1f2937';
+    // Use the wedge's own slot: with the union filter its first/last leaf may be hidden
+    const unitOf = new Map(view.units.map(u => [u.id, u]));
     view.collapsed.forEach(id => {
         const node = byId[id];
-        const u0 = view.leafA0[node.l0], u1 = view.leafA1[node.l1];
+        const u0 = unitOf.get(id).a0, u1 = unitOf.get(id).a1;
         const inset = Math.min((u0 - u1) * 0.12, 0.4);
         const a0 = u0 - inset, a1 = u1 + inset;
         const rN = view.nodeR[id];
