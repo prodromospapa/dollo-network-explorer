@@ -4130,9 +4130,9 @@ function renderCircularTree(scaleOptions = {}) {
         svgParts.push(`<text x="${t.x}" y="${t.y}" transform="rotate(${t.rot}, ${t.x}, ${t.y})" font-size="${fs.toFixed(1)}" font-weight="600" fill="${wedgeLabelCol}" text-anchor="${t.anchor}" dominant-baseline="middle" pointer-events="none">${label}</text>`);
     });
 
-    // 2b. Dollo events: X = inferred loss on the branch into that node, dot = single gain (origin).
-    // Markers use the branch colour scheme: a loss takes the colour of the branch leading into it
-    // (the state being lost), an origin takes the colour of the branch it starts.
+    // 2b. Dollo events: dot = inferred loss on the branch into that node, ring = single gain (origin).
+    // Markers use the gene's own branch colour (the colour of a branch where only that gene is
+    // present), so each dot / ring says which gene was lost / gained.
     const lossesInView = {};
     if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
         const markR = (3.2 * Math.min(1.4, Math.sqrt(textScale)));
@@ -4148,7 +4148,7 @@ function renderCircularTree(scaleOptions = {}) {
                 if (!node) return;
                 // Merged unary nodes put their marker on the branch that absorbed them
                 let nid = view.drawId[lossId];
-                let x, y, col, where = `on branch to ${treeNodeLabel(node)}`;
+                let x, y, where = `on branch to ${treeNodeLabel(node)}`;
                 if (nid < 0 && view.keep) {
                     // Union filter pruned the lost lineage: mark where it branched off
                     let a = node.p;
@@ -4157,23 +4157,18 @@ function renderCircularTree(scaleOptions = {}) {
                     nid = view.drawId[a];
                     if (nid === a) {
                         [x, y] = pt(view.nodeR[a], view.nodeA[a]);
-                        col = nodeColors[a] || geneCol;
                         where = `in a hidden lineage (${treeNodeLabel(node)}) branching off ${treeNodeLabel(byId[a])}`;
                     }
                 }
                 if (nid < 0 || (x === undefined && nid === view.rootId)) return;
                 lossesInView[gName]++;
                 if (x === undefined) {
-                    // The branch below a loss is already drawn in the post-loss colour, so mark the
-                    // loss in the parent branch's colour: the state that ends at this X.
-                    col = nodeColors[view.parent[nid]] || geneCol;
                     const rP = view.nodeR[view.parent[nid]], rC = view.nodeR[nid];
                     [x, y] = pt(rP + (rC - rP) * frac, view.nodeA[nid]);
                 }
-                const d = markR;
+                const d = markR, col = geneCol;
                 svgParts.push(`<g class="tree-loss-mark"><title>${gName} lost ${where}</title>` +
-                    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(d * 1.25)}" fill="${outline}" fill-opacity="0.85" />` +
-                    `<path d="M ${f(x - d)} ${f(y - d)} L ${f(x + d)} ${f(y + d)} M ${f(x - d)} ${f(y + d)} L ${f(x + d)} ${f(y - d)}" stroke="${col}" stroke-width="1.8" stroke-linecap="round" /></g>`);
+                    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(d * 1.1)}" fill="${col}" stroke="${outline}" stroke-width="1.2" /></g>`);
             });
             const gid = (ev.gain !== null && byId[ev.gain]) ? view.drawId[ev.gain] : -1;
             if (gid >= 0) {
@@ -4181,9 +4176,9 @@ function renderCircularTree(scaleOptions = {}) {
                 const r = gid === view.rootId ? view.nodeR[gid]
                     : view.nodeR[view.parent[gid]] + (view.nodeR[gid] - view.nodeR[view.parent[gid]]) * 0.5;
                 const [x, y] = pt(r, view.nodeA[gid]);
-                const col = nodeColors[gid] || geneCol;
+                const col = geneCol;
                 svgParts.push(`<g class="tree-gain-mark"><title>${gName} origin (single Dollo gain) at ${treeNodeLabel(node)}</title>` +
-                    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(markR * 1.3)}" fill="${col}" stroke="${outline}" stroke-width="1.2" /></g>`);
+                    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(markR * 1.4)}" fill="${outline}" stroke="${col}" stroke-width="2.2" /></g>`);
             }
         });
     }
@@ -4304,12 +4299,12 @@ function renderCircularTree(scaleOptions = {}) {
     if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
         svgParts.push(`<text x="0" y="${y}" font-size="${legTitleSz}" font-weight="700" fill="${legTitleCol}">Dollo events</text>`);
         y += Math.round(14 * textScale);
-        svgParts.push(`<text x="0" y="${y}" font-size="${legSubSz}" fill="${legSubCol}">&#x2715; inferred loss &#8226; &#9679; origin (branch colour; hover for gene)</text>`);
+        svgParts.push(`<text x="0" y="${y}" font-size="${legSubSz}" fill="${legSubCol}">&#9679; inferred loss &#8226; &#9675; origin, in the gene's colour (hover for clade)</text>`);
         TREE_SELECTED_GENES.forEach((g, gI) => {
             const n = getTreeGeneEvents(g).losses.length;
             const inViewNote = (isFocused || view.keep) ? ` (${lossesInView[g]} in view)` : '';
             y += lineGap;
-            svgParts.push(`<text x="0" y="${y}" font-size="${legItemSz}" font-weight="700" fill="${legTextCol}">&#x2715;</text>`);
+            svgParts.push(`<text x="0" y="${y}" font-size="${legItemSz}" font-weight="700" fill="${TREE_PALETTE[gI % TREE_PALETTE.length]}">&#9679;</text>`);
             svgParts.push(`<text x="${rectW + 6}" y="${y}" font-size="${legItemSz}" fill="${legTextCol}">${g}: ${n} loss${n === 1 ? '' : 'es'}${inViewNote}</text>`);
         });
         y += Math.round(20 * textScale);
