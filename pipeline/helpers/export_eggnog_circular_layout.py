@@ -20,14 +20,18 @@ first (newick order), then internal nodes in postorder.
 Nodes carry a contiguous leaf range [l0, l1] instead of an explicit leaf list
 (12.5k leaves would make per-node lists tens of MB).
 
+Taxonomy: every leaf carries its name at each rank in TAX_LEVELS (falling back
+to the nearest higher rank NCBI defines). Clade blocks and colours are derived
+in the browser from these names, so they can follow the current view.
+
 Usage (from repo root):
-  python3 pipeline/helpers/export_eggnog_circular_layout.py
+  python3 pipeline/helpers/export_eggnog_circular_layout.py [--layout-only]
 """
 
 import json
 import math
 import struct
-from collections import Counter
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -47,22 +51,10 @@ GAP_DEG = 0.0
 R_ROOT = 35.0
 R_TREE = 300.0
 
-# Taxonomy levels exposed in the UI selector -> NCBI ranks to try, in order.
-LEVEL_RANKS = {
-    "supergroup": ["superkingdom", "domain"],
-    "kingdom": ["kingdom", "superkingdom", "domain"],
-    "phylum": ["phylum", "kingdom", "superkingdom", "domain"],
-    "detailed": ["class", "phylum", "kingdom", "superkingdom", "domain"],
-    "tcs": ["phylum", "kingdom", "superkingdom", "domain"],
-}
-
-PALETTE = [
-    "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f",
-    "#e5c494", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-    "#8c564b", "#17becf", "#bcbd22", "#f781bf", "#14b8a6", "#84cc16",
-    "#f59e0b", "#6366f1",
-]
-OTHER_COLOR = "#94a3b8"
+# Taxonomy levels exposed in the UI selector, coarse to fine. Each level falls
+# back to the nearest higher rank NCBI defines for that lineage.
+TAX_LEVELS = ["domain", "kingdom", "phylum", "class", "order", "family", "genus"]
+RANK_ALIASES = {"domain": ["domain", "superkingdom"]}
 
 
 def leaf_taxonomy(ncbi, taxids):
@@ -82,35 +74,12 @@ def leaf_taxonomy(ncbi, taxids):
     for t, lin in lineages.items():
         by_rank = {ranks.get(i): names.get(i) for i in lin}
         info = {"sci_name": names.get(int(t), t) if t.isdigit() else t}
-        for level, candidates in LEVEL_RANKS.items():
-            info[level] = next((by_rank[r] for r in candidates if by_rank.get(r)), "Unclassified")
+        prev = "Unclassified"
+        for level in TAX_LEVELS:
+            val = next((by_rank[r] for r in RANK_ALIASES.get(level, [level]) if by_rank.get(r)), None)
+            info[level] = prev = val or prev
         out[t] = info
     return out
-
-
-def assign_colors(values):
-    counts = Counter(values)
-    colors = {}
-    for i, (v, _) in enumerate(counts.most_common()):
-        colors[v] = PALETTE[i] if i < len(PALETTE) and v != "Unclassified" else OTHER_COLOR
-    return colors
-
-
-def clade_blocks(leaf_species, leaf_tax, level, leaf_angles):
-    blocks = []
-    start = 0
-    for i in range(1, len(leaf_species) + 1):
-        if i == len(leaf_species) or leaf_tax[i][level] != leaf_tax[start][level]:
-            blocks.append({
-                "clade": leaf_tax[start][level],
-                "color": leaf_tax[start][level + "_color"],
-                "start_idx": start,
-                "end_idx": i - 1,
-                "start_angle": leaf_angles[start],
-                "end_angle": leaf_angles[i - 1],
-            })
-            start = i
-    return blocks
 
 
 def main():
@@ -127,14 +96,7 @@ def main():
     # Taxonomy + colours
     ncbi = NCBITaxa()
     tax = leaf_taxonomy(ncbi, leaf_species)
-    leaf_tax = []
-    for sp in leaf_species:
-        info = {"sp": sp, **tax[sp], "cilia": "NR"}
-        leaf_tax.append(info)
-    for level in LEVEL_RANKS:
-        colors = assign_colors([t[level] for t in leaf_tax])
-        for t in leaf_tax:
-            t[level + "_color"] = colors[t[level]]
+    leaf_tax = [{"sp": sp, **tax[sp]} for sp in leaf_species]
 
     # Nodes: preorder ids, contiguous leaf ranges, depth-based radii
     leaf_idx = {id(l): i for i, l in enumerate(leaves)}
@@ -191,7 +153,7 @@ def main():
         "leaf_species": leaf_species,
         "leaf_angles": leaf_angles,
         "leaf_taxonomies": leaf_tax,
-        "clade_levels": {lv: clade_blocks(leaf_species, leaf_tax, lv, leaf_angles) for lv in LEVEL_RANKS},
+        "tax_levels": TAX_LEVELS,
         "nodes": nodes,
         "gene_names": gene_names,
         "gap_deg": GAP_DEG,
@@ -199,10 +161,11 @@ def main():
         "r_root": R_ROOT,
         "r_tree": R_TREE,
     }
-    layout["clade_blocks"] = layout["clade_levels"]["supergroup"]
     LAYOUT_OUT.write_text(json.dumps(layout, separators=(",", ":")))
     print(f"Wrote {LAYOUT_OUT} ({LAYOUT_OUT.stat().st_size / 1e6:.1f} MB, {len(nodes)} nodes)")
 
+    if "--layout-only" in sys.argv:
+        return
     write_events(gene_names, nodes)
 
     # Presence bitmap in gene_names x leaf order
@@ -223,7 +186,6 @@ def main():
 
 
 def write_events(gene_names, nodes):
-    import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from count_bits import load_npz, unpack
 

@@ -890,13 +890,28 @@ body.light-theme #tree-toast {
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
                 Taxonomy:
                 <select id="tree-tax-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
-                    <option value="kingdom" selected>Kingdom (UniProt)</option>
-                    <option value="phylum">Phylum (UniProt)</option>
-                    <option value="supergroup">Supergroup</option>
-                    <option value="tcs">TCS Major Clades (31)</option>
-                    <option value="detailed">Detailed (Phylum)</option>
+                    <option value="domain">Domain</option>
+                    <option value="kingdom" selected>Kingdom</option>
+                    <option value="phylum">Phylum</option>
+                    <option value="class">Class</option>
+                    <option value="order">Order</option>
+                    <option value="family">Family</option>
+                    <option value="genus">Genus</option>
                 </select>
             </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500; cursor:pointer;" title="Draw each clade where the selected genes are present in all or none of its species as a single wedge">
+                <input type="checkbox" id="tree-collapse-toggle" checked onchange="setTreeCollapse(this.checked)" style="cursor:pointer;">
+                Collapse uniform clades
+            </label>
+            <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500; cursor:pointer;" title="Hide species that carry none of the selected genes">
+                <input type="checkbox" id="tree-union-toggle" onchange="setTreeUnionOnly(this.checked)" style="cursor:pointer;">
+                Only species with a selected gene
+            </label>
+            <span id="tree-focus-bar" style="display:none; align-items:center; gap:6px; font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.10); border:1px solid rgba(56,189,248,0.3); padding:2px 4px 2px 8px; border-radius:10px;">
+                <span id="tree-focus-label"></span>
+                <button class="btn" style="padding:1px 7px; font-size:11px;" onclick="treeFocusBack()" title="Go back to the previous zoom level">Back</button>
+                <button class="btn" style="padding:1px 7px; font-size:11px;" onclick="treeFocusReset()" title="Show the whole tree">Whole tree</button>
+            </span>
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
                 Branches:
                 <select id="tree-branch-mode" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeBranchMode(this.value)">
@@ -1102,6 +1117,11 @@ window.downloadExportSlidePng = downloadExportSlidePng;
 window.drawCanvasPill = drawCanvasPill;
 window.drawCanvasRoundedRect = drawCanvasRoundedRect;
 window.exportTreeSvg = exportTreeSvg;
+window.focusTreeClade = focusTreeClade;
+window.treeFocusBack = treeFocusBack;
+window.treeFocusReset = treeFocusReset;
+window.setTreeCollapse = setTreeCollapse;
+window.setTreeUnionOnly = setTreeUnionOnly;
 window.focusGeneInCluster = focusGeneInCluster;
 window.generatePresentationSlideCanvas = generatePresentationSlideCanvas;
 window.getActiveGeneSet = getActiveGeneSet;
@@ -1189,7 +1209,7 @@ window.CURRENT_DATASET = DATASET;
 const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
 
 // Bumped on every data rebuild so browsers never mix cached old data files with a new page.
-const DATA_VERSION = '20261007-1545';
+const DATA_VERSION = '20261008-0900';
 const DATA = await (await fetch('data_eggnog.json?v=' + DATA_VERSION)).json();
 
 // ---- Static Metadata (fetched per-dataset, see DATA above) ----
@@ -3497,8 +3517,10 @@ async function initTreeView() {
                 console.warn('Loss events unavailable:', e);
             }
             TREE_LAYOUT.gene_names.forEach((name, i) => { TREE_GENE_IDX[name] = i; });
-            
+            buildTreeIndex();
+
             setupTreePanZoom();
+            setupTreeCladeInteractions();
             setupTreeSearch();
         } catch (err) {
             console.error('Error loading tree:', err);
@@ -3666,10 +3688,290 @@ function blendTreeColors(presentIndices, isDark) {
     return `rgb(${r},${g},${b})`;
 }
 
+// ---- View: clade focus + collapsing of clades whose gene state never changes ----
+const TREE_CLADE_PALETTE = [
+    '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494',
+    '#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#8c564b', '#17becf', '#bcbd22',
+    '#f781bf', '#14b8a6', '#84cc16', '#f59e0b', '#6366f1',
+];
+let TREE_FOCUS_STACK = [];          // node ids zoomed into; last one is the drawn root
+let TREE_COLLAPSE_UNIFORM = true;
+let TREE_UNION_ONLY = false;        // draw only species carrying at least one selected gene
+let TREE_IDX = null;                // { byId, leafNode, depth, rootId }
+let TREE_VIEW = null;               // last computed view, used by hover/click handlers
+
+function buildTreeIndex() {
+    const nodes = TREE_LAYOUT.nodes;
+    const byId = new Array(nodes.length);
+    nodes.forEach(n => { byId[n.id] = n; });
+    const leafNode = new Int32Array(TREE_LAYOUT.n_leaves);
+    const depth = new Int32Array(nodes.length);
+    let rootId = 0;
+    // Ids are preorder, so every parent is visited before its children.
+    for (let id = 0; id < byId.length; id++) {
+        const n = byId[id];
+        if (n.p === null || n.p === undefined) rootId = id;
+        else depth[id] = depth[n.p] + 1;
+        if (n.leaf) leafNode[n.leaf_idx] = id;
+    }
+    TREE_IDX = { byId, leafNode, depth, rootId };
+}
+
+function treeFocusId() {
+    return TREE_FOCUS_STACK.length ? TREE_FOCUS_STACK[TREE_FOCUS_STACK.length - 1] : TREE_IDX.rootId;
+}
+
+// Smallest clade containing leaves l0..l1
+function treeMrca(l0, l1) {
+    let id = TREE_IDX.leafNode[l0];
+    for (;;) {
+        const n = TREE_IDX.byId[id];
+        if ((n.l0 <= l0 && n.l1 >= l1) || n.p === null || n.p === undefined) return id;
+        id = n.p;
+    }
+}
+
+function treeDominantTaxon(node, level) {
+    const tax = TREE_LAYOUT.leaf_taxonomies;
+    const keep = TREE_VIEW && TREE_VIEW.keep;
+    const counts = new Map();
+    let best = null, bestN = 0, total = 0;
+    for (let i = node.l0; i <= node.l1; i++) {
+        if (keep && !keep[i]) continue;
+        total++;
+        const c = tax[i][level];
+        const k = (counts.get(c) || 0) + 1;
+        counts.set(c, k);
+        if (k > bestN) { bestN = k; best = c; }
+    }
+    return { name: best, frac: total ? bestN / total : 0 };
+}
+
+function treeCladeName(node) {
+    if (node.leaf) return treeNodeLabel(node);
+    return node.name || treeDominantTaxon(node, TREE_TAX_LEVEL).name || 'Unnamed clade';
+}
+
+function focusTreeClade(nid) {
+    const node = TREE_IDX.byId[nid];
+    if (!node) return;
+    if (node.leaf) {
+        if (node.p === null || node.p === undefined) return;
+        nid = node.p;
+    }
+    if (nid === treeFocusId()) return;
+    if (nid === TREE_IDX.rootId) TREE_FOCUS_STACK = [];
+    else TREE_FOCUS_STACK.push(nid);
+    resetTreeZoom();
+    renderCircularTree();
+}
+
+function treeFocusBack() {
+    TREE_FOCUS_STACK.pop();
+    resetTreeZoom();
+    renderCircularTree();
+}
+
+function treeFocusReset() {
+    TREE_FOCUS_STACK = [];
+    resetTreeZoom();
+    renderCircularTree();
+}
+
+function setTreeCollapse(on) {
+    TREE_COLLAPSE_UNIFORM = on;
+    renderCircularTree();
+}
+
+function setTreeUnionOnly(on) {
+    TREE_UNION_ONLY = on;
+    resetTreeZoom();
+    renderCircularTree();
+}
+function updateTreeFocusBar() {
+    const bar = document.getElementById('tree-focus-bar');
+    if (!bar || !TREE_IDX) return;
+    const fid = treeFocusId();
+    if (fid === TREE_IDX.rootId) {
+        bar.style.display = 'none';
+        return;
+    }
+    const n = TREE_IDX.byId[fid];
+    document.getElementById('tree-focus-label').textContent =
+        `Zoomed: ${treeCladeName(n)} (${(TREE_VIEW ? TREE_VIEW.shownN(n) : n.l1 - n.l0 + 1).toLocaleString()} species)`;
+    bar.style.display = 'inline-flex';
+}
+
+// Lay out the subtree under the current focus. A clade where every selected
+// gene is either present in all species or absent from all of them carries no
+// Dollo event inside it, so it is drawn as one wedge instead of its branches.
+// Wedges get sqrt(size) leaf slots, so the angle goes to where the genes vary.
+// With TREE_UNION_ONLY, species carrying none of the selected genes are pruned
+// and nodes left with a single child are merged into the branch below them.
+function computeTreeView(prefixSums) {
+    const { byId, depth } = TREE_IDX;
+    const nL = TREE_LAYOUT.n_leaves;
+
+    // Union mask: leaves with at least one selected gene
+    let keep = null, U = null;
+    if (TREE_UNION_ONLY && prefixSums.length > 0) {
+        keep = new Uint8Array(nL);
+        U = new Uint32Array(nL + 1);
+        for (let i = 0; i < nL; i++) {
+            for (const ps of prefixSums) {
+                if (ps[i + 1] > ps[i]) { keep[i] = 1; break; }
+            }
+            U[i + 1] = U[i] + keep[i];
+        }
+        if (U[nL] === 0) { keep = null; U = null; }
+    }
+    const shownN = n => U ? U[n.l1 + 1] - U[n.l0] : n.l1 - n.l0 + 1;
+
+    // A zoomed clade with no species left in the union falls back to its ancestors
+    while (TREE_FOCUS_STACK.length && shownN(byId[treeFocusId()]) === 0) TREE_FOCUS_STACK.pop();
+    const rootId = treeFocusId();
+
+    // Under the union filter a single gene is present everywhere, so nothing would vary
+    const canCollapse = TREE_COLLAPSE_UNIFORM && prefixSums.length > 0 && !(keep && prefixSums.length === 1);
+    const isUniform = n => {
+        const size = shownN(n);
+        for (const ps of prefixSums) {
+            const c = ps[n.l1 + 1] - ps[n.l0];
+            if (c !== 0 && c !== size) return false;
+        }
+        return true;
+    };
+
+    const visible = [];
+    const units = [];
+    const collapsed = new Set();
+    const parent = new Int32Array(byId.length).fill(-1);   // drawn parent
+    const drawId = new Int32Array(byId.length).fill(-1);   // node -> drawn node carrying its branch
+    const merged = [];                                      // [skipped unary node, its kept child]
+    const stack = [[rootId, -1]];
+    while (stack.length) {
+        const [id, dp] = stack.pop();
+        const n = byId[id];
+        if (!n.leaf && !(canCollapse && id !== rootId && isUniform(n))) {
+            const kids = keep ? n.c.filter(c => shownN(byId[c]) > 0) : n.c;
+            if (id !== rootId && kids.length === 1) {
+                merged.push([id, kids[0]]);
+                stack.push([kids[0], dp]);
+                continue;
+            }
+            visible.push(id);
+            drawId[id] = id;
+            parent[id] = dp;
+            for (let k = kids.length - 1; k >= 0; k--) stack.push([kids[k], id]);
+            continue;
+        }
+        visible.push(id);
+        drawId[id] = id;
+        parent[id] = dp;
+        if (n.leaf) {
+            units.push({ id, w: 1 });
+        } else {
+            collapsed.add(id);
+            units.push({ id, w: Math.sqrt(shownN(n)) });
+        }
+    }
+    // Merged nodes resolve to the first drawn node below them (deepest first)
+    for (let k = merged.length - 1; k >= 0; k--) drawId[merged[k][0]] = drawId[merged[k][1]];
+
+    // Angles decrease clockwise from start_deg; shown leaves inside a wedge split it evenly
+    const totalW = units.reduce((s, u) => s + u.w, 0);
+    const step = (360.0 - TREE_LAYOUT.gap_deg) / totalW;
+    const leafA0 = new Float64Array(nL);
+    const leafA1 = new Float64Array(nL);
+    const nodeA = new Float64Array(byId.length);
+    const nodeR = new Float64Array(byId.length);
+    let a = TREE_LAYOUT.start_deg;
+    units.forEach(u => {
+        const n = byId[u.id];
+        u.a0 = a;
+        u.a1 = a - u.w * step;
+        a = u.a1;
+        const per = (u.a0 - u.a1) / shownN(n);
+        let k = 0;
+        for (let li = n.l0; li <= n.l1; li++) {
+            if (keep && !keep[li]) continue;
+            leafA0[li] = u.a0 - k * per;
+            leafA1[li] = leafA0[li] - per;
+            k++;
+        }
+        nodeA[u.id] = (u.a0 + u.a1) / 2;
+    });
+    // Internal nodes sit midway between their first and last drawn child.
+    // Reverse preorder visits every child before its parent (and the last child first).
+    const firstA = new Float64Array(byId.length);
+    const lastA = new Float64Array(byId.length).fill(NaN);
+    for (let k = visible.length - 1; k >= 0; k--) {
+        const id = visible[k];
+        if (!byId[id].leaf && !collapsed.has(id)) nodeA[id] = (firstA[id] + lastA[id]) / 2;
+        const p = parent[id];
+        if (p < 0) continue;
+        firstA[p] = nodeA[id];
+        if (Number.isNaN(lastA[p])) lastA[p] = nodeA[id];
+    }
+
+    // Radii from depth below the focus, rescaled to the deepest drawn node
+    const phylo = TREE_BRANCH_LEN_MODE === 'phylogram';
+    const d0 = depth[rootId];
+    let maxD = 1;
+    visible.forEach(id => {
+        const d = depth[id] - d0;
+        maxD = Math.max(maxD, byId[id].leaf ? (phylo ? d : 0) : d + 1);
+    });
+    const R0 = TREE_LAYOUT.r_root;
+    const R1 = TREE_LAYOUT.r_tree;
+    visible.forEach(id => {
+        nodeR[id] = (byId[id].leaf && !phylo) ? R1 : R0 + (R1 - R0) * (depth[id] - d0) / maxD;
+    });
+
+    return { rootId, visible, units, collapsed, parent, drawId, keep, shownN, leafA0, leafA1, nodeA, nodeR, prefixSums };
+}
+
+// Contiguous runs of one taxon at `level` over the shown leaves in l0..l1,
+// coloured by size within the view (palette for the largest, alternating
+// greys for the tail)
+function treeCladeBlocks(level, l0, l1, keep) {
+    const tax = TREE_LAYOUT.leaf_taxonomies;
+    const blocks = [];
+    let cur = null;
+    for (let i = l0; i <= l1; i++) {
+        if (keep && !keep[i]) continue;
+        if (cur && tax[i][level] === cur.clade) {
+            cur.end_idx = i;
+            cur.n++;
+        } else {
+            cur = { clade: tax[i][level], start_idx: i, end_idx: i, n: 1 };
+            blocks.push(cur);
+        }
+    }
+    const counts = new Map();
+    blocks.forEach(b => counts.set(b.clade, (counts.get(b.clade) || 0) + b.n));
+    const ranked = [...counts.keys()].sort((x, y) => counts.get(y) - counts.get(x));
+    const colorOf = new Map();
+    let pi = 0;
+    ranked.forEach(c => {
+        if (c !== 'Unclassified' && pi < TREE_CLADE_PALETTE.length) colorOf.set(c, TREE_CLADE_PALETTE[pi++]);
+    });
+    blocks.forEach((b, i) => { b.color = colorOf.get(b.clade) || (i % 2 ? '#7c8799' : '#a3adbd'); });
+    return { blocks, ranked, colorOf };
+}
+
+function treeLevelLabel(level) {
+    return level.charAt(0).toUpperCase() + level.slice(1);
+}
+
 function renderCircularTree(scaleOptions = {}) {
     if (!TREE_LAYOUT) return;
     const svg = document.getElementById('tree-svg');
     if (!svg) return;
+    if (!TREE_IDX) buildTreeIndex();
+    // Elements under the cursor are about to be replaced, so their mouseout never fires
+    const tooltipEl = document.getElementById('tree-tooltip');
+    if (tooltipEl) tooltipEl.style.display = 'none';
 
     const textScale = (scaleOptions && scaleOptions.textScale) ? scaleOptions.textScale : 1.0;
     const isDark = getEffectiveTreeTheme() === 'dark';
@@ -3677,79 +3979,60 @@ function renderCircularTree(scaleOptions = {}) {
     const SIZE = 1000;
     const CX = SIZE / 2;
     const CY = SIZE / 2;
-    const SPAN = 360.0 - TREE_LAYOUT.gap_deg;
     const nLeaves = TREE_LAYOUT.n_leaves;
+    const { byId } = TREE_IDX;
 
     const presenceVectors = TREE_SELECTED_GENES.map(g => getTreeGenePresence(g));
-    const cladeBlocks = (TREE_LAYOUT.clade_levels && TREE_LAYOUT.clade_levels[TREE_TAX_LEVEL]) || TREE_LAYOUT.clade_blocks;
+    // Prefix sums give O(1) "how many leaves in [l0, l1] have the gene" per node.
+    const prefixSums = presenceVectors.map(pVec => {
+        const ps = new Uint32Array(pVec.length + 1);
+        for (let i = 0; i < pVec.length; i++) ps[i + 1] = ps[i] + pVec[i];
+        return ps;
+    });
+    const view = computeTreeView(prefixSums);
+    TREE_VIEW = view;
+    const focusNode = byId[view.rootId];
+    const isFocused = view.rootId !== TREE_IDX.rootId;
+    const { blocks: cladeBlocks, ranked: rankedClades, colorOf: cladeColorOf } =
+        treeCladeBlocks(TREE_TAX_LEVEL, focusNode.l0, focusNode.l1, view.keep);
 
     // Calculate node colors
     const nodeColors = {};
-    const idToNode = {};
-    TREE_LAYOUT.nodes.forEach(n => { idToNode[n.id] = n; });
-
     const defaultNodeCol = isDark ? '#475569' : '#94a3b8';
 
     if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {
-        // Color branches by taxonomic clade of descendant leaves
-        TREE_LAYOUT.nodes.forEach(node => {
-            if (node.leaf) {
-                const lInfo = TREE_LAYOUT.leaf_taxonomies ? TREE_LAYOUT.leaf_taxonomies[node.leaf_idx] : null;
-                nodeColors[node.id] = lInfo ? (lInfo[TREE_TAX_LEVEL + '_color'] || defaultNodeCol) : defaultNodeCol;
-            } else {
-                const counts = {};
-                const colors = {};
-                for (let lIdx = node.l0; lIdx <= node.l1; lIdx++) {
-                    const lInfo = TREE_LAYOUT.leaf_taxonomies ? TREE_LAYOUT.leaf_taxonomies[lIdx] : null;
-                    if (!lInfo) continue;
-                    const c = lInfo[TREE_TAX_LEVEL];
-                    counts[c] = (counts[c] || 0) + 1;
-                    colors[c] = lInfo[TREE_TAX_LEVEL + '_color'] || defaultNodeCol;
-                }
-                let maxCount = 0;
-                let domClade = null;
-                for (const [c, cnt] of Object.entries(counts)) {
-                    if (cnt > maxCount) {
-                        maxCount = cnt;
-                        domClade = c;
-                    }
-                }
-                if (domClade && (maxCount / (node.l1 - node.l0 + 1) >= 0.70)) {
-                    nodeColors[node.id] = colors[domClade];
-                } else {
-                    nodeColors[node.id] = defaultNodeCol;
-                }
-            }
+        // Color branches by the taxon holding >= 70% of the descendant leaves
+        view.visible.forEach(id => {
+            const dom = treeDominantTaxon(byId[id], TREE_TAX_LEVEL);
+            nodeColors[id] = (dom.frac >= 0.70 && cladeColorOf.get(dom.name)) || defaultNodeCol;
         });
     } else {
         // Color branches by gene presence combinations (Dollo parsimony)
-        // Prefix sums give O(1) "any leaf in [l0, l1] has the gene" per node.
-        const prefixSums = presenceVectors.map(pVec => {
-            const ps = new Uint32Array(pVec.length + 1);
-            for (let i = 0; i < pVec.length; i++) ps[i + 1] = ps[i] + pVec[i];
-            return ps;
-        });
-        TREE_LAYOUT.nodes.forEach(node => {
+        view.visible.forEach(id => {
+            const node = byId[id];
             const presentIndices = [];
             for (let gI = 0; gI < prefixSums.length; gI++) {
                 const ps = prefixSums[gI];
-                if (ps[node.l1 + 1] - ps[node.l0] > 0) {
-                    presentIndices.push(gI);
-                }
+                if (ps[node.l1 + 1] - ps[node.l0] > 0) presentIndices.push(gI);
             }
-            nodeColors[node.id] = blendTreeColors(presentIndices, isDark);
+            nodeColors[id] = blendTreeColors(presentIndices, isDark);
         });
     }
 
     const svgParts = [];
-    const taxLabel = TREE_TAX_LEVEL === 'tcs' ? 'TCS Clades' : (TREE_TAX_LEVEL === 'detailed' ? 'Phylum' : TREE_TAX_LEVEL.charAt(0).toUpperCase() + TREE_TAX_LEVEL.slice(1));
+    svgParts.push(`<style>#tree-svg .tree-hit:hover{stroke:rgba(56,189,248,0.35)} #tree-svg .tree-wedge:hover{fill-opacity:0.6} #tree-svg .tree-clade-hit:hover{opacity:0.75}</style>`);
+    const taxLabel = treeLevelLabel(TREE_TAX_LEVEL);
+    const nFocus = view.shownN(focusNode);
+    const unionNote = view.keep ? (TREE_SELECTED_GENES.length > 1 ? ' with any of them' : ' with it') : '';
+    const scopeText = isFocused
+        ? `${treeCladeName(focusNode)} (${nFocus.toLocaleString()} species${unionNote})`
+        : `${nFocus.toLocaleString()} species${unionNote}`;
     const titleText = TREE_SELECTED_GENES.length > 0
         ? (TREE_BRANCH_MODE === 'taxonomy'
-            ? `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes (${taxLabel} taxonomy)`
-            : `${TREE_SELECTED_GENES.join(', ')} presence across eukaryotes`)
-        : `EggNOG Species Tree (${nLeaves.toLocaleString()} species • ${taxLabel} taxonomy)`;
+            ? `${TREE_SELECTED_GENES.join(', ')} presence across ${scopeText} (${taxLabel} taxonomy)`
+            : `${TREE_SELECTED_GENES.join(', ')} presence across ${scopeText}`)
+        : `EggNOG Species Tree (${scopeText} • ${taxLabel} taxonomy)`;
     const titleColor = isDark ? '#f8fafc' : '#111827';
-    svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="${titleColor}">${titleText}</text>`);
     const titleFontSize = Math.round(16 * textScale);
     svgParts.push(`<text x="500" y="32" text-anchor="middle" font-size="${titleFontSize}" font-weight="700" fill="${titleColor}">${titleText}</text>`);
 
@@ -3765,87 +4048,123 @@ function renderCircularTree(scaleOptions = {}) {
         const rad = (angDeg * Math.PI) / 180.0;
         return [CX + r * Math.cos(rad), CY + r * Math.sin(rad)];
     }
+    const f = v => v.toFixed(2);
+    // Annular sector between radii rIn..rOut from angle a0 down to a1
+    function sectorPath(rIn, rOut, a0, a1) {
+        const large = (a0 - a1) > 180 ? 1 : 0;
+        const [x1, y1] = pt(rIn, a0), [x2, y2] = pt(rOut, a0), [x3, y3] = pt(rOut, a1), [x4, y4] = pt(rIn, a1);
+        return `M ${f(x1)} ${f(y1)} L ${f(x2)} ${f(y2)} A ${rOut} ${rOut} 0 ${large} 0 ${f(x3)} ${f(y3)} L ${f(x4)} ${f(y4)} A ${rIn} ${rIn} 0 ${large} 1 ${f(x1)} ${f(y1)} Z`;
+    }
+    function arcPath(r, a0, a1) {
+        const large = (a0 - a1) > 180 ? 1 : 0;
+        const [xS, yS] = pt(r, a0), [xE, yE] = pt(r, a1);
+        return `M ${f(xS)} ${f(yS)} A ${r} ${r} 0 ${large} 0 ${f(xE)} ${f(yE)}`;
+    }
+    // Radial text reading outward on the right half and flipped on the left
+    function radialText(r, ang, anchorOut) {
+        const norm = ((ang % 360) + 360) % 360;
+        const flip = norm > 90 && norm < 270;
+        const [x, y] = pt(r, ang);
+        const rot = flip ? norm + 180 : norm;
+        const anchor = (anchorOut !== flip) ? 'start' : 'end';
+        return { x: f(x), y: f(y), rot: rot.toFixed(1), anchor };
+    }
 
     // 1. Clade Background Wedges
     const wedgeOpacity = isDark ? '0.14' : '0.08';
-    const stepA = (TREE_LAYOUT.gap_deg && TREE_LAYOUT.gap_deg > 0) ? (SPAN / (nLeaves - 1)) : (SPAN / nLeaves);
-    const dA = stepA * 0.48;
-
     cladeBlocks.forEach(block => {
-        const sIdx = block.start_idx;
-        const eIdx = block.end_idx;
-        const col = block.color || (isDark ? '#475569' : '#94a3b8');
-        const a1 = TREE_LAYOUT.leaf_angles[sIdx] + dA;
-        const a2 = TREE_LAYOUT.leaf_angles[eIdx] - dA;
-
-        const rad1 = (a1 * Math.PI) / 180.0;
-        const rad2 = (a2 * Math.PI) / 180.0;
-        const rMax = R_CLADE_ARC + 32;
-
-        const x1 = (CX + R_ROOT * Math.cos(rad1)).toFixed(2);
-        const y1 = (CY + R_ROOT * Math.sin(rad1)).toFixed(2);
-        const x2 = (CX + rMax * Math.cos(rad1)).toFixed(2);
-        const y2 = (CY + rMax * Math.sin(rad1)).toFixed(2);
-        const x3 = (CX + rMax * Math.cos(rad2)).toFixed(2);
-        const y3 = (CY + rMax * Math.sin(rad2)).toFixed(2);
-        const x4 = (CX + R_ROOT * Math.cos(rad2)).toFixed(2);
-        const y4 = (CY + R_ROOT * Math.sin(rad2)).toFixed(2);
-
-        svgParts.push(`<path d="M ${x1} ${y1} L ${x2} ${y2} A ${rMax} ${rMax} 0 0 0 ${x3} ${y3} L ${x4} ${y4} Z" fill="${col}" fill-opacity="${wedgeOpacity}" stroke="none" />`);
+        const a0 = view.leafA0[block.start_idx];
+        const a1 = view.leafA1[block.end_idx];
+        svgParts.push(`<path d="${sectorPath(R_ROOT, R_CLADE_ARC + 32, a0, a1)}" fill="${block.color}" fill-opacity="${wedgeOpacity}" stroke="none" />`);
     });
 
     // 2. Tree Branches
     const branchWidth = (parseFloat(isDark ? '1.8' : '1.7') * Math.min(1.4, Math.sqrt(textScale))).toFixed(2);
-    TREE_LAYOUT.nodes.forEach(node => {
-        if (node.p === null || node.p === undefined) return;
-        const parent = idToNode[node.p];
-        const rP = (TREE_BRANCH_LEN_MODE === 'phylogram' && parent.r_phylo !== undefined) ? parent.r_phylo : (parent.r_clad !== undefined ? parent.r_clad : parent.r);
-        const aP = parent.a;
-        const rC = (TREE_BRANCH_LEN_MODE === 'phylogram' && node.r_phylo !== undefined) ? node.r_phylo : (node.r_clad !== undefined ? node.r_clad : node.r);
-        const aC = node.a;
-        const col = nodeColors[node.id];
-
+    const branchPaths = {};
+    view.visible.forEach(id => {
+        if (id === view.rootId) return;
+        const p = view.parent[id];
+        const rP = view.nodeR[p], aP = view.nodeA[p];
+        const rC = view.nodeR[id], aC = view.nodeA[id];
         const [xP, yP] = pt(rP, aP);
         const [xArc, yArc] = pt(rP, aC);
         const [xC, yC] = pt(rC, aC);
-
         const sweep = aC < aP ? 0 : 1;
-        const pathD = `M ${xP.toFixed(2)} ${yP.toFixed(2)} A ${rP.toFixed(2)} ${rP.toFixed(2)} 0 0 ${sweep} ${xArc.toFixed(2)} ${yArc.toFixed(2)} L ${xC.toFixed(2)} ${yC.toFixed(2)}`;
-        svgParts.push(`<path d="${pathD}" fill="none" stroke="${col}" stroke-width="${branchWidth}" stroke-linecap="round" />`);
+        const large = Math.abs(aC - aP) > 180 ? 1 : 0;
+        const pathD = `M ${f(xP)} ${f(yP)} A ${f(rP)} ${f(rP)} 0 ${large} ${sweep} ${f(xArc)} ${f(yArc)} L ${f(xC)} ${f(yC)}`;
+        branchPaths[id] = pathD;
+        svgParts.push(`<path d="${pathD}" fill="none" stroke="${nodeColors[id]}" stroke-width="${branchWidth}" stroke-linecap="round" />`);
+    });
+    // Wide invisible strokes over internal branches: hover for clade info, click to zoom
+    view.visible.forEach(id => {
+        const node = byId[id];
+        if (node.leaf || view.collapsed.has(id) || !branchPaths[id]) return;
+        svgParts.push(`<path class="tree-hit" data-nid="${id}" d="${branchPaths[id]}" fill="none" stroke="transparent" stroke-width="7" style="cursor:zoom-in;" />`);
+    });
+
+    // 2a. Collapsed clades: one wedge from the clade's node out to the leaf circle
+    const wedgeLabelCol = isDark ? '#e2e8f0' : '#1f2937';
+    view.collapsed.forEach(id => {
+        const node = byId[id];
+        const u0 = view.leafA0[node.l0], u1 = view.leafA1[node.l1];
+        const inset = Math.min((u0 - u1) * 0.12, 0.4);
+        const a0 = u0 - inset, a1 = u1 + inset;
+        const rN = view.nodeR[id];
+        const col = nodeColors[id];
+        const [xA, yA] = pt(rN, view.nodeA[id]);
+        const [x0, y0] = pt(R_TREE, a0), [x1, y1] = pt(R_TREE, a1);
+        const large = (a0 - a1) > 180 ? 1 : 0;
+        svgParts.push(`<path class="tree-wedge" data-nid="${id}" d="M ${f(xA)} ${f(yA)} L ${f(x0)} ${f(y0)} A ${R_TREE} ${R_TREE} 0 ${large} 0 ${f(x1)} ${f(y1)} Z" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="0.8" stroke-linejoin="round" style="cursor:zoom-in;" />`);
+
+        // Label along the wedge's axis when it is wide and long enough
+        const spanRad = (a0 - a1) * Math.PI / 180;
+        const fs = Math.min(8 * textScale, spanRad * (rN + R_TREE) / 2 * 0.75);
+        if (fs < 5) return;
+        let label = `${treeCladeName(node)} (${view.shownN(node).toLocaleString()})`;
+        const maxChars = Math.floor((R_TREE - rN - 10) / (fs * 0.58));
+        if (maxChars < 4) return;
+        if (label.length > maxChars) label = label.slice(0, maxChars - 1) + '…';
+        const t = radialText(R_TREE - 4, view.nodeA[id], false);
+        svgParts.push(`<text x="${t.x}" y="${t.y}" transform="rotate(${t.rot}, ${t.x}, ${t.y})" font-size="${fs.toFixed(1)}" font-weight="600" fill="${wedgeLabelCol}" text-anchor="${t.anchor}" dominant-baseline="middle" pointer-events="none">${label}</text>`);
     });
 
     // 2b. Dollo events: X = inferred loss on the branch into that node, dot = single gain (origin)
+    const lossesInView = {};
     if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
         const markR = (3.2 * Math.min(1.4, Math.sqrt(textScale)));
         const outline = isDark ? '#0b1120' : '#ffffff';
-        const radiusOf = nd => (TREE_BRANCH_LEN_MODE === 'phylogram' && nd.r_phylo !== undefined) ? nd.r_phylo : (nd.r_clad !== undefined ? nd.r_clad : nd.r);
         TREE_SELECTED_GENES.forEach((gName, gI) => {
             const col = TREE_PALETTE[gI % TREE_PALETTE.length];
             const ev = getTreeGeneEvents(gName);
             // Spread markers of different genes along the branch so they don't overlap
             const frac = Math.max(0.15, Math.min(0.85, 0.5 + (gI - (TREE_SELECTED_GENES.length - 1) / 2) * 0.12));
-            ev.losses.forEach(nid => {
-                const node = idToNode[nid];
-                if (!node || node.p === null || node.p === undefined) return;
-                const rP = radiusOf(idToNode[node.p]), rC = radiusOf(node);
-                const [x, y] = pt(rP + (rC - rP) * frac, node.a);
+            lossesInView[gName] = 0;
+            ev.losses.forEach(lossId => {
+                const node = byId[lossId];
+                // Merged unary nodes put their marker on the branch that absorbed them
+                const nid = node ? view.drawId[lossId] : -1;
+                if (nid < 0 || nid === view.rootId) return;
+                lossesInView[gName]++;
+                const rP = view.nodeR[view.parent[nid]], rC = view.nodeR[nid];
+                const [x, y] = pt(rP + (rC - rP) * frac, view.nodeA[nid]);
                 const d = markR;
                 svgParts.push(`<g class="tree-loss-mark"><title>${gName} lost on branch to ${treeNodeLabel(node)}</title>` +
-                    `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(d * 1.25).toFixed(2)}" fill="${outline}" fill-opacity="0.85" />` +
-                    `<path d="M ${(x - d).toFixed(2)} ${(y - d).toFixed(2)} L ${(x + d).toFixed(2)} ${(y + d).toFixed(2)} M ${(x - d).toFixed(2)} ${(y + d).toFixed(2)} L ${(x + d).toFixed(2)} ${(y - d).toFixed(2)}" stroke="${col}" stroke-width="1.8" stroke-linecap="round" /></g>`);
+                    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(d * 1.25)}" fill="${outline}" fill-opacity="0.85" />` +
+                    `<path d="M ${f(x - d)} ${f(y - d)} L ${f(x + d)} ${f(y + d)} M ${f(x - d)} ${f(y + d)} L ${f(x + d)} ${f(y - d)}" stroke="${col}" stroke-width="1.8" stroke-linecap="round" /></g>`);
             });
-            if (ev.gain !== null && idToNode[ev.gain]) {
-                const node = idToNode[ev.gain];
-                const hasParent = node.p !== null && node.p !== undefined;
-                const r = hasParent ? radiusOf(idToNode[node.p]) + (radiusOf(node) - radiusOf(idToNode[node.p])) * 0.5 : radiusOf(node);
-                const [x, y] = pt(r, node.a);
+            const gid = (ev.gain !== null && byId[ev.gain]) ? view.drawId[ev.gain] : -1;
+            if (gid >= 0) {
+                const node = byId[ev.gain];
+                const r = gid === view.rootId ? view.nodeR[gid]
+                    : view.nodeR[view.parent[gid]] + (view.nodeR[gid] - view.nodeR[view.parent[gid]]) * 0.5;
+                const [x, y] = pt(r, view.nodeA[gid]);
                 svgParts.push(`<g class="tree-gain-mark"><title>${gName} origin (single Dollo gain) at ${treeNodeLabel(node)}</title>` +
-                    `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(markR * 1.3).toFixed(2)}" fill="${col}" stroke="${outline}" stroke-width="1.2" /></g>`);
+                    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(markR * 1.3)}" fill="${col}" stroke="${outline}" stroke-width="1.2" /></g>`);
             }
         });
     }
 
-    // 3. Concentric Tracks
+    // 3. Concentric Tracks: one tile per leaf, or one per collapsed clade
     const absentFill = isDark ? '#151d30' : '#f8fafc';
     const absentStroke = isDark ? '#263350' : '#e2e8f0';
 
@@ -3853,73 +4172,35 @@ function renderCircularTree(scaleOptions = {}) {
         const rInner = R_TRACKS_START + gI * (TRACK_WIDTH + 2);
         const rOuter = rInner + TRACK_WIDTH;
         const col = TREE_PALETTE[gI % TREE_PALETTE.length];
-        const pVec = presenceVectors[gI];
+        const ps = prefixSums[gI];
 
-        TREE_LAYOUT.leaf_species.forEach((sp, leafI) => {
-            const isPres = pVec[leafI] === 1;
-            const ang = TREE_LAYOUT.leaf_angles[leafI];
-            const a1 = ang + dA;
-            const a2 = ang - dA;
-            const rad1 = (a1 * Math.PI) / 180.0;
-            const rad2 = (a2 * Math.PI) / 180.0;
-
+        view.units.forEach(u => {
+            const node = byId[u.id];
+            const isPres = ps[node.l1 + 1] - ps[node.l0] > 0;
             const fillCol = isPres ? col : absentFill;
             const strokeCol = isPres ? col : absentStroke;
-
-            const x1 = (CX + rInner * Math.cos(rad1)).toFixed(2);
-            const y1 = (CY + rInner * Math.sin(rad1)).toFixed(2);
-            const x2 = (CX + rOuter * Math.cos(rad1)).toFixed(2);
-            const y2 = (CY + rOuter * Math.sin(rad1)).toFixed(2);
-            const x3 = (CX + rOuter * Math.cos(rad2)).toFixed(2);
-            const y3 = (CY + rOuter * Math.sin(rad2)).toFixed(2);
-            const x4 = (CX + rInner * Math.cos(rad2)).toFixed(2);
-            const y4 = (CY + rInner * Math.sin(rad2)).toFixed(2);
-
-            const pathD = `M ${x1} ${y1} L ${x2} ${y2} A ${rOuter} ${rOuter} 0 0 0 ${x3} ${y3} L ${x4} ${y4} A ${rInner} ${rInner} 0 0 1 ${x1} ${y1} Z`;
-            svgParts.push(`<path class="tree-tile" data-sp="${sp}" data-gene="${gName}" data-pres="${isPres ? 1 : 0}" d="${pathD}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="0.35" style="cursor:pointer;" />`);
+            const pathD = sectorPath(rInner, rOuter, u.a0, u.a1);
+            const attrs = node.leaf
+                ? `class="tree-tile" data-sp="${node.sp}" data-gene="${gName}" data-pres="${isPres ? 1 : 0}" style="cursor:pointer;"`
+                : `class="tree-tile-clade" data-nid="${u.id}" style="cursor:zoom-in;"`;
+            svgParts.push(`<path ${attrs} d="${pathD}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="0.35" />`);
         });
     });
 
-    // 4. Clade Outer Arcs and Labels
+    // 4. Clade Outer Arcs and Labels (click to zoom into the clade)
     const arcStroke = (5.5 * Math.min(1.4, Math.sqrt(textScale))).toFixed(1);
+    const baseFont = cladeBlocks.length > 40 ? 7.5 : 8.5;
+    const fontSize = (baseFont * textScale).toFixed(1);
     cladeBlocks.forEach(block => {
-        const sIdx = block.start_idx;
-        const eIdx = block.end_idx;
-        const cname = block.clade;
-        const col = block.color || (isDark ? '#94a3b8' : '#64748b');
+        const a0 = view.leafA0[block.start_idx];
+        const a1 = view.leafA1[block.end_idx];
+        const hit = `class="tree-clade-hit" data-l0="${block.start_idx}" data-l1="${block.end_idx}" data-clade="${block.clade}" data-n="${block.n}" style="cursor:zoom-in;"`;
+        svgParts.push(`<path ${hit} d="${arcPath(R_CLADE_ARC, a0, a1)}" fill="none" stroke="${block.color}" stroke-width="${arcStroke}" stroke-linecap="butt" />`);
 
-        const a1 = TREE_LAYOUT.leaf_angles[sIdx] + dA;
-        const a2 = TREE_LAYOUT.leaf_angles[eIdx] - dA;
-        const rad1 = (a1 * Math.PI) / 180.0;
-        const rad2 = (a2 * Math.PI) / 180.0;
-
-        const xS = (CX + R_CLADE_ARC * Math.cos(rad1)).toFixed(2);
-        const yS = (CY + R_CLADE_ARC * Math.sin(rad1)).toFixed(2);
-        const xE = (CX + R_CLADE_ARC * Math.cos(rad2)).toFixed(2);
-        const yE = (CY + R_CLADE_ARC * Math.sin(rad2)).toFixed(2);
-
-        svgParts.push(`<path d="M ${xS} ${yS} A ${R_CLADE_ARC} ${R_CLADE_ARC} 0 0 0 ${xE} ${yE}" fill="none" stroke="${col}" stroke-width="5.5" stroke-linecap="round" />`);
-        svgParts.push(`<path d="M ${xS} ${yS} A ${R_CLADE_ARC} ${R_CLADE_ARC} 0 0 0 ${xE} ${yE}" fill="none" stroke="${col}" stroke-width="${arcStroke}" stroke-linecap="round" />`);
-
-        // Skip label for tiny single-species sectors to avoid crowded/isolated labels
-        const blockSize = (eIdx - sIdx) + 1;
-        if (blockSize < Math.max(2, nLeaves * 0.005)) return;
-
-        const midAng = (a1 + a2) / 2.0;
-        const rLabel = R_CLADE_ARC + 14;
-        const [lx, ly] = pt(rLabel, midAng);
-
-        const normRot = ((midAng % 360) + 360) % 360;
-        let rot = normRot;
-        let anchor = 'start';
-        if (normRot > 90 && normRot < 270) {
-            rot = normRot + 180;
-            anchor = 'end';
-        }
-
-        const baseFont = cladeBlocks.length > 40 ? 7.5 : 8.5;
-        const fontSize = (baseFont * textScale).toFixed(1);
-        svgParts.push(`<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" transform="rotate(${rot.toFixed(1)}, ${lx.toFixed(2)}, ${ly.toFixed(2)})" font-size="${fontSize}" font-weight="700" fill="${col}" text-anchor="${anchor}" alignment-baseline="middle">${cname}</text>`);
+        // Skip labels for sectors too narrow to hold text
+        if (a0 - a1 < 1.6) return;
+        const t = radialText(R_CLADE_ARC + 14, (a0 + a1) / 2, true);
+        svgParts.push(`<text ${hit} x="${t.x}" y="${t.y}" transform="rotate(${t.rot}, ${t.x}, ${t.y})" font-size="${fontSize}" font-weight="700" fill="${block.color}" text-anchor="${t.anchor}" dominant-baseline="middle">${block.clade}</text>`);
     });
 
     // 5. Dynamic Tree Coloring Legend (Top-Left)
@@ -3936,24 +4217,24 @@ function renderCircularTree(scaleOptions = {}) {
     const itemStartY = Math.round(26 * textScale);
 
     svgParts.push('<g id="tree-coloring-legend" transform="translate(35, 45)">');
+    let legendBottom;
     if (TREE_BRANCH_MODE === 'taxonomy' || TREE_SELECTED_GENES.length === 0) {
         svgParts.push(`<text x="0" y="0" font-size="${legTitleSz}" font-weight="700" fill="${legTitleCol}">Taxonomy: ${taxLabel}</text>`);
-        svgParts.push(`<text x="0" y="${Math.round(14 * textScale)}" font-size="${legSubSz}" fill="${legSubCol}">(clade color coding)</text>`);
+        svgParts.push(`<text x="0" y="${Math.round(14 * textScale)}" font-size="${legSubSz}" fill="${legSubCol}">(largest clades in view)</text>`);
 
-        const seenClades = new Set();
-        let lI = 0;
-        cladeBlocks.forEach(block => {
-            if (seenClades.has(block.clade) || lI >= 12) return;
-            seenClades.add(block.clade);
+        const shown = rankedClades.filter(c => cladeColorOf.has(c)).slice(0, 12);
+        shown.forEach((c, lI) => {
             const y = itemStartY + lI * lineGap;
-            svgParts.push(`<rect x="0" y="${y}" width="${rectW}" height="${rectH}" rx="2" fill="${block.color}" />`);
-            svgParts.push(`<text x="${rectW + 6}" y="${y + rectH - 1}" font-size="${legItemSz}" fill="${legTextCol}">${block.clade}</text>`);
-            lI++;
+            svgParts.push(`<rect x="0" y="${y}" width="${rectW}" height="${rectH}" rx="2" fill="${cladeColorOf.get(c)}" />`);
+            svgParts.push(`<text x="${rectW + 6}" y="${y + rectH - 1}" font-size="${legItemSz}" fill="${legTextCol}">${c}</text>`);
         });
-        if (seenClades.size > 12) {
+        let lI = shown.length;
+        if (rankedClades.length > shown.length) {
             const y = itemStartY + lI * lineGap;
-            svgParts.push(`<text x="0" y="${y + rectH - 1}" font-size="${(8.5 * textScale).toFixed(1)}" fill="#94a3b8">+ ${seenClades.size - 12} more...</text>`);
+            svgParts.push(`<text x="0" y="${y + rectH - 1}" font-size="${(8.5 * textScale).toFixed(1)}" fill="#94a3b8">+ ${rankedClades.length - shown.length} more (grey)</text>`);
+            lI++;
         }
+        legendBottom = itemStartY + lI * lineGap;
     } else {
         svgParts.push(`<text x="0" y="0" font-size="${legTitleSz}" font-weight="700" fill="${legTitleCol}">Branch Color: Gene Presence</text>`);
         svgParts.push(`<text x="0" y="${Math.round(14 * textScale)}" font-size="${legSubSz}" fill="${legSubCol}">(presence combinations)</text>`);
@@ -3993,23 +4274,102 @@ function renderCircularTree(scaleOptions = {}) {
             svgParts.push(`<text x="${rectW + 6}" y="${y + rectH - 1}" font-size="${legItemSz}" fill="${legTextCol}">${label}</text>`);
             lI++;
         });
+        legendBottom = itemStartY + lI * lineGap;
     }
+    let y = legendBottom + Math.round(20 * textScale);
     if (TREE_SHOW_LOSSES && TREE_EVENTS && TREE_SELECTED_GENES.length > 0) {
-        let y = Math.round((TREE_BRANCH_MODE === 'taxonomy' ? 250 : 150) * textScale);
         svgParts.push(`<text x="0" y="${y}" font-size="${legTitleSz}" font-weight="700" fill="${legTitleCol}">Dollo events</text>`);
         y += Math.round(14 * textScale);
         svgParts.push(`<text x="0" y="${y}" font-size="${legSubSz}" fill="${legSubCol}">&#x2715; inferred loss &#8226; &#9679; origin (hover for clade)</text>`);
         TREE_SELECTED_GENES.forEach((g, gI) => {
             const n = getTreeGeneEvents(g).losses.length;
+            const inViewNote = (isFocused || view.keep) ? ` (${lossesInView[g]} in view)` : '';
             y += lineGap;
             svgParts.push(`<text x="0" y="${y}" font-size="${legItemSz}" font-weight="700" fill="${TREE_PALETTE[gI % TREE_PALETTE.length]}">&#x2715;</text>`);
-            svgParts.push(`<text x="${rectW + 6}" y="${y}" font-size="${legItemSz}" fill="${legTextCol}">${g}: ${n} loss${n === 1 ? '' : 'es'}</text>`);
+            svgParts.push(`<text x="${rectW + 6}" y="${y}" font-size="${legItemSz}" fill="${legTextCol}">${g}: ${n} loss${n === 1 ? '' : 'es'}${inViewNote}</text>`);
         });
+        y += Math.round(20 * textScale);
     }
+    if (view.collapsed.size > 0) {
+        svgParts.push(`<text x="0" y="${y}" font-size="${legSubSz}" fill="${legSubCol}">&#9650; ${view.collapsed.size.toLocaleString()} wedges = clades with no presence change</text>`);
+        y += Math.round(13 * textScale);
+    }
+    svgParts.push(`<text x="0" y="${y}" font-size="${legSubSz}" fill="${legSubCol}">Click a branch, wedge or clade name to zoom in</text>`);
     svgParts.push('</g>');
 
     svg.innerHTML = svgParts.join('');
     setupTreeTooltips();
+    updateTreeFocusBar();
+}
+
+function treeCladeTooltipHtml(nid) {
+    const node = TREE_IDX.byId[nid];
+    const isDark = getEffectiveTreeTheme() === 'dark';
+    const titleCol = isDark ? '#f8fafc' : '#0f172a';
+    const subCol = isDark ? '#94a3b8' : '#64748b';
+    const borderCol = isDark ? '#334155' : '#e2e8f0';
+    const total = node.l1 - node.l0 + 1;
+    const n = TREE_VIEW ? TREE_VIEW.shownN(node) : total;
+    const dom = treeDominantTaxon(node, TREE_TAX_LEVEL);
+    let html = `<strong style="color:${titleCol}; font-size:12px;">${treeCladeName(node)}</strong><br>`;
+    html += `<span style="color:${subCol}; font-size:10.5px;">${n.toLocaleString()} species`;
+    if (n !== total) html += ` shown of ${total.toLocaleString()}`;
+    if (dom.frac < 1) html += ` • ${Math.round(dom.frac * 100)}% ${dom.name} (${TREE_TAX_LEVEL})`;
+    html += `</span>`;
+    if (TREE_VIEW && TREE_VIEW.prefixSums.length) {
+        html += `<div style="margin-top:6px; border-top:1px solid ${borderCol}; padding-top:4px;">`;
+        TREE_SELECTED_GENES.forEach((g, gI) => {
+            const ps = TREE_VIEW.prefixSums[gI];
+            const k = ps[node.l1 + 1] - ps[node.l0];
+            html += `<div style="display:flex; justify-content:space-between; gap:12px; font-size:10.5px;">
+                <span style="color:${TREE_PALETTE[gI % TREE_PALETTE.length]}; font-weight:600;">${g}:</span>
+                <span style="color:${titleCol};">${k.toLocaleString()} / ${n.toLocaleString()} present</span></div>`;
+        });
+        html += `</div>`;
+    }
+    if (nid !== treeFocusId()) html += `<div style="margin-top:5px; color:#38bdf8; font-size:10px;">Click to zoom into this clade</div>`;
+    return html;
+}
+
+// Delegated hover/click for clade branches, wedges and clade-ring labels.
+// A click that ends a pan drag (pointer moved) is ignored.
+function setupTreeCladeInteractions() {
+    const svg = document.getElementById('tree-svg');
+    const tooltip = document.getElementById('tree-tooltip');
+    if (!svg || !tooltip) return;
+    let downX = 0, downY = 0;
+    const target = e => e.target.closest && e.target.closest('[data-nid], .tree-clade-hit');
+    svg.addEventListener('mousedown', e => { downX = e.clientX; downY = e.clientY; });
+    svg.addEventListener('mouseover', e => {
+        const el = target(e);
+        if (!el || !TREE_IDX) return;
+        if (el.hasAttribute('data-nid')) {
+            tooltip.innerHTML = treeCladeTooltipHtml(parseInt(el.getAttribute('data-nid'), 10));
+        } else {
+            const l0 = parseInt(el.getAttribute('data-l0'), 10), l1 = parseInt(el.getAttribute('data-l1'), 10);
+            tooltip.innerHTML = `<strong>${el.getAttribute('data-clade')}</strong><br><span style="font-size:10.5px; opacity:0.8;">${parseInt(el.getAttribute('data-n'), 10).toLocaleString()} species in this block</span><div style="margin-top:5px; color:#38bdf8; font-size:10px;">Click to zoom into this clade</div>`;
+        }
+        tooltip.style.display = 'block';
+    });
+    svg.addEventListener('mousemove', e => {
+        if (!target(e)) return;
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY + 14) + 'px';
+    });
+    svg.addEventListener('mouseout', e => {
+        if (target(e)) tooltip.style.display = 'none';
+    });
+    svg.addEventListener('click', e => {
+        const el = target(e);
+        if (!el || !TREE_IDX) return;
+        if (Math.hypot(e.clientX - downX, e.clientY - downY) > 4) return;
+        tooltip.style.display = 'none';
+        if (el.hasAttribute('data-nid')) {
+            focusTreeClade(parseInt(el.getAttribute('data-nid'), 10));
+        } else {
+            focusTreeClade(treeMrca(parseInt(el.getAttribute('data-l0'), 10), parseInt(el.getAttribute('data-l1'), 10)));
+        }
+    });
 }
 
 function setupTreePanZoom() {
@@ -4118,12 +4478,13 @@ function setupTreeTooltips() {
             const absCol = isDark ? '#94a3b8' : '#64748b';
 
             let html = `<strong style="color:${titleCol}; font-size:12px;">${taxInfo.sci_name || sp.replace(/_/g, ' ')}</strong><br>`;
-            const taxName = TREE_TAX_LEVEL === 'tcs' ? 'TCS CLADE' : (TREE_TAX_LEVEL === 'detailed' ? 'PHYLUM' : TREE_TAX_LEVEL.toUpperCase());
+            const taxName = TREE_TAX_LEVEL.toUpperCase();
             if (curVal) {
                 html += `<span style="color:${taxCol}; font-size:10.5px;">${taxName}: <strong>${curVal}</strong></span><br>`;
             }
-            if (taxInfo.supergroup && taxInfo.phylum) {
-                html += `<span style="color:${subCol}; font-size:10px;">${taxInfo.supergroup} &rarr; ${taxInfo.kingdom} &rarr; ${taxInfo.phylum}</span><br>`;
+            const lineage = (TREE_LAYOUT.tax_levels || []).map(lv => taxInfo[lv]).filter((v, i, arr) => v && v !== arr[i - 1]);
+            if (lineage.length) {
+                html += `<span style="color:${subCol}; font-size:10px;">${lineage.join(' &rarr; ')}</span><br>`;
             }
             html += `<div style="margin-top:6px; border-top:1px solid ${borderCol}; padding-top:4px;">`;
             TREE_SELECTED_GENES.forEach((gName, gI) => {
@@ -4806,7 +5167,7 @@ async function generatePresentationSlideCanvas(options = {}) {
         slideTitle = customTitle;
     } else if (isTree) {
         slideTitle = TREE_SELECTED_GENES.length > 0
-            ? `${TREE_SELECTED_GENES.join(', ')} • Eukaryotic Species Tree`
+            ? `${TREE_SELECTED_GENES.join(', ')} • Species Tree${TREE_IDX && treeFocusId() !== TREE_IDX.rootId ? ` (${treeCladeName(TREE_IDX.byId[treeFocusId()])})` : ''}`
             : 'EggNOG Species Tree (12,525 Species)';
     } else if (selectedGene) {
         slideTitle = `${selectedGene} • Gene Co-Loss Ego Network`;
@@ -4818,7 +5179,7 @@ async function generatePresentationSlideCanvas(options = {}) {
 
     // Badges based on mode
     if (isTree) {
-        const taxLabel = TREE_TAX_LEVEL === 'tcs' ? 'TCS Clades' : (TREE_TAX_LEVEL === 'detailed' ? 'Phylum' : TREE_TAX_LEVEL.charAt(0).toUpperCase() + TREE_TAX_LEVEL.slice(1));
+        const taxLabel = treeLevelLabel(TREE_TAX_LEVEL);
         badges.push(`Taxonomy: ${taxLabel}`);
         badges.push(`Branches: ${TREE_BRANCH_MODE === 'taxonomy' ? 'Taxonomy Clade' : 'Gene Parsimony'}`);
         badges.push(`Lengths: ${TREE_BRANCH_LEN_MODE === 'phylogram' ? 'Phylogram' : 'Cladogram'}`);
