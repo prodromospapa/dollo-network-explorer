@@ -157,8 +157,10 @@ def build(gene, work, out, uniprot_tsv, threads, linsi_max, max_iterate=1000):
             "dom": pfam_domains(acc, ref, work), "rows": rows,
             "method": f"MAFFT {' '.join(mode)}; best DIAMOND hit to human per species among PANTHER-passing proteins"}
     out.mkdir(parents=True, exist_ok=True)
-    with gzip.open(out / f"{gene}.json.gz", "wt", compresslevel=9) as fh:
+    tmp = out / f".{gene}.json.gz.tmp"
+    with gzip.open(tmp, "wt", compresslevel=9) as fh:
         json.dump(data, fh, separators=(",", ":"))
+    tmp.rename(out / f"{gene}.json.gz")   # atomic: the viewer never reads a half-written file
     print(f"{gene}: {len(rows)} rows x {len(rows[0]['s'])} columns, {len(data['dom'])} Pfam domains, "
           f"{sum(1 for sp in chosen if chosen[sp] not in bits)} species without a DIAMOND hit")
 

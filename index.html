@@ -2019,7 +2019,7 @@ function renderTreeCoevolutionCard(isDark) {
                 <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
                     Loss of <strong>${prof.partner}</strong> relaxes constraint on <strong>${prof.target}</strong>: deletion hotspot at residues <strong>${prof.hotspot_start}–${prof.hotspot_end}</strong> (${prof.delta_pct}% conservation drop).
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10.5px; color:#94a3b8; background:#0f172a; padding:6px 8px; border-radius:4px; border:1px solid #1e293b;">
+                <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10.5px; color:#94a3b8; background:${isDark ? '#0f172a' : '#f1f5f9'}; padding:6px 8px; border-radius:4px; border:1px solid ${isDark ? '#1e293b' : '#e2e8f0'};">
                     <span>${prof.partner} Retained: <strong style="color:#10b981;">${prof.hotspot_both_pct}% intact</strong></span>
                     <span>${prof.partner} Lost: <strong style="color:#f43f5e;">${prof.hotspot_lost_pct}% (${prof.delta_pct}%)</strong></span>
                 </div>
