@@ -522,6 +522,15 @@ body.light-theme .tree-species-opt-ctx, body.light-theme .tree-species-empty { c
 #msa-canvas { position:absolute; top:0; left:0; }
 #msa-spacer { pointer-events:none; }
 #msa-goto-wrap { position:relative; }
+#msa-copres { display:none; align-items:center; gap:8px; flex-wrap:wrap; }
+#msa-copres .cp { display:inline-flex; align-items:center; gap:4px; }
+#msa-copres .cp i { display:inline-block; width:8px; height:8px; border-radius:50%; }
+#msa-copres select { background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:2px 4px; font-size:11px; }
+body.light-theme #msa-copres select { background:#f8fafc; border-color:#cbd5e1; color:#0f172a; }
+#msa-legend { display:none; flex-wrap:wrap; gap:4px 12px; padding:5px 14px; border-top:1px solid #1e293b; font-size:10.5px; color:#cbd5e1; }
+#msa-legend span.chip { display:inline-flex; align-items:center; gap:5px; }
+#msa-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; }
+body.light-theme #msa-legend { border-color:#e2e8f0; color:#334155; }
 #msa-tools label select { max-width:200px; }
 #msa-goto-suggestions { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:300px; max-width:420px; max-height:320px; overflow-y:auto; background:#0f172a; border:1px solid #334155; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:10020; }
 .msa-sug { padding:5px 10px; cursor:pointer; border-bottom:1px solid #1e293b; display:flex; flex-direction:column; gap:1px; }
@@ -1185,12 +1194,23 @@ body.light-theme #msa-tools label select { background:#f8fafc; border-color:#cbd
             <span>Zoom:</span>
             <button class="btn" style="padding:1px 8px;" onclick="msaZoom(0.8)">&minus;</button>
             <button class="btn" style="padding:1px 8px;" onclick="msaZoom(1.25)">+</button>
-            <div id="msa-goto-wrap">
-                <label title="Show only the species of one taxon; the colouring and the logo are recomputed for them. Human stays as the reference row.">Taxon:
+            <label title="Show only the species of one taxon; the colouring and the logo are recomputed for them. Human stays as the reference row.">Taxon:
                 <select id="msa-tax-level" onchange="msaSetTaxLevel(this.value)"></select>
                 <select id="msa-tax-value" onchange="msaSetTaxValue(this.value)" style="max-width:220px;"></select>
             </label>
-            <input type="text" id="msa-goto" placeholder="Find species, domain or position…" autocomplete="off" spellcheck="false" style="width:240px;">
+            <label title="Colour each species row by its taxon at this level">Colour by:
+                <select id="msa-group-level" onchange="msaSetGrouping()"><option value="">None</option></select>
+            </label>
+            <label title="Species tree: rows follow the tree. Grouped: rows of the same taxon are pulled together (groups in tree order, tree order inside each group)">Order:
+                <select id="msa-order" onchange="msaSetGrouping()">
+                    <option value="tree" selected>Species tree</option>
+                    <option value="grouped">Grouped by taxon</option>
+                </select>
+            </label>
+            
+            <span id="msa-copres" title="Keep species by whether they also have the other genes on the tree (same presence calls as the tree)"></span>
+            <div id="msa-goto-wrap">
+                <input type="text" id="msa-goto" placeholder="Find species, domain or position…" autocomplete="off" spellcheck="false" style="width:240px;">
                 <div id="msa-goto-suggestions"></div>
             </div>
         </div>
@@ -1203,6 +1223,7 @@ body.light-theme #msa-tools label select { background:#f8fafc; border-color:#cbd
                 <div id="msa-spacer"></div>
             </div>
         </div>
+        <div id="msa-legend"></div>
         <div id="msa-status"></div>
     </div>
 </div>
@@ -1316,6 +1337,8 @@ window.msaZoom = msaZoom;
 window.msaGoto = msaGoto;
 window.msaSetTaxLevel = msaSetTaxLevel;
 window.msaSetTaxValue = msaSetTaxValue;
+window.msaSetGrouping = msaSetGrouping;
+window.msaSetCopresence = msaSetCopresence;
 window.findTreeSpecies = findTreeSpecies;
 window.setupTreeTooltips = setupTreeTooltips;
 window.showAllClusters = showAllClusters;
@@ -4917,6 +4940,106 @@ function msaTaxLevels() {
 }
 
 let MSA_TAX_LEVEL = null;   // remembered across genes
+let MSA_GROUP_LEVEL = '';    // 'Colour by' level, remembered across genes ('' = off)
+let MSA_ORDER = 'tree';      // 'tree' | 'grouped'
+let MSA_COPRES = {};         // other tree gene -> 'present' | 'absent' (missing = any)
+
+// Presence of another tree gene in a row's species (null when the tree data isn't loaded)
+function msaGenePresent(gene, sp) {
+    if (typeof TREE_LAYOUT === 'undefined' || !TREE_LAYOUT || typeof getTreeGenePresence !== 'function') return null;
+    if (!MSA._presCache) MSA._presCache = new Map();
+    if (!MSA._presCache.has(gene)) MSA._presCache.set(gene, getTreeGenePresence(gene));
+    const i = msaLeafIndex(sp);
+    return i < 0 ? null : MSA._presCache.get(gene)[i] === 1;
+}
+
+function msaOtherTreeGenes() {
+    if (typeof TREE_SELECTED_GENES === 'undefined' || !MSA) return [];
+    return TREE_SELECTED_GENES.filter(g => g !== MSA.data.g);
+}
+
+function msaFillCopresence() {
+    const box = document.getElementById('msa-copres');
+    const others = msaOtherTreeGenes();
+    const treeReady = typeof TREE_LAYOUT !== 'undefined' && TREE_LAYOUT && MSA_LAYOUT === TREE_LAYOUT;
+    if (!others.length || !treeReady) { box.style.display = 'none'; MSA_COPRES = {}; return; }
+    Object.keys(MSA_COPRES).forEach(g => { if (!others.includes(g)) delete MSA_COPRES[g]; });
+    const rows = MSA.allRows.slice(1);
+    box.innerHTML = '<span>With tree genes:</span>' + others.map(g => {
+        const gi = TREE_SELECTED_GENES.indexOf(g);
+        const col = TREE_PALETTE[gi % TREE_PALETTE.length];
+        let nP = 0;
+        rows.forEach(r => { if (msaGenePresent(g, r.sp)) nP++; });
+        const v = MSA_COPRES[g] || '';
+        return `<span class="cp"><i style="background:${col}"></i>${treeEscapeHtml(g)}
+            <select data-gene="${treeEscapeHtml(g)}" onchange="msaSetCopresence(this.dataset.gene, this.value)">
+                <option value=""${v === '' ? ' selected' : ''}>any</option>
+                <option value="present"${v === 'present' ? ' selected' : ''}>present (${nP})</option>
+                <option value="absent"${v === 'absent' ? ' selected' : ''}>absent (${rows.length - nP})</option>
+            </select></span>`;
+    }).join('');
+    box.style.display = 'inline-flex';
+}
+
+function msaSetCopresence(gene, value) {
+    if (!MSA) return;
+    if (value) MSA_COPRES[gene] = value; else delete MSA_COPRES[gene];
+    msaApplyTaxFilter();
+}
+const MSA_GROUP_PALETTE = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6',
+    '#bfef45', '#469990', '#dcbeff', '#9a6324', '#fabed4', '#800000', '#aaffc3', '#808000', '#000075'];
+
+function msaFillGroupSelect() {
+    const sel = document.getElementById('msa-group-level');
+    const levels = msaTaxLevels();
+    if (!levels.includes(MSA_GROUP_LEVEL)) MSA_GROUP_LEVEL = '';
+    sel.innerHTML = '<option value="">None</option>' + levels.map(l =>
+        `<option value="${l}"${l === MSA_GROUP_LEVEL ? ' selected' : ''}>${l.charAt(0).toUpperCase() + l.slice(1)}</option>`).join('');
+    sel.disabled = !levels.length;
+    document.getElementById('msa-order').value = MSA_ORDER;
+}
+
+function msaSetGrouping() {
+    if (!MSA) return;
+    MSA_GROUP_LEVEL = document.getElementById('msa-group-level').value;
+    MSA_ORDER = document.getElementById('msa-order').value;
+    if (MSA_ORDER === 'grouped' && !MSA_GROUP_LEVEL) {
+        // Grouping needs a level: use the filter's level
+        MSA_GROUP_LEVEL = MSA_TAX_LEVEL || (msaTaxLevels()[0] || '');
+        document.getElementById('msa-group-level').value = MSA_GROUP_LEVEL;
+    }
+    msaApplyTaxFilter();
+}
+
+// Group colours for the rows shown: the 16 largest taxa get a colour, the rest grey
+function msaComputeGroups() {
+    MSA.groupOf = null;
+    MSA.groupColor = new Map();
+    const legend = document.getElementById('msa-legend');
+    if (!MSA_GROUP_LEVEL) { legend.style.display = 'none'; return; }
+    MSA.groupOf = MSA.rows.map((r, i) => i === 0 ? null : msaTaxon(r.sp, MSA_GROUP_LEVEL));
+    const counts = new Map();
+    MSA.groupOf.forEach(g => { if (g) counts.set(g, (counts.get(g) || 0) + 1); });
+    const ranked = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b));
+    let k = 0;
+    ranked.forEach(g => MSA.groupColor.set(g, g !== 'Unclassified' && k < MSA_GROUP_PALETTE.length ? MSA_GROUP_PALETTE[k++] : '#94a3b8'));
+    const shown = ranked.filter(g => MSA.groupColor.get(g) !== '#94a3b8');
+    legend.innerHTML = `<strong style="margin-right:4px;">${MSA_GROUP_LEVEL.charAt(0).toUpperCase() + MSA_GROUP_LEVEL.slice(1)}:</strong>` +
+        shown.map(g => `<span class="chip"><i style="background:${MSA.groupColor.get(g)}"></i>${treeEscapeHtml(g)} (${counts.get(g)})</span>`).join('') +
+        (ranked.length > shown.length ? `<span class="chip"><i style="background:#94a3b8"></i>other (${ranked.length - shown.length} taxa)</span>` : '');
+    legend.style.display = 'flex';
+}
+
+// Grouped order: taxa in the order they first appear in the tree, tree order inside each
+function msaGroupRows(rows) {
+    if (MSA_ORDER !== 'grouped' || !MSA_GROUP_LEVEL) return rows;
+    const [human, ...rest] = rows;
+    const first = new Map();
+    rest.forEach((r, i) => { const g = msaTaxon(r.sp, MSA_GROUP_LEVEL); if (!first.has(g)) first.set(g, i); });
+    const idx = new Map(rest.map((r, i) => [r, i]));
+    rest.sort((a, b) => (first.get(msaTaxon(a.sp, MSA_GROUP_LEVEL)) - first.get(msaTaxon(b.sp, MSA_GROUP_LEVEL))) || (idx.get(a) - idx.get(b)));
+    return [human, ...rest];
+}
 
 function msaFillTaxonFilter() {
     const lvSel = document.getElementById('msa-tax-level');
@@ -4956,6 +5079,13 @@ function msaApplyTaxFilter() {
     const keep = msaCenterHumanPos();
     const v = MSA.taxValue;
     MSA.rows = v ? [MSA.allRows[0], ...MSA.allRows.slice(1).filter(r => msaTaxon(r.sp, MSA_TAX_LEVEL) === v)] : MSA.allRows.slice();
+    const conds = Object.entries(MSA_COPRES);
+    if (conds.length) {
+        MSA.rows = [MSA.rows[0], ...MSA.rows.slice(1).filter(r =>
+            conds.every(([g, want]) => { const has = msaGenePresent(g, r.sp); return has === null || has === (want === 'present'); }))];
+    }
+    MSA.rows = msaGroupRows(MSA.rows);
+    msaComputeGroups();
     MSA.hlRow = undefined;
     msaPrepare();
     document.getElementById('msa-scroll').scrollTop = 0;
@@ -4972,6 +5102,7 @@ async function openAlignmentViewer(gene) {
     document.getElementById('msa-status').textContent = '';
     document.getElementById('msa-goto').value = '';
     document.getElementById('msa-goto-suggestions').style.display = 'none';
+    document.getElementById('msa-legend').style.display = 'none';
     MSA = null;
     msaDrawAll();
     try {
@@ -4980,6 +5111,11 @@ async function openAlignmentViewer(gene) {
         const allRows = msaOrderRows(data.rows.slice());
         MSA = { data, allRows, rows: allRows.slice(), opts, taxValue: '' };
         msaFillTaxonFilter();
+        msaFillGroupSelect();
+        msaFillCopresence();
+        if (Object.keys(MSA_COPRES).length) msaApplyTaxFilter();
+        MSA.rows = msaGroupRows(MSA.rows);
+        msaComputeGroups();
         msaPrepare();
         const nSp = data.rows.length - 1;
         document.getElementById('msa-subtitle').innerHTML =
@@ -5132,7 +5268,9 @@ function msaResize() {
     msaDrawAll();
     document.getElementById('msa-status').textContent =
         `${MSA.cols.length.toLocaleString()} columns${MSA.opts.hideGaps ? ' (columns with a gap in human hidden)' : ''} · ${MSA.rows.length} rows` +
-        (MSA.taxValue ? ` (${MSA_TAX_LEVEL} = ${MSA.taxValue}, plus human)` : '');
+        (MSA.taxValue ? ` (${MSA_TAX_LEVEL} = ${MSA.taxValue}, plus human)` : '') +
+        (Object.keys(MSA_COPRES).length ? ' · ' + Object.entries(MSA_COPRES).map(([g, w]) => `${g} ${w}`).join(', ') : '') +
+        (MSA.rows.length === 1 ? ' · no species match these filters' : '');
 }
 
 function msaSetupCanvas(cv, w, h) {
@@ -5217,6 +5355,15 @@ function msaDrawAll(message) {
                 main.fillRect(x, y + rh * 0.3, cw, rh * 0.4);
             }
         }
+    }
+    // Group boundaries when rows are grouped by taxon
+    if (MSA.groupOf && MSA_ORDER === 'grouped') {
+        main.fillStyle = th.text;
+        main.globalAlpha = 0.55;
+        for (let r = Math.max(2, r0); r <= r1; r++) {
+            if (MSA.groupOf[r] !== MSA.groupOf[r - 1]) main.fillRect(0, r * rh - y0 - 0.5, W, 1.2);
+        }
+        main.globalAlpha = 1;
     }
     if (MSA.hlRow !== undefined && MSA.hlRow >= r0 && MSA.hlRow <= r1) {
         main.strokeStyle = '#facc15';
@@ -5320,10 +5467,15 @@ function msaDrawAll(message) {
         const y = r * rh - y0;
         if (r === 0) { lab.fillStyle = th.human; lab.fillRect(0, y, MSA_LABEL_W, rh); }
         if (rh < 8) continue;
+        const gcol = MSA.groupOf && MSA.groupOf[r] ? MSA.groupColor.get(MSA.groupOf[r]) : null;
+        if (gcol) {
+            lab.globalAlpha = 0.16; lab.fillStyle = gcol; lab.fillRect(0, y, MSA_LABEL_W, rh);
+            lab.globalAlpha = 1; lab.fillRect(0, y, 6, rh);
+        }
         if (r === MSA.hlRow) { lab.fillStyle = 'rgba(250,204,21,0.35)'; lab.fillRect(0, y, MSA_LABEL_W, rh); }
         lab.fillStyle = r === 0 || r === MSA.hlRow ? th.text : th.sub;
         lab.font = `${r === 0 ? 'bold ' : 'italic '}${Math.min(12, Math.max(8, rh - 3))}px system-ui, sans-serif`;
-        lab.fillText(msaSpeciesName(rows[r].sp), 6, y + rh / 2, MSA_LABEL_W - 10);
+        lab.fillText(msaSpeciesName(rows[r].sp), gcol ? 10 : 6, y + rh / 2, MSA_LABEL_W - (gcol ? 14 : 10));
     }
 }
 
@@ -5475,7 +5627,8 @@ function msaHover(e) {
     const hp = MSA.humanPos[k];
     const ha = MSA.rows[0].s[c];
     const d = MSA.colDomain[k];
-    tip.innerHTML = `<strong style="font-style:italic;">${msaSpeciesName(row.sp)}</strong> <span style="opacity:.7;">${row.id}</span><br>` +
+    const grp = MSA.groupOf && MSA.groupOf[r] ? `<br><span style="color:${MSA.groupColor.get(MSA.groupOf[r])}; font-weight:600;">${MSA_GROUP_LEVEL}: ${treeEscapeHtml(MSA.groupOf[r])}</span>` : '';
+    tip.innerHTML = `<strong style="font-style:italic;">${msaSpeciesName(row.sp)}</strong> <span style="opacity:.7;">${row.id}</span>${grp}<br>` +
         (a === '-' ? 'gap' : `${a}${resNo}`) +
         ` · human ${hp ? ha + hp : '(insertion)'} · column ${c + 1}` +
         (d ? `<br><span style="color:${MSA.domColor.get(d)}; font-weight:600;">${d.id}</span> ${d.name} (${d.start}-${d.end})` : '');
