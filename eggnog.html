@@ -188,6 +188,9 @@ body {
     display: flex;
     position: relative;
     overflow: hidden;
+    /* Own stacking layer: nothing inside (tree panel, zoomed canvas) can paint over the header */
+    z-index: 0;
+    isolation: isolate;
 }
 #graph-wrapper {
     flex: 1;
@@ -509,14 +512,28 @@ body.light-theme .tree-species-opt-ctx, body.light-theme .tree-species-empty { c
 #msa-tools { display:flex; align-items:center; gap:10px; padding:6px 14px; border-bottom:1px solid #1e293b; flex-wrap:wrap; font-size:11px; color:#94a3b8; }
 #msa-tools label { display:flex; align-items:center; gap:4px; cursor:pointer; }
 #msa-tools select, #msa-tools input[type=text] { background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:2px 6px; font-size:11px; outline:none; }
-#msa-grid { flex:1; display:grid; grid-template-columns:190px 1fr; grid-template-rows:40px 1fr; min-height:0; }
-#msa-corner { background:#0b1120; border-right:1px solid #1e293b; border-bottom:1px solid #1e293b; font-size:10px; color:#64748b; display:flex; align-items:flex-end; padding:0 6px 4px; }
+#msa-grid { flex:1; display:grid; grid-template-columns:190px 1fr; grid-template-rows:92px 1fr; min-height:0; }
+#msa-corner { background:#0b1120; border-right:1px solid #1e293b; border-bottom:1px solid #1e293b; font-size:10px; color:#64748b; display:flex; flex-direction:column; padding:0 6px; }
+#msa-corner span { display:flex; align-items:center; }
 #msa-top-wrap { border-bottom:1px solid #1e293b; overflow:hidden; }
 #msa-labels-wrap { border-right:1px solid #1e293b; overflow:hidden; }
 #msa-scroll { position:relative; overflow:auto; }
 #msa-sticky { position:sticky; top:0; left:0; width:0; height:0; }
 #msa-canvas { position:absolute; top:0; left:0; }
 #msa-spacer { pointer-events:none; }
+#msa-goto-wrap { position:relative; }
+#msa-tools label select { max-width:200px; }
+#msa-goto-suggestions { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:300px; max-width:420px; max-height:320px; overflow-y:auto; background:#0f172a; border:1px solid #334155; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:10020; }
+.msa-sug { padding:5px 10px; cursor:pointer; border-bottom:1px solid #1e293b; display:flex; flex-direction:column; gap:1px; }
+.msa-sug.active, .msa-sug:hover { background:#1e293b; }
+.msa-sug-main { font-size:12px; color:#e2e8f0; }
+.msa-sug-sub { font-size:10px; color:#94a3b8; }
+.msa-sug-head { padding:4px 10px; font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#64748b; background:#0b1120; }
+body.light-theme #msa-goto-suggestions { background:#ffffff; border-color:#cbd5e1; box-shadow:0 8px 24px rgba(15,23,42,0.18); }
+body.light-theme .msa-sug { border-bottom-color:#e2e8f0; }
+body.light-theme .msa-sug.active, body.light-theme .msa-sug:hover { background:#f1f5f9; }
+body.light-theme .msa-sug-main { color:#0f172a; }
+body.light-theme .msa-sug-head { background:#f8fafc; }
 #msa-status { font-size:10.5px; color:#64748b; padding:4px 14px; border-top:1px solid #1e293b; }
 #msa-tooltip { position:fixed; display:none; pointer-events:none; background:rgba(15,23,42,0.96); border:1px solid #38bdf8; border-radius:6px; padding:6px 10px; color:#fff; font-size:11px; z-index:10010; max-width:320px; line-height:1.45; }
 body.light-theme #msa-box { background:#ffffff; border-color:#cbd5e1; }
@@ -1150,10 +1167,17 @@ body.light-theme #tree-toast {
             <span>Zoom:</span>
             <button class="btn" style="padding:1px 8px;" onclick="msaZoom(0.8)">&minus;</button>
             <button class="btn" style="padding:1px 8px;" onclick="msaZoom(1.25)">+</button>
-            <input type="text" id="msa-goto" placeholder="Go to position, domain or species…" style="width:210px;" onkeydown="if (event.key === 'Enter') msaGoto(this.value)">
+            <div id="msa-goto-wrap">
+                <label title="Show only the species of one taxon; the colouring and the logo are recomputed for them. Human stays as the reference row.">Taxon:
+                <select id="msa-tax-level" onchange="msaSetTaxLevel(this.value)"></select>
+                <select id="msa-tax-value" onchange="msaSetTaxValue(this.value)" style="max-width:220px;"></select>
+            </label>
+            <input type="text" id="msa-goto" placeholder="Find species, domain or position…" autocomplete="off" spellcheck="false" style="width:240px;">
+                <div id="msa-goto-suggestions"></div>
+            </div>
         </div>
         <div id="msa-grid">
-            <div id="msa-corner">human position</div>
+            <div id="msa-corner"><span style="height:22px;">human position</span><span style="height:18px;">Pfam domains</span><span style="height:52px;" id="msa-logo-label" title="Letter height = information content (bits) x fraction of shown species without a gap">sequence logo (bits)</span></div>
             <div id="msa-top-wrap"><canvas id="msa-top"></canvas></div>
             <div id="msa-labels-wrap"><canvas id="msa-labels"></canvas></div>
             <div id="msa-scroll">
@@ -1272,6 +1296,8 @@ window.closeAlignmentViewer = closeAlignmentViewer;
 window.msaSetOption = msaSetOption;
 window.msaZoom = msaZoom;
 window.msaGoto = msaGoto;
+window.msaSetTaxLevel = msaSetTaxLevel;
+window.msaSetTaxValue = msaSetTaxValue;
 window.findTreeSpecies = findTreeSpecies;
 window.setupTreeTooltips = setupTreeTooltips;
 window.showAllClusters = showAllClusters;
@@ -4792,7 +4818,7 @@ const MSA_DOMAIN_COLORS = ['#f59e0b', '#22c55e', '#38bdf8', '#e879f9', '#f87171'
 async function msaFetch(gene) {
     if (MSA_CACHE.has(gene)) return MSA_CACHE.get(gene);
     const resp = await fetch(MSA_BASE_URL + encodeURIComponent(gene.replace(/\//g, '_')) + '.json.gz');
-    if (!resp.ok) throw new Error(resp.status === 404 ? `No alignment available for ${gene}` : `HTTP ${resp.status}`);
+    if (!resp.ok) throw new Error(resp.status === 404 ? `No alignment has been built for ${gene} yet` : `Could not load the alignment (HTTP ${resp.status})`);
     let buf = new Uint8Array(await resp.arrayBuffer());
     // Static hosts serve .gz as a file; a server that sets Content-Encoding has already inflated it
     if (buf[0] === 0x1f && buf[1] === 0x8b) {
@@ -4804,22 +4830,102 @@ async function msaFetch(gene) {
     return data;
 }
 
+// Species tree layout (names, order, taxonomy). Fetched on its own when the
+// tree view has not been opened yet.
+let MSA_LAYOUT = null;
+async function msaLoadLayout() {
+    if (typeof TREE_LAYOUT !== 'undefined' && TREE_LAYOUT) return (MSA_LAYOUT = TREE_LAYOUT);
+    if (MSA_LAYOUT) return MSA_LAYOUT;
+    try {
+        const r = await fetch('tree_layout_eggnog.json?v=' + DATA_VERSION);
+        if (r.ok) MSA_LAYOUT = await r.json();
+    } catch (e) { console.warn('Alignment viewer: no tree layout', e); }
+    if (MSA_LAYOUT) MSA_LAYOUT._idx = new Map(MSA_LAYOUT.leaf_species.map((sp, i) => [String(sp), i]));
+    return MSA_LAYOUT;
+}
+
+function msaLeafIndex(sp) {
+    const L = MSA_LAYOUT;
+    if (!L) return -1;
+    if (!L._idx) L._idx = new Map(L.leaf_species.map((s, i) => [String(s), i]));
+    const i = L._idx.get(String(sp));
+    return i === undefined ? -1 : i;
+}
+
+function msaTaxon(sp, level) {
+    const i = msaLeafIndex(sp);
+    const t = i >= 0 && MSA_LAYOUT.leaf_taxonomies ? MSA_LAYOUT.leaf_taxonomies[i] : null;
+    return (t && t[level]) || 'Unclassified';
+}
+
 function msaSpeciesName(sp) {
-    if (typeof TREE_LAYOUT !== 'undefined' && TREE_LAYOUT && TREE_LAYOUT.leaf_taxonomies) {
-        const i = TREE_LAYOUT.leaf_species.indexOf(sp);
-        const n = i >= 0 ? TREE_LAYOUT.leaf_taxonomies[i].sci_name : null;
-        if (n && !n.includes('N/A')) return n;
-    }
+    const i = msaLeafIndex(sp);
+    const n = i >= 0 && MSA_LAYOUT.leaf_taxonomies ? MSA_LAYOUT.leaf_taxonomies[i].sci_name : null;
+    if (n && !n.includes('N/A')) return n;
     return String(sp).replace(/_/g, ' ');
 }
 
-// Rows in species-tree order (human first) when the tree is loaded
+// Rows in species-tree order (human first)
 function msaOrderRows(rows) {
-    if (typeof TREE_LAYOUT === 'undefined' || !TREE_LAYOUT) return rows;
-    const pos = new Map(TREE_LAYOUT.leaf_species.map((sp, i) => [sp, i]));
+    if (!MSA_LAYOUT) return rows;
     const [human, ...rest] = rows;
-    rest.sort((a, b) => (pos.has(a.sp) ? pos.get(a.sp) : 1e9) - (pos.has(b.sp) ? pos.get(b.sp) : 1e9));
+    const pos = sp => { const i = msaLeafIndex(sp); return i < 0 ? 1e9 : i; };
+    rest.sort((a, b) => pos(a.sp) - pos(b.sp));
     return [human, ...rest];
+}
+
+function msaTaxLevels() {
+    if (!MSA_LAYOUT || !MSA_LAYOUT.leaf_taxonomies) return [];
+    if (MSA_LAYOUT.tax_levels) return MSA_LAYOUT.tax_levels;
+    return Object.keys(MSA_LAYOUT.leaf_taxonomies[0])
+        .filter(k => !['sp', 'sci_name', 'cilia', 'clade'].includes(k) && !k.endsWith('_color'));
+}
+
+let MSA_TAX_LEVEL = null;   // remembered across genes
+
+function msaFillTaxonFilter() {
+    const lvSel = document.getElementById('msa-tax-level');
+    const vSel = document.getElementById('msa-tax-value');
+    const levels = msaTaxLevels();
+    if (!levels.length) {
+        lvSel.innerHTML = '<option>n/a</option>'; lvSel.disabled = true;
+        vSel.innerHTML = '<option>All species</option>'; vSel.disabled = true;
+        return;
+    }
+    if (!levels.includes(MSA_TAX_LEVEL)) MSA_TAX_LEVEL = levels.includes('phylum') ? 'phylum' : levels[0];
+    lvSel.disabled = false;
+    lvSel.innerHTML = levels.map(l => `<option value="${l}"${l === MSA_TAX_LEVEL ? ' selected' : ''}>${l.charAt(0).toUpperCase() + l.slice(1)}</option>`).join('');
+    const counts = new Map();
+    MSA.allRows.slice(1).forEach(r => { const t = msaTaxon(r.sp, MSA_TAX_LEVEL); counts.set(t, (counts.get(t) || 0) + 1); });
+    const taxa = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b));
+    vSel.disabled = false;
+    vSel.innerHTML = `<option value="">All species (${MSA.allRows.length - 1})</option>` +
+        taxa.map(t => `<option value="${treeEscapeHtml(t)}"${t === MSA.taxValue ? ' selected' : ''}>${treeEscapeHtml(t)} (${counts.get(t)})</option>`).join('');
+}
+
+function msaSetTaxLevel(level) {
+    if (!MSA) return;
+    MSA_TAX_LEVEL = level;
+    MSA.taxValue = '';
+    msaFillTaxonFilter();
+    msaApplyTaxFilter();
+}
+
+function msaSetTaxValue(value) {
+    if (!MSA) return;
+    MSA.taxValue = value;
+    msaApplyTaxFilter();
+}
+
+function msaApplyTaxFilter() {
+    const keep = msaCenterHumanPos();
+    const v = MSA.taxValue;
+    MSA.rows = v ? [MSA.allRows[0], ...MSA.allRows.slice(1).filter(r => msaTaxon(r.sp, MSA_TAX_LEVEL) === v)] : MSA.allRows.slice();
+    MSA.hlRow = undefined;
+    msaPrepare();
+    document.getElementById('msa-scroll').scrollTop = 0;
+    msaResize();
+    if (keep) msaScrollToHumanPos(keep);
 }
 
 async function openAlignmentViewer(gene) {
@@ -4829,12 +4935,16 @@ async function openAlignmentViewer(gene) {
     document.getElementById('msa-title').textContent = gene;
     document.getElementById('msa-subtitle').textContent = 'Loading alignment…';
     document.getElementById('msa-status').textContent = '';
+    document.getElementById('msa-goto').value = '';
+    document.getElementById('msa-goto-suggestions').style.display = 'none';
     MSA = null;
     msaDrawAll();
     try {
-        const data = await msaFetch(gene);
+        const [data] = await Promise.all([msaFetch(gene), msaLoadLayout()]);
         const opts = MSA_OPTS_DEFAULT();
-        MSA = { data, rows: msaOrderRows(data.rows.slice()), opts };
+        const allRows = msaOrderRows(data.rows.slice());
+        MSA = { data, allRows, rows: allRows.slice(), opts, taxValue: '' };
+        msaFillTaxonFilter();
         msaPrepare();
         const nSp = data.rows.length - 1;
         document.getElementById('msa-subtitle').innerHTML =
@@ -4843,7 +4953,9 @@ async function openAlignmentViewer(gene) {
         document.getElementById('msa-scroll').scrollTo(0, 0);
         msaResize();
     } catch (err) {
-        document.getElementById('msa-subtitle').textContent = err.message;
+        document.getElementById('msa-subtitle').textContent = '';
+        document.getElementById('msa-status').textContent = err.message;
+        msaDrawAll(err.message);
     }
 }
 
@@ -4900,6 +5012,40 @@ function msaPrepare() {
         return doms.find(d => at >= d.start && at <= d.end && (hp || at < d.end)) || null;
     });
     MSA.colClass = cols.map(c => msaColumnClasses(rows, c));
+    MSA.logo = cols.map(c => msaLogoColumn(rows, c));
+}
+
+// Residue colour for the logo (ClustalX groups, independent of conservation)
+function msaResidueColor(a) {
+    if ('AILMFWV'.includes(a)) return MSA_CLUSTAL.hydrophobic;
+    if ('KR'.includes(a)) return MSA_CLUSTAL.positive;
+    if ('DE'.includes(a)) return MSA_CLUSTAL.negative;
+    if ('NQST'.includes(a)) return MSA_CLUSTAL.polar;
+    if (a === 'C') return MSA_CLUSTAL.cys;
+    if (a === 'G') return MSA_CLUSTAL.gly;
+    if (a === 'P') return MSA_CLUSTAL.pro;
+    if ('HY'.includes(a)) return MSA_CLUSTAL.aromatic;
+    return '#94a3b8';
+}
+
+// Logo column: information content (log2 20 - entropy) scaled by the fraction
+// of shown rows without a gap, split between residues by frequency.
+// Returns { bits, stack:[[aa, bits], ...] } with the tallest letter last.
+function msaLogoColumn(rows, c) {
+    const cnt = {};
+    let n = 0;
+    for (const r of rows) {
+        const a = r.s[c];
+        if (a === '-' || a === 'X' || a === '*') continue;
+        cnt[a] = (cnt[a] || 0) + 1;
+        n++;
+    }
+    if (!n) return { bits: 0, stack: [] };
+    let H = 0;
+    for (const a in cnt) { const f = cnt[a] / n; H -= f * Math.log2(f); }
+    const bits = Math.max(0, Math.log2(20) - H) * (n / rows.length);
+    const stack = Object.keys(cnt).map(a => [a, bits * cnt[a] / n]).sort((x, y) => x[1] - y[1]);
+    return { bits, stack };
 }
 
 // Jalview ClustalX rules, simplified: a residue is coloured when its group
@@ -4937,7 +5083,8 @@ function msaColumnClasses(rows, c) {
     return out;
 }
 
-const MSA_LABEL_W = 190, MSA_RULER_H = 22, MSA_DOMAIN_H = 18;
+const MSA_LABEL_W = 190, MSA_RULER_H = 22, MSA_DOMAIN_H = 18, MSA_LOGO_H = 52;
+const MSA_TOP_H = MSA_RULER_H + MSA_DOMAIN_H + MSA_LOGO_H;
 
 function msaRowH() { return Math.max(8, Math.round(MSA.opts.cw * 1.25)); }
 
@@ -4949,7 +5096,8 @@ function msaResize() {
     spacer.style.height = (MSA.rows.length * msaRowH()) + 'px';
     msaDrawAll();
     document.getElementById('msa-status').textContent =
-        `${MSA.cols.length.toLocaleString()} columns${MSA.opts.hideGaps ? ' (columns with a gap in human hidden)' : ''} · ${MSA.rows.length} rows`;
+        `${MSA.cols.length.toLocaleString()} columns${MSA.opts.hideGaps ? ' (columns with a gap in human hidden)' : ''} · ${MSA.rows.length} rows` +
+        (MSA.taxValue ? ` (${MSA_TAX_LEVEL} = ${MSA.taxValue}, plus human)` : '');
 }
 
 function msaSetupCanvas(cv, w, h) {
@@ -4972,19 +5120,25 @@ function msaTheme() {
         : { bg: '#0b1120', text: '#e2e8f0', sub: '#94a3b8', grid: '#1e293b', gap: '#334155', human: '#3b2f0b', panel: '#0f172a' };
 }
 
-function msaDrawAll() {
+function msaDrawAll(message) {
     const scroll = document.getElementById('msa-scroll');
     if (!scroll) return;
     const W = scroll.clientWidth, H = scroll.clientHeight;
     const th = msaTheme();
     const main = msaSetupCanvas(document.getElementById('msa-canvas'), W, H);
     const lab = msaSetupCanvas(document.getElementById('msa-labels'), MSA_LABEL_W, H);
-    const top = msaSetupCanvas(document.getElementById('msa-top'), W, MSA_RULER_H + MSA_DOMAIN_H);
-    for (const [ctx, w, h] of [[main, W, H], [lab, MSA_LABEL_W, H], [top, W, MSA_RULER_H + MSA_DOMAIN_H]]) {
+    const top = msaSetupCanvas(document.getElementById('msa-top'), W, MSA_TOP_H);
+    for (const [ctx, w, h] of [[main, W, H], [lab, MSA_LABEL_W, H], [top, W, MSA_TOP_H]]) {
         ctx.fillStyle = th.bg;
         ctx.fillRect(0, 0, w, h);
     }
-    if (!MSA || !MSA.cols) return;
+    if (!MSA || !MSA.cols) {
+        main.fillStyle = th.sub;
+        main.font = '14px system-ui, sans-serif';
+        main.textAlign = 'center';
+        main.fillText(message || 'Loading alignment…', W / 2, Math.min(H / 2, 160));
+        return;
+    }
 
     const { rows, cols, opts } = MSA;
     const cw = opts.cw, rh = msaRowH();
@@ -5090,6 +5244,39 @@ function msaDrawAll() {
         k = e + 1;
     }
 
+    // Sequence logo (pinned: it lives in the top canvas, which only scrolls sideways)
+    const ly0 = MSA_RULER_H + MSA_DOMAIN_H, lyB = MSA_TOP_H - 2;
+    const pxPerBit = (MSA_LOGO_H - 6) / Math.log2(20);
+    top.strokeStyle = th.grid;
+    top.beginPath(); top.moveTo(0, ly0 + 0.5); top.lineTo(W, ly0 + 0.5); top.stroke();
+    top.textAlign = 'center';
+    top.textBaseline = 'alphabetic';
+    top.font = 'bold 100px ui-monospace, SFMono-Regular, Menlo, monospace';
+    for (let k = c0; k <= c1; k++) {
+        const col = MSA.logo[k];
+        if (!col || !col.stack.length) continue;
+        const x = k * cw - x0;
+        let y = lyB;
+        for (let s = col.stack.length - 1; s >= 0; s--) {
+            const [a, b] = col.stack[s];
+            const h = b * pxPerBit;
+            if (h < 0.6) continue;
+            top.fillStyle = msaResidueColor(a);
+            if (cw >= 7 && h >= 3) {
+                const tw = top.measureText(a).width;
+                top.save();
+                top.translate(x + cw / 2, y);
+                top.scale((cw * 0.92) / tw, h / 72);
+                top.fillText(a, 0, 0);
+                top.restore();
+            } else {
+                top.fillRect(x + 0.5, y - h, Math.max(1, cw - 1), h);
+            }
+            y -= h;
+        }
+    }
+    top.textBaseline = 'middle';
+
     // Species labels
     lab.font = `${Math.min(12, Math.max(8, rh - 3))}px system-ui, sans-serif`;
     lab.textBaseline = 'middle';
@@ -5121,24 +5308,119 @@ function msaScrollToHumanPos(hp) {
     msaDrawAll();
 }
 
+// Search box: live matches among this alignment's species, its Pfam domains and human positions
+function msaGotoMatches(v) {
+    const q = String(v).trim().toLowerCase();
+    if (!MSA || !MSA.cols || !q) return [];
+    const out = [];
+    const n = parseInt(q, 10);
+    if (/^\d+$/.test(q) && n >= 1 && n <= MSA.data.ref.len) {
+        out.push({ kind: 'pos', pos: n, main: `Human position ${n}`, sub: `${MSA.rows[0].s.replace(/-/g, '')[n - 1]}${n}` });
+    }
+    (MSA.data.dom || []).forEach(d => {
+        if ((d.id + ' ' + d.acc + ' ' + d.name).toLowerCase().includes(q)) {
+            out.push({ kind: 'dom', pos: d.start, main: `${d.id} (${d.start}-${d.end})`, sub: `${d.acc} · ${d.name}` });
+        }
+    });
+    const tiers = [[], [], []];
+    MSA.rows.forEach((row, r) => {
+        const name = msaSpeciesName(row.sp).toLowerCase();
+        const t = name.startsWith(q) ? 0 : name.includes(' ' + q) ? 1
+            : (name.includes(q) || String(row.sp) === q || String(row.id).toLowerCase().includes(q)) ? 2 : -1;
+        if (t >= 0) tiers[t].push(r);
+    });
+    tiers.flat().forEach(r => {
+        const row = MSA.rows[r];
+        out.push({ kind: 'row', row: r, main: msaSpeciesName(row.sp), sub: `row ${r + 1} · ${row.id}` });
+    });
+    return out;
+}
+
+let msaSugItems = [], msaSugIdx = -1;
+
+function msaRenderGotoSuggestions() {
+    const input = document.getElementById('msa-goto');
+    const box = document.getElementById('msa-goto-suggestions');
+    msaSugItems = msaGotoMatches(input.value);
+    msaSugIdx = msaSugItems.length ? 0 : -1;
+    if (!input.value.trim()) { box.style.display = 'none'; return; }
+    if (!msaSugItems.length) {
+        box.innerHTML = `<div class="msa-sug-head">No species, domain or position matches</div>`;
+        box.style.display = 'block';
+        return;
+    }
+    const MAX = 40;
+    let lastKind = null, html = '';
+    msaSugItems.slice(0, MAX).forEach((it, k) => {
+        if (it.kind !== lastKind) {
+            html += `<div class="msa-sug-head">${it.kind === 'row' ? 'Species in this alignment' : it.kind === 'dom' ? 'Pfam domains' : 'Position'}</div>`;
+            lastKind = it.kind;
+        }
+        html += `<div class="msa-sug${k === 0 ? ' active' : ''}" data-k="${k}">` +
+            `<span class="msa-sug-main"${it.kind === 'row' ? ' style="font-style:italic;"' : ''}>${treeEscapeHtml(it.main)}</span>` +
+            `<span class="msa-sug-sub">${treeEscapeHtml(it.sub)}</span></div>`;
+    });
+    if (msaSugItems.length > MAX) html += `<div class="msa-sug-head">+ ${msaSugItems.length - MAX} more, keep typing</div>`;
+    box.innerHTML = html;
+    box.style.display = 'block';
+}
+
+function msaPickSuggestion(k) {
+    const it = msaSugItems[k];
+    if (!it) return;
+    document.getElementById('msa-goto-suggestions').style.display = 'none';
+    const input = document.getElementById('msa-goto');
+    input.value = it.main;
+    input.blur();
+    if (it.kind === 'row') {
+        MSA.hlRow = it.row;
+        const scroll = document.getElementById('msa-scroll');
+        scroll.scrollTop = Math.max(0, it.row * msaRowH() - scroll.clientHeight / 2);
+        msaDrawAll();
+    } else {
+        msaScrollToHumanPos(it.pos);
+    }
+}
+
+// Kept for callers that pass a query directly: jumps to the best match
 function msaGoto(val) {
-    if (!MSA) return;
-    const v = String(val).trim();
-    const n = parseInt(v, 10);
-    if (n > 0) return msaScrollToHumanPos(n);
-    const q = v.toLowerCase();
-    const d = (MSA.data.dom || []).find(d => (d.id + ' ' + d.acc + ' ' + d.name).toLowerCase().includes(q));
-    if (d) return msaScrollToHumanPos(d.start);
-    // Species: name prefix first, then substring, then the row's id / taxid
-    const names = MSA.rows.map(r => msaSpeciesName(r.sp).toLowerCase());
-    let r = names.findIndex(n => n.startsWith(q));
-    if (r < 0) r = names.findIndex(n => n.includes(q));
-    if (r < 0) r = MSA.rows.findIndex(row => String(row.sp) === v || String(row.id).toLowerCase().includes(q));
-    if (r < 0) { document.getElementById('msa-status').textContent = `Nothing matches "${v}"`; return; }
-    MSA.hlRow = r;
-    const scroll = document.getElementById('msa-scroll');
-    scroll.scrollTop = Math.max(0, r * msaRowH() - scroll.clientHeight / 2);
-    msaDrawAll();
+    msaSugItems = msaGotoMatches(val);
+    if (msaSugItems.length) msaPickSuggestion(0);
+}
+
+function setupMsaGoto() {
+    const input = document.getElementById('msa-goto');
+    const box = document.getElementById('msa-goto-suggestions');
+    if (!input || input._wired) return;
+    input._wired = true;
+    input.addEventListener('input', msaRenderGotoSuggestions);
+    input.addEventListener('focus', () => { if (input.value.trim()) msaRenderGotoSuggestions(); });
+    input.addEventListener('keydown', e => {
+        const opts = box.querySelectorAll('.msa-sug');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!opts.length) return;
+            e.preventDefault();
+            msaSugIdx = (msaSugIdx + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+            opts.forEach((o, k) => o.classList.toggle('active', k === msaSugIdx));
+            opts[msaSugIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (box.style.display !== 'block') msaRenderGotoSuggestions();
+            msaPickSuggestion(Math.max(0, msaSugIdx));
+        } else if (e.key === 'Escape') {
+            e.stopPropagation();
+            box.style.display = 'none';
+        }
+    });
+    box.addEventListener('mousedown', e => {
+        const o = e.target.closest('.msa-sug');
+        if (!o) return;
+        e.preventDefault();
+        msaPickSuggestion(parseInt(o.dataset.k, 10));
+    });
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#msa-goto-wrap')) box.style.display = 'none';
+    });
 }
 
 function msaHover(e) {
@@ -5177,10 +5459,12 @@ function setupAlignmentViewer() {
         raf = requestAnimationFrame(() => { raf = 0; msaDrawAll(); });
     });
     scroll.addEventListener('mousemove', msaHover);
+    setupMsaGoto();
     scroll.addEventListener('mouseleave', () => { document.getElementById('msa-tooltip').style.display = 'none'; });
     window.addEventListener('resize', () => { if (document.getElementById('msa-modal').style.display === 'flex') msaDrawAll(); });
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && document.getElementById('msa-modal').style.display === 'flex') closeAlignmentViewer();
+        if (e.key === 'Escape' && document.getElementById('msa-modal').style.display === 'flex' &&
+            document.activeElement !== document.getElementById('msa-goto')) closeAlignmentViewer();
     });
 }
 setupAlignmentViewer();

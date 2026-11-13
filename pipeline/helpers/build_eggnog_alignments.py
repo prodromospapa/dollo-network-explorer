@@ -105,7 +105,7 @@ def pfam_domains(acc, seq, work):
     return sorted(({k: v for k, v in h.items() if k != "e"} for h in kept), key=lambda h: h["start"])
 
 
-def build(gene, work, out, uniprot_tsv, threads, linsi_max):
+def build(gene, work, out, uniprot_tsv, threads, linsi_max, max_iterate=1000):
     pthr = json.load(open(GENE_TO_PTHR)).get(gene)
     if not pthr:
         print(f"{gene}: no PANTHER family, skipped")
@@ -144,7 +144,8 @@ def build(gene, work, out, uniprot_tsv, threads, linsi_max):
             fh.write(f">9606\n{ref}\n")
             for sp, pid in chosen.items():
                 fh.write(f">{sp}\n{seqs[pid].replace('*', '')}\n")
-        mode = ["--localpair", "--maxiterate", "1000"] if len(chosen) <= linsi_max else ["--retree", "2"]
+        mode = (["--localpair", "--maxiterate", str(max_iterate)] if len(chosen) <= linsi_max
+                else ["--retree", "2"])
         res = subprocess.run(["mafft", *mode, "--thread", str(threads), "--quiet", "--anysymbol", str(td / "in.fa")],
                              capture_output=True, text=True, check=True)
         (td / "aln.fa").write_text(res.stdout)
@@ -170,10 +171,12 @@ def main():
     ap.add_argument("--uniprot", default="cache_alignments/uniprot_human.tsv.gz")
     ap.add_argument("--threads", type=int, default=16)
     ap.add_argument("--linsi-max", type=int, default=1000, help="rows up to which L-INS-i is used")
+    ap.add_argument("--maxiterate", type=int, default=1000,
+                    help="L-INS-i refinement rounds (2 is much faster on large families)")
     a = ap.parse_args()
     a.work.mkdir(exist_ok=True)
     for g in a.genes:
-        build(g, a.work, a.out, a.uniprot, a.threads, a.linsi_max)
+        build(g, a.work, a.out, a.uniprot, a.threads, a.linsi_max, a.maxiterate)
 
 
 if __name__ == "__main__":
