@@ -29,3 +29,8 @@ build/
 .vscode/
 
 junk/
+
+# ── Alignment build scratch (the published files live in alignments_eggnog/) ──
+alignments/
+alignments_eggnog_fast/
+alignments_eggnog_quick/
