@@ -478,6 +478,50 @@ body.light-theme #header h1 {
 body.light-theme .controls label {
     color: #475569;
 }
+/* Species search in the tree toolbar */
+#tree-species-search-wrap { position:relative; display:flex; align-items:center; }
+#tree-species-input { background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 22px 3px 7px; font-size:11px; outline:none; width:170px; }
+#tree-species-input:focus { border-color:#38bdf8; }
+#tree-species-clear { position:absolute; right:3px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; font-size:14px; line-height:1; cursor:pointer; padding:0 3px; }
+#tree-species-clear:hover { color:#f8fafc; }
+#tree-species-suggestions { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:280px; max-width:380px; max-height:300px; overflow-y:auto; background:#0f172a; border:1px solid #334155; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:300; }
+.tree-species-opt { padding:5px 10px; cursor:pointer; border-bottom:1px solid #1e293b; display:flex; flex-direction:column; gap:1px; }
+.tree-species-opt.active, .tree-species-opt:hover { background:#1e293b; }
+.tree-species-opt-name { font-size:12px; font-style:italic; color:#e2e8f0; }
+.tree-species-opt-ctx { font-size:10px; color:#94a3b8; }
+.tree-species-empty { padding:6px 10px; font-size:11px; color:#94a3b8; }
+body.light-theme #tree-species-input { background:#f8fafc; border-color:#cbd5e1; color:#0f172a; }
+body.light-theme #tree-species-clear:hover { color:#0f172a; }
+body.light-theme #tree-species-suggestions { background:#ffffff; border-color:#cbd5e1; box-shadow:0 8px 24px rgba(15,23,42,0.18); }
+body.light-theme .tree-species-opt { border-bottom-color:#e2e8f0; }
+body.light-theme .tree-species-opt.active, body.light-theme .tree-species-opt:hover { background:#f1f5f9; }
+body.light-theme .tree-species-opt-name { color:#0f172a; }
+body.light-theme .tree-species-opt-ctx, body.light-theme .tree-species-empty { color:#64748b; }
+/* Alignment viewer */
+#msa-modal { display:none; position:fixed; inset:0; background:rgba(2,6,23,0.82); backdrop-filter:blur(6px); z-index:10002; align-items:center; justify-content:center; padding:16px; }
+#msa-box { background:#0f172a; border:1px solid #334155; border-radius:10px; width:min(1500px, 100%); height:min(900px, 100%); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+#msa-head { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #1e293b; flex-wrap:wrap; }
+#msa-title { font-size:16px; font-weight:700; color:#f8fafc; }
+#msa-subtitle { font-size:11px; color:#94a3b8; flex:1; min-width:240px; }
+#msa-subtitle a { color:#38bdf8; }
+#msa-tools { display:flex; align-items:center; gap:10px; padding:6px 14px; border-bottom:1px solid #1e293b; flex-wrap:wrap; font-size:11px; color:#94a3b8; }
+#msa-tools label { display:flex; align-items:center; gap:4px; cursor:pointer; }
+#msa-tools select, #msa-tools input[type=text] { background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:2px 6px; font-size:11px; outline:none; }
+#msa-grid { flex:1; display:grid; grid-template-columns:190px 1fr; grid-template-rows:40px 1fr; min-height:0; }
+#msa-corner { background:#0b1120; border-right:1px solid #1e293b; border-bottom:1px solid #1e293b; font-size:10px; color:#64748b; display:flex; align-items:flex-end; padding:0 6px 4px; }
+#msa-top-wrap { border-bottom:1px solid #1e293b; overflow:hidden; }
+#msa-labels-wrap { border-right:1px solid #1e293b; overflow:hidden; }
+#msa-scroll { position:relative; overflow:auto; }
+#msa-sticky { position:sticky; top:0; left:0; width:0; height:0; }
+#msa-canvas { position:absolute; top:0; left:0; }
+#msa-spacer { pointer-events:none; }
+#msa-status { font-size:10.5px; color:#64748b; padding:4px 14px; border-top:1px solid #1e293b; }
+#msa-tooltip { position:fixed; display:none; pointer-events:none; background:rgba(15,23,42,0.96); border:1px solid #38bdf8; border-radius:6px; padding:6px 10px; color:#fff; font-size:11px; z-index:10010; max-width:320px; line-height:1.45; }
+body.light-theme #msa-box { background:#ffffff; border-color:#cbd5e1; }
+body.light-theme #msa-title { color:#0f172a; }
+body.light-theme #msa-head, body.light-theme #msa-tools, body.light-theme #msa-status, body.light-theme #msa-top-wrap, body.light-theme #msa-labels-wrap, body.light-theme #msa-corner { border-color:#e2e8f0; }
+body.light-theme #msa-corner { background:#ffffff; }
+body.light-theme #msa-tools select, body.light-theme #msa-tools input[type=text] { background:#f8fafc; border-color:#cbd5e1; color:#0f172a; }
 body.light-theme .controls select {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
@@ -833,9 +877,9 @@ body.light-theme #tree-toast {
     <div class="dataset-toggle" title="Which presence/absence calls the whole analysis is built from. Orthogroups (default): a species counts as 'has this gene' if it has ANY sequence in the same OrthoFinder cluster -- inclusive, may count paralogs as if they were the gene. Pure orthologs: only species where OrthoFinder's gene-tree step confirmed a true speciation-derived ortholog count as present -- stricter, but a large/poorly-resolved gene tree can miss real orthologs (false negatives). See README_presence_matrices.md.">
         <label for="dataset-select" style="font-size:11px; color:#8892b0; font-weight:600; margin-right:4px;">Data:</label>
         <select id="dataset-select" onchange="switchDataset(this.value)">
+            <option value="eggnog" selected>EggNOG Full (12,525 species)</option>
             <option value="orthogroup" >TCS Orthogroups (196 species)</option>
             <option value="ortholog">TCS Pure orthologs (196 species)</option>
-            <option value="eggnog" selected>EggNOG Full (12,525 species)</option>
         </select>
     </div>
 
@@ -926,6 +970,11 @@ body.light-theme #tree-toast {
                     <option value="phylogram">Use Branch Lengths</option>
                 </select>
             </label>
+            <div id="tree-species-search-wrap" title="Find a species on the tree (scientific name or taxid)">
+                <input type="text" id="tree-species-input" placeholder="Find species…" autocomplete="off" spellcheck="false">
+                <button id="tree-species-clear" style="display:none;" onclick="clearTreeSpeciesFind()" title="Clear species highlight">&times;</button>
+                <div id="tree-species-suggestions"></div>
+            </div>
             <button class="btn" style="padding:3px 8px; font-size:11px;" onclick="resetTreeZoom()" title="Reset Pan & Zoom">Fit</button>
             <button class="btn" style="padding:3px 8px; font-size:11px;" onclick="exportTreeSvg()" title="Download high-res SVG">SVG</button>
         </div>
@@ -1079,6 +1128,42 @@ body.light-theme #tree-toast {
 </div>
 
 <!-- Edge Alignment Modal (Safe Prototype) -->
+<div id="msa-modal" onclick="if (event.target === this) closeAlignmentViewer()">
+    <div id="msa-box">
+        <div id="msa-head">
+            <span id="msa-title"></span>
+            <span id="msa-subtitle"></span>
+            <button class="btn" style="padding:3px 10px; font-size:13px;" onclick="closeAlignmentViewer()" title="Close (Esc)">&times;</button>
+        </div>
+        <div id="msa-tools">
+            <label title="Hide alignment columns where the human sequence has a gap (insertions in other species)"><input type="checkbox" id="msa-opt-hidegaps" checked onchange="msaSetOption()"> Remove gaps by human</label>
+            <label title="Draw Pfam domain borders (on the human sequence) through the alignment"><input type="checkbox" id="msa-opt-domains" checked onchange="msaSetOption()"> Domain borders</label>
+            <label>Colour:
+                <select id="msa-opt-color" onchange="msaSetOption()">
+                    <option value="clustal" selected>ClustalX</option>
+                    <option value="identity">Identity to human</option>
+                    <option value="none">None</option>
+                </select>
+            </label>
+            <span>Zoom:</span>
+            <button class="btn" style="padding:1px 8px;" onclick="msaZoom(0.8)">&minus;</button>
+            <button class="btn" style="padding:1px 8px;" onclick="msaZoom(1.25)">+</button>
+            <input type="text" id="msa-goto" placeholder="Go to position, domain or species…" style="width:210px;" onkeydown="if (event.key === 'Enter') msaGoto(this.value)">
+        </div>
+        <div id="msa-grid">
+            <div id="msa-corner">human position</div>
+            <div id="msa-top-wrap"><canvas id="msa-top"></canvas></div>
+            <div id="msa-labels-wrap"><canvas id="msa-labels"></canvas></div>
+            <div id="msa-scroll">
+                <div id="msa-sticky"><canvas id="msa-canvas"></canvas></div>
+                <div id="msa-spacer"></div>
+            </div>
+        </div>
+        <div id="msa-status"></div>
+    </div>
+</div>
+<div id="msa-tooltip"></div>
+
 <div id="edge-alignment-modal" style="display:none; position:fixed; inset:0; background:rgba(2, 6, 23, 0.82); backdrop-filter:blur(6px); z-index:10001; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; width:95%; max-width:960px; max-height:94vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.85); overflow:hidden; color:#f8fafc; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">
         <!-- Modal Header -->
@@ -1179,6 +1264,13 @@ window.setTreeTaxLevel = setTreeTaxLevel;
 window.setTreeTheme = setTreeTheme;
 window.setupTreePanZoom = setupTreePanZoom;
 window.setupTreeSearch = setupTreeSearch;
+window.clearTreeSpeciesFind = clearTreeSpeciesFind;
+window.openAlignmentViewer = openAlignmentViewer;
+window.closeAlignmentViewer = closeAlignmentViewer;
+window.msaSetOption = msaSetOption;
+window.msaZoom = msaZoom;
+window.msaGoto = msaGoto;
+window.findTreeSpecies = findTreeSpecies;
 window.setupTreeTooltips = setupTreeTooltips;
 window.showAllClusters = showAllClusters;
 window.showSingleCluster = showSingleCluster;
@@ -2176,7 +2268,10 @@ function renderTreeSidebar() {
                     <strong style="color:${isDark ? '#f8fafc' : '#0f172a'}; overflow:hidden; text-overflow:ellipsis;">${g}</strong>
                     <span style="color:#8892b0; font-size:10.5px;">(${losses}L, ${presCount}/${pVec.length})</span>
                 </div>
-                <span style="cursor:pointer; color:#8892b0; font-weight:700; padding:0 4px;" onclick="removeTreeGene('${g}')" title="Remove gene">&times;</span>
+                <span style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                    <button class="btn" style="padding:1px 7px; font-size:10px;" onclick="openAlignmentViewer('${g}')" title="Protein alignment of ${g} across species, human as reference">Alignment</button>
+                    <span style="cursor:pointer; color:#8892b0; font-weight:700; padding:0 4px;" onclick="removeTreeGene('${g}')" title="Remove gene">&times;</span>
+                </span>
             </div>
         `;
     }).join('');
@@ -2321,6 +2416,7 @@ function renderSidebar(name) {
         </div>
         <div style="display:flex; align-items:center; gap:6px; margin-top:6px; margin-bottom:4px;">
             <button class="btn btn-tree-add" onclick="addTreeGene('${name}')" title="Add ${name} to Species Tree" style="font-size:11px; padding:3px 8px;">+ Add to Tree</button>
+            <button class="btn" onclick="openAlignmentViewer('${name}')" title="Protein alignment across species, human as reference" style="font-size:11px; padding:3px 8px;">Alignment</button>
             <button class="btn btn-accent" style="padding:3px 8px; font-size:11px; font-weight:600;" onclick="openExportModal()" title="Export presentation slide with graph & sidebar results">Export Slide</button>
         </div>
         <div class="meta">
@@ -3522,6 +3618,7 @@ async function initTreeView() {
             setupTreePanZoom();
             setupTreeCladeInteractions();
             setupTreeSearch();
+            setupTreeSpeciesSearch();
         } catch (err) {
             console.error('Error loading tree:', err);
             document.getElementById('tree-loading').innerHTML = '<span style="color:#f87171;">Error loading tree data: ' + err.message + '</span>';
@@ -3594,6 +3691,7 @@ function renderTreeChips() {
             <div class="tree-gene-chip" style="display:inline-flex; align-items:center; gap:5px; background:${chipBg}; border:1px solid ${col}; border-radius:14px; padding:2px 8px; font-size:11px; color:${textCol};">
                 <span style="width:8px; height:8px; border-radius:50%; background:${col};"></span>
                 <strong>${g}</strong>
+                <span style="cursor:pointer; color:${closeCol}; font-size:10px; text-decoration:underline dotted;" onclick="openAlignmentViewer('${g}')" title="Open ${g} alignment">MSA</span>
                 <span style="cursor:pointer; color:${closeCol}; margin-left:3px; font-weight:700;" onclick="removeTreeGene('${g}')">&times;</span>
             </div>
         `;
@@ -3852,7 +3950,8 @@ function computeTreeView(prefixSums) {
     while (stack.length) {
         const [id, dp] = stack.pop();
         const n = byId[id];
-        if (!n.leaf && !(canCollapse && id !== rootId && isUniform(n))) {
+        const holdsFound = TREE_FIND_LEAF !== null && n.l0 <= TREE_FIND_LEAF && TREE_FIND_LEAF <= n.l1;
+        if (!n.leaf && !(canCollapse && id !== rootId && !holdsFound && isUniform(n))) {
             const kids = keep ? n.c.filter(c => shownN(byId[c]) > 0) : n.c;
             if (id !== rootId && kids.length === 1) {
                 merged.push([id, kids[0]]);
@@ -4222,6 +4321,19 @@ function renderCircularTree(scaleOptions = {}) {
         svgParts.push(`<text ${hit} x="${t.x}" y="${t.y}" transform="rotate(${t.rot}, ${t.x}, ${t.y})" font-size="${fontSize}" font-weight="700" fill="${block.color}" text-anchor="${t.anchor}" dominant-baseline="middle">${block.clade}</text>`);
     });
 
+    // 4b. Searched species: lineage, tip ring and name
+    if (TREE_FIND_LEAF !== null) {
+        const leafId = TREE_IDX.leafNode[TREE_FIND_LEAF];
+        if (view.drawId[leafId] === leafId) {
+            const lineage = [];
+            for (let id = leafId; id >= 0 && id !== view.rootId; id = view.parent[id]) {
+                if (branchPaths[id]) lineage.push(branchPaths[id]);
+            }
+            svgParts.push(treeFindMarkerSvg({ pt, lineage, ang: view.nodeA[leafId], rTip: view.nodeR[leafId],
+                rOuter: R_CLADE_ARC, branchWidth, isDark, textScale }));
+        }
+    }
+
     // 5. Dynamic Tree Coloring Legend (Top-Left)
     const legTitleCol = isDark ? '#f8fafc' : '#111827';
     const legSubCol = isDark ? '#94a3b8' : '#6b7280';
@@ -4482,6 +4594,591 @@ function setupTreeSearch() {
         }
     });
 }
+
+// ---- Species search: find a species on the tree and highlight its lineage ----
+let TREE_FIND_LEAF = null;      // leaf index of the searched species
+let TREE_SPECIES_INDEX = null;  // [{ i, name, sp }] lowercased, built on first search
+let treeSpeciesSugIdx = -1;
+const TREE_FIND_ZOOM = 3.0;
+
+function treeSpeciesName(i) {
+    const t = TREE_LAYOUT.leaf_taxonomies && TREE_LAYOUT.leaf_taxonomies[i];
+    return (t && t.sci_name) || String(TREE_LAYOUT.leaf_species[i]).replace(/_/g, ' ');
+}
+
+function treeSpeciesContext(i) {
+    const t = (TREE_LAYOUT.leaf_taxonomies && TREE_LAYOUT.leaf_taxonomies[i]) || {};
+    const bits = [];
+    ['supergroup', 'phylum', 'family'].forEach(k => {
+        if (t[k] && !bits.includes(t[k]) && t[k] !== 'Unclassified') bits.push(t[k]);
+    });
+    const sp = String(TREE_LAYOUT.leaf_species[i]);
+    if (/^\d+$/.test(sp)) bits.push('taxid ' + sp);
+    return bits.join(' · ');
+}
+
+function treeEscapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Name prefix or exact id first, then word starts, then any substring
+function searchTreeSpecies(q) {
+    q = q.trim().toLowerCase().replace(/_/g, ' ');
+    if (!q || !TREE_LAYOUT) return [];
+    if (!TREE_SPECIES_INDEX) {
+        TREE_SPECIES_INDEX = TREE_LAYOUT.leaf_species.map((sp, i) => ({
+            i, name: treeSpeciesName(i).toLowerCase(), sp: String(sp).toLowerCase().replace(/_/g, ' ')
+        }));
+    }
+    const tiers = [[], [], []];
+    for (const e of TREE_SPECIES_INDEX) {
+        if (e.name.startsWith(q) || e.sp === q) tiers[0].push(e.i);
+        else if (e.name.includes(' ' + q)) tiers[1].push(e.i);
+        else if (e.name.includes(q) || e.sp.includes(q)) tiers[2].push(e.i);
+    }
+    return tiers[0].concat(tiers[1], tiers[2]);
+}
+
+function renderTreeSpeciesSuggestions() {
+    const input = document.getElementById('tree-species-input');
+    const box = document.getElementById('tree-species-suggestions');
+    if (!input || !box) return;
+    if (!input.value.trim()) { box.style.display = 'none'; return; }
+    const hits = searchTreeSpecies(input.value);
+    treeSpeciesSugIdx = hits.length ? 0 : -1;
+    const MAX = 30;
+    box.innerHTML = hits.length
+        ? hits.slice(0, MAX).map((i, k) =>
+            `<div class="tree-species-opt${k === 0 ? ' active' : ''}" data-leaf="${i}">` +
+            `<span class="tree-species-opt-name">${treeEscapeHtml(treeSpeciesName(i))}</span>` +
+            `<span class="tree-species-opt-ctx">${treeEscapeHtml(treeSpeciesContext(i))}</span></div>`).join('') +
+          (hits.length > MAX ? `<div class="tree-species-empty">+ ${(hits.length - MAX).toLocaleString()} more, keep typing</div>` : '')
+        : `<div class="tree-species-empty">No species match</div>`;
+    box.style.display = 'block';
+}
+
+function setupTreeSpeciesSearch() {
+    const input = document.getElementById('tree-species-input');
+    const box = document.getElementById('tree-species-suggestions');
+    if (!input || !box || input._wired) return;
+    input._wired = true;
+    input.addEventListener('input', renderTreeSpeciesSuggestions);
+    input.addEventListener('focus', () => { if (TREE_FIND_LEAF === null) renderTreeSpeciesSuggestions(); });
+    input.addEventListener('keydown', e => {
+        const opts = box.querySelectorAll('.tree-species-opt');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!opts.length) return;
+            e.preventDefault();
+            treeSpeciesSugIdx = (treeSpeciesSugIdx + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+            opts.forEach((o, k) => o.classList.toggle('active', k === treeSpeciesSugIdx));
+            opts[treeSpeciesSugIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const o = opts[Math.max(0, treeSpeciesSugIdx)];
+            if (o) findTreeSpecies(parseInt(o.dataset.leaf, 10));
+        } else if (e.key === 'Escape') {
+            box.style.display = 'none';
+            input.blur();
+        }
+    });
+    // mousedown so the pick lands before the input's blur
+    box.addEventListener('mousedown', e => {
+        const o = e.target.closest('.tree-species-opt');
+        if (!o) return;
+        e.preventDefault();
+        findTreeSpecies(parseInt(o.dataset.leaf, 10));
+    });
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#tree-species-search-wrap')) box.style.display = 'none';
+    });
+}
+
+function findTreeSpecies(i) {
+    if (!TREE_LAYOUT || !(i >= 0 && i < TREE_LAYOUT.n_leaves)) return;
+    TREE_FIND_LEAF = i;
+    const input = document.getElementById('tree-species-input');
+    if (input) { input.value = treeSpeciesName(i); input.blur(); }
+    document.getElementById('tree-species-suggestions').style.display = 'none';
+    document.getElementById('tree-species-clear').style.display = 'block';
+    treeRevealFoundLeaf();
+    renderCircularTree();
+    centerTreeOnFoundSpecies();
+}
+
+function clearTreeSpeciesFind() {
+    TREE_FIND_LEAF = null;
+    const input = document.getElementById('tree-species-input');
+    if (input) input.value = '';
+    document.getElementById('tree-species-suggestions').style.display = 'none';
+    document.getElementById('tree-species-clear').style.display = 'none';
+    renderCircularTree();
+}
+
+// Zoom in and pan so the marked tip sits in the middle of the viewport
+function centerTreeOnFoundSpecies() {
+    const marker = document.getElementById('tree-find-marker');
+    const viewport = document.getElementById('tree-viewport');
+    if (!marker || !viewport) return;
+    treeZoomScale = Math.max(treeZoomScale, TREE_FIND_ZOOM);
+    treePanX = 0;
+    treePanY = 0;
+    applyTreeTransform();
+    const m = marker.getBoundingClientRect(), v = viewport.getBoundingClientRect();
+    treePanX = (v.left + v.width / 2) - (m.left + m.width / 2);
+    treePanY = (v.top + v.height / 2) - (m.top + m.height / 2);
+    applyTreeTransform();
+}
+
+// SVG for the found species: lineage drawn over the tree, ring at the tip,
+// dashed ray across the gene tracks and a name pill outside the clade ring
+function treeFindMarkerSvg(o) {
+    const col = o.isDark ? '#facc15' : '#d97706';
+    const bw = parseFloat(o.branchWidth);
+    const f = v => v.toFixed(2);
+    const parts = ['<g id="tree-find-layer" pointer-events="none">'];
+    o.lineage.forEach(d => parts.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="${f(bw * 2)}" stroke-linecap="round" />`));
+    const [x0, y0] = o.pt(o.rTip, o.ang), [x1, y1] = o.pt(o.rOuter + 6, o.ang);
+    parts.push(`<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke="${col}" stroke-width="1.2" stroke-dasharray="3 2" />`);
+    const r = 5 * Math.min(1.4, Math.sqrt(o.textScale));
+    parts.push(`<circle id="tree-find-marker" cx="${f(x0)}" cy="${f(y0)}" r="${f(r)}" fill="none" stroke="${col}" stroke-width="2.2" />`);
+    const label = treeSpeciesName(TREE_FIND_LEAF);
+    const fs = 10 * o.textScale, h = fs + 8, w = label.length * fs * 0.56 + 14;
+    const [lx, ly] = o.pt(o.rOuter + 28, o.ang);
+    let rx = lx >= 500 ? lx : lx - w;
+    rx = Math.max(4, Math.min(996 - w, rx));
+    const ry = Math.max(4, Math.min(996 - h, ly - h / 2));
+    parts.push(`<rect x="${f(rx)}" y="${f(ry)}" width="${f(w)}" height="${f(h)}" rx="${f(h / 2)}" fill="${col}" />`);
+    parts.push(`<text x="${f(rx + w / 2)}" y="${f(ry + h / 2)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}" font-weight="700" font-style="italic" fill="#111827">${treeEscapeHtml(label)}</text>`);
+    parts.push('</g>');
+    return parts.join('');
+}
+
+// Make sure the found species is drawn: leave a zoomed clade that doesn't
+// hold it and lift the union filter if the species has none of the genes.
+// computeTreeView never collapses the clades on its lineage.
+function treeRevealFoundLeaf() {
+    const i = TREE_FIND_LEAF;
+    if (i === null || !TREE_IDX) return;
+    TREE_FOCUS_STACK = TREE_FOCUS_STACK.filter(id => {
+        const n = TREE_IDX.byId[id];
+        return n.l0 <= i && i <= n.l1;
+    });
+    if (TREE_UNION_ONLY && TREE_SELECTED_GENES.length > 0 &&
+        !TREE_SELECTED_GENES.some(g => getTreeGenePresence(g)[i] === 1)) {
+        TREE_UNION_ONLY = false;
+        const cb = document.getElementById('tree-union-toggle');
+        if (cb) cb.checked = false;
+        showTreeToast(`${treeSpeciesName(i)} has none of the selected genes: showing all species`);
+    }
+}
+// ---- Alignment viewer: human-referenced MSA per gene (Jalview-style) ----
+// Files: MSA_BASE_URL + GENE + '.json.gz' = { g, og, ref:{acc,len}, dom:[{acc,id,name,start,end}],
+// rows:[{sp,id,s}] } with the human row first. Built by pipeline/helpers/build_tcs_alignments.py.
+const MSA_BASE_URL = 'alignments_eggnog/';
+const MSA_CACHE = new Map();
+let MSA = null;   // { data, rows, cols, humanPos, colDomain, opts, ... }
+
+const MSA_CLUSTAL = {   // Jalview ClustalX residue colours
+    hydrophobic: '#80a0f0', positive: '#f01505', negative: '#c048c0', polar: '#15c015',
+    cys: '#f08080', gly: '#f09048', pro: '#c0c000', aromatic: '#15a4a4'
+};
+const MSA_DOMAIN_COLORS = ['#f59e0b', '#22c55e', '#38bdf8', '#e879f9', '#f87171', '#a3e635', '#fb923c', '#818cf8'];
+
+async function msaFetch(gene) {
+    if (MSA_CACHE.has(gene)) return MSA_CACHE.get(gene);
+    const resp = await fetch(MSA_BASE_URL + encodeURIComponent(gene.replace(/\//g, '_')) + '.json.gz');
+    if (!resp.ok) throw new Error(resp.status === 404 ? `No alignment available for ${gene}` : `HTTP ${resp.status}`);
+    let buf = new Uint8Array(await resp.arrayBuffer());
+    // Static hosts serve .gz as a file; a server that sets Content-Encoding has already inflated it
+    if (buf[0] === 0x1f && buf[1] === 0x8b) {
+        const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+        buf = new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    const data = JSON.parse(new TextDecoder().decode(buf));
+    MSA_CACHE.set(gene, data);
+    return data;
+}
+
+function msaSpeciesName(sp) {
+    if (typeof TREE_LAYOUT !== 'undefined' && TREE_LAYOUT && TREE_LAYOUT.leaf_taxonomies) {
+        const i = TREE_LAYOUT.leaf_species.indexOf(sp);
+        const n = i >= 0 ? TREE_LAYOUT.leaf_taxonomies[i].sci_name : null;
+        if (n && !n.includes('N/A')) return n;
+    }
+    return String(sp).replace(/_/g, ' ');
+}
+
+// Rows in species-tree order (human first) when the tree is loaded
+function msaOrderRows(rows) {
+    if (typeof TREE_LAYOUT === 'undefined' || !TREE_LAYOUT) return rows;
+    const pos = new Map(TREE_LAYOUT.leaf_species.map((sp, i) => [sp, i]));
+    const [human, ...rest] = rows;
+    rest.sort((a, b) => (pos.has(a.sp) ? pos.get(a.sp) : 1e9) - (pos.has(b.sp) ? pos.get(b.sp) : 1e9));
+    return [human, ...rest];
+}
+
+async function openAlignmentViewer(gene) {
+    const modal = document.getElementById('msa-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.getElementById('msa-title').textContent = gene;
+    document.getElementById('msa-subtitle').textContent = 'Loading alignment…';
+    document.getElementById('msa-status').textContent = '';
+    MSA = null;
+    msaDrawAll();
+    try {
+        const data = await msaFetch(gene);
+        const opts = MSA_OPTS_DEFAULT();
+        MSA = { data, rows: msaOrderRows(data.rows.slice()), opts };
+        msaPrepare();
+        const nSp = data.rows.length - 1;
+        document.getElementById('msa-subtitle').innerHTML =
+            `Human reference ${data.ref.acc ? `<a href="https://www.uniprot.org/uniprotkb/${data.ref.acc}" target="_blank" rel="noopener">${data.ref.acc}</a>` : '(RefSeq isoform)'} · ${data.ref.len} aa · ` +
+            `${nSp} other species (best hit to human in ${data.og}) · ${data.dom.length} Pfam domain${data.dom.length === 1 ? '' : 's'}`;
+        document.getElementById('msa-scroll').scrollTo(0, 0);
+        msaResize();
+    } catch (err) {
+        document.getElementById('msa-subtitle').textContent = err.message;
+    }
+}
+
+function closeAlignmentViewer() {
+    document.getElementById('msa-modal').style.display = 'none';
+}
+
+function MSA_OPTS_DEFAULT() {
+    const g = id => document.getElementById(id);
+    return {
+        hideGaps: g('msa-opt-hidegaps').checked,
+        domains: g('msa-opt-domains').checked,
+        color: g('msa-opt-color').value,
+        cw: MSA && MSA.opts ? MSA.opts.cw : 11,
+    };
+}
+
+function msaSetOption() {
+    if (!MSA) return;
+    const keepHumanPos = msaCenterHumanPos();
+    MSA.opts = MSA_OPTS_DEFAULT();
+    msaPrepare();
+    msaResize();
+    if (keepHumanPos) msaScrollToHumanPos(keepHumanPos);
+}
+
+function msaZoom(f) {
+    if (!MSA) return;
+    const keep = msaCenterHumanPos();
+    MSA.opts.cw = Math.max(4, Math.min(20, Math.round(MSA.opts.cw * f)));
+    msaResize();
+    if (keep) msaScrollToHumanPos(keep);
+}
+
+// Visible columns, human numbering, per-column domain and colour classes
+function msaPrepare() {
+    const { rows, opts, data } = MSA;
+    const human = rows[0].s;
+    const L = human.length;
+    const humanPosAll = new Int32Array(L);
+    let p = 0;
+    for (let c = 0; c < L; c++) if (human[c] !== '-') humanPosAll[c] = ++p;
+    const cols = [];
+    for (let c = 0; c < L; c++) if (!opts.hideGaps || humanPosAll[c]) cols.push(c);
+    MSA.cols = cols;
+    MSA.humanPos = cols.map(c => humanPosAll[c]);
+    // Domain per visible column (by human position; insertion columns inherit the previous one)
+    const doms = data.dom || [];
+    MSA.domColor = new Map(doms.map((d, i) => [d, MSA_DOMAIN_COLORS[i % MSA_DOMAIN_COLORS.length]]));
+    let last = 0;
+    MSA.colDomain = MSA.humanPos.map(hp => {
+        const at = hp || last;
+        if (hp) last = hp;
+        return doms.find(d => at >= d.start && at <= d.end && (hp || at < d.end)) || null;
+    });
+    MSA.colClass = cols.map(c => msaColumnClasses(rows, c));
+}
+
+// Jalview ClustalX rules, simplified: a residue is coloured when its group
+// is conserved in the column (thresholds on the non-gap fraction)
+function msaColumnClasses(rows, c) {
+    const cnt = {};
+    let n = 0;
+    for (const r of rows) {
+        const a = r.s[c];
+        if (a === '-' || a === 'X') continue;
+        cnt[a] = (cnt[a] || 0) + 1;
+        n++;
+    }
+    if (!n) return null;
+    const frac = s => [...s].reduce((t, a) => t + (cnt[a] || 0), 0) / n;
+    const out = {};
+    const hydro = frac('WLVIMAFCHP') >= 0.6;
+    const kr = frac('KR') >= 0.6, de = frac('DE') >= 0.5, qe = frac('QE') >= 0.5, ed = frac('ED') >= 0.5;
+    for (const a of Object.keys(cnt)) {
+        let col = null;
+        const f1 = cnt[a] / n;
+        if ('AILMFWV'.includes(a)) col = hydro || f1 >= 0.85 ? MSA_CLUSTAL.hydrophobic : null;
+        else if (a === 'C') col = hydro || f1 >= 0.85 ? MSA_CLUSTAL.hydrophobic : null;
+        else if ('KR'.includes(a)) col = (kr || frac('KRQ') >= 0.85) ? MSA_CLUSTAL.positive : null;
+        else if (a === 'E') col = (de || qe || frac('EQD') >= 0.85) ? MSA_CLUSTAL.negative : null;
+        else if (a === 'D') col = (ed || frac('KRQ') < 0.5 && frac('ND') >= 0.5) ? MSA_CLUSTAL.negative : null;
+        else if (a === 'N') col = (f1 >= 0.5 || frac('ND') >= 0.5) ? MSA_CLUSTAL.polar : null;
+        else if ('QST'.includes(a)) col = (frac('QE') >= 0.5 || frac('TS') >= 0.5 || f1 >= 0.5 || frac('KRQ') >= 0.6) ? MSA_CLUSTAL.polar : null;
+        else if (a === 'G') col = MSA_CLUSTAL.gly;
+        else if (a === 'P') col = MSA_CLUSTAL.pro;
+        else if ('HY'.includes(a)) col = (hydro || frac('WYACPQFHILMV') >= 0.85 || f1 >= 0.5) ? MSA_CLUSTAL.aromatic : null;
+        if (a === 'C' && f1 >= 0.85) col = MSA_CLUSTAL.cys;
+        out[a] = col;
+    }
+    return out;
+}
+
+const MSA_LABEL_W = 190, MSA_RULER_H = 22, MSA_DOMAIN_H = 18;
+
+function msaRowH() { return Math.max(8, Math.round(MSA.opts.cw * 1.25)); }
+
+function msaResize() {
+    const scroll = document.getElementById('msa-scroll');
+    const spacer = document.getElementById('msa-spacer');
+    if (!MSA || !MSA.cols) { spacer.style.width = '0px'; spacer.style.height = '0px'; msaDrawAll(); return; }
+    spacer.style.width = (MSA.cols.length * MSA.opts.cw) + 'px';
+    spacer.style.height = (MSA.rows.length * msaRowH()) + 'px';
+    msaDrawAll();
+    document.getElementById('msa-status').textContent =
+        `${MSA.cols.length.toLocaleString()} columns${MSA.opts.hideGaps ? ' (columns with a gap in human hidden)' : ''} · ${MSA.rows.length} rows`;
+}
+
+function msaSetupCanvas(cv, w, h) {
+    const dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+        cv.style.width = w + 'px';
+        cv.style.height = h + 'px';
+    }
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return ctx;
+}
+
+function msaTheme() {
+    const light = document.body.classList.contains('light-theme');
+    return light
+        ? { bg: '#ffffff', text: '#0f172a', sub: '#64748b', grid: '#e2e8f0', gap: '#cbd5e1', human: '#fef3c7', panel: '#f8fafc' }
+        : { bg: '#0b1120', text: '#e2e8f0', sub: '#94a3b8', grid: '#1e293b', gap: '#334155', human: '#3b2f0b', panel: '#0f172a' };
+}
+
+function msaDrawAll() {
+    const scroll = document.getElementById('msa-scroll');
+    if (!scroll) return;
+    const W = scroll.clientWidth, H = scroll.clientHeight;
+    const th = msaTheme();
+    const main = msaSetupCanvas(document.getElementById('msa-canvas'), W, H);
+    const lab = msaSetupCanvas(document.getElementById('msa-labels'), MSA_LABEL_W, H);
+    const top = msaSetupCanvas(document.getElementById('msa-top'), W, MSA_RULER_H + MSA_DOMAIN_H);
+    for (const [ctx, w, h] of [[main, W, H], [lab, MSA_LABEL_W, H], [top, W, MSA_RULER_H + MSA_DOMAIN_H]]) {
+        ctx.fillStyle = th.bg;
+        ctx.fillRect(0, 0, w, h);
+    }
+    if (!MSA || !MSA.cols) return;
+
+    const { rows, cols, opts } = MSA;
+    const cw = opts.cw, rh = msaRowH();
+    const x0 = scroll.scrollLeft, y0 = scroll.scrollTop;
+    const c0 = Math.floor(x0 / cw), c1 = Math.min(cols.length - 1, Math.ceil((x0 + W) / cw));
+    const r0 = Math.floor(y0 / rh), r1 = Math.min(rows.length - 1, Math.ceil((y0 + H) / rh));
+    const showText = cw >= 8;
+    const font = `${Math.round(cw * 0.95)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+
+    // Residues
+    main.font = font;
+    main.textAlign = 'center';
+    main.textBaseline = 'middle';
+    for (let r = r0; r <= r1; r++) {
+        const y = r * rh - y0;
+        const s = rows[r].s;
+        const hs = rows[0].s;
+        if (r === 0) { main.fillStyle = th.human; main.fillRect(0, y, W, rh); }
+        for (let k = c0; k <= c1; k++) {
+            const a = s[cols[k]];
+            const x = k * cw - x0;
+            if (a === '-') {
+                if (!showText) continue;
+                main.fillStyle = th.gap;
+                main.fillText('-', x + cw / 2, y + rh / 2 + 0.5);
+                continue;
+            }
+            let bg = null;
+            if (opts.color === 'clustal') {
+                const cls = MSA.colClass[k];
+                bg = cls ? cls[a] : null;
+            } else if (opts.color === 'identity' && r > 0) {
+                bg = a === hs[cols[k]] ? (th.bg === '#ffffff' ? '#93c5fd' : '#1d4ed8') : null;
+            }
+            if (bg) { main.fillStyle = bg; main.fillRect(x, y, cw, rh); }
+            if (showText) {
+                main.fillStyle = bg ? '#0b1120' : th.text;
+                main.fillText(a, x + cw / 2, y + rh / 2 + 0.5);
+            } else if (!bg) {
+                main.fillStyle = th.sub;
+                main.fillRect(x, y + rh * 0.3, cw, rh * 0.4);
+            }
+        }
+    }
+    if (MSA.hlRow !== undefined && MSA.hlRow >= r0 && MSA.hlRow <= r1) {
+        main.strokeStyle = '#facc15';
+        main.lineWidth = 2;
+        main.strokeRect(1, MSA.hlRow * rh - y0 + 1, W - 2, rh - 2);
+    }
+    // Domain borders through the alignment
+    const doms = MSA.colDomain;
+    if (opts.domains) {
+        main.lineWidth = 1.5;
+        for (let k = Math.max(1, c0); k <= c1 + 1 && k <= cols.length; k++) {
+            const a = doms[k - 1], b = k < cols.length ? doms[k] : null;
+            if (a === b) continue;
+            const x = Math.round(k * cw - x0) + 0.5;
+            main.strokeStyle = MSA.domColor.get(b || a);
+            main.beginPath(); main.moveTo(x, 0); main.lineTo(x, H); main.stroke();
+        }
+        if (c0 === 0 && doms[0]) {
+            main.strokeStyle = MSA.domColor.get(doms[0]);
+            main.beginPath(); main.moveTo(0.5 - x0, 0); main.lineTo(0.5 - x0, H); main.stroke();
+        }
+    }
+
+    // Ruler (human numbering) and domain track
+    top.font = '10px ui-monospace, monospace';
+    top.textBaseline = 'middle';
+    top.textAlign = 'center';
+    const step = cw >= 10 ? 10 : cw >= 6 ? 20 : 50;
+    for (let k = c0; k <= c1; k++) {
+        const hp = MSA.humanPos[k];
+        if (!hp || hp % step) continue;
+        const x = k * cw - x0 + cw / 2;
+        top.fillStyle = th.sub;
+        top.fillText(String(hp), x, 8);
+        top.fillRect(Math.round(x), 15, 1, 6);
+    }
+    top.fillStyle = th.panel;
+    top.fillRect(0, MSA_RULER_H, W, MSA_DOMAIN_H);
+    // Contiguous runs of the same domain
+    let k = c0;
+    while (k <= c1) {
+        const d = doms[k];
+        let e = k;
+        while (e + 1 < cols.length && doms[e + 1] === d) e++;
+        if (d) {
+            const xa = Math.max(0, k * cw - x0), xb = Math.min(W, (e + 1) * cw - x0);
+            top.fillStyle = MSA.domColor.get(d);
+            top.globalAlpha = 0.85;
+            top.fillRect(xa, MSA_RULER_H + 2, xb - xa, MSA_DOMAIN_H - 4);
+            top.globalAlpha = 1;
+            const label = `${d.id} ${d.start}-${d.end}`;
+            top.fillStyle = '#0b1120';
+            top.font = 'bold 10px system-ui, sans-serif';
+            top.textAlign = 'left';
+            const tw = top.measureText(label).width;
+            if (xb - xa > tw + 6) top.fillText(label, xa + 4, MSA_RULER_H + MSA_DOMAIN_H / 2);
+            top.textAlign = 'center';
+            top.font = '10px ui-monospace, monospace';
+        }
+        k = e + 1;
+    }
+
+    // Species labels
+    lab.font = `${Math.min(12, Math.max(8, rh - 3))}px system-ui, sans-serif`;
+    lab.textBaseline = 'middle';
+    lab.textAlign = 'left';
+    for (let r = r0; r <= r1; r++) {
+        const y = r * rh - y0;
+        if (r === 0) { lab.fillStyle = th.human; lab.fillRect(0, y, MSA_LABEL_W, rh); }
+        if (rh < 8) continue;
+        if (r === MSA.hlRow) { lab.fillStyle = 'rgba(250,204,21,0.35)'; lab.fillRect(0, y, MSA_LABEL_W, rh); }
+        lab.fillStyle = r === 0 || r === MSA.hlRow ? th.text : th.sub;
+        lab.font = `${r === 0 ? 'bold ' : 'italic '}${Math.min(12, Math.max(8, rh - 3))}px system-ui, sans-serif`;
+        lab.fillText(msaSpeciesName(rows[r].sp), 6, y + rh / 2, MSA_LABEL_W - 10);
+    }
+}
+
+function msaCenterHumanPos() {
+    if (!MSA || !MSA.cols) return 0;
+    const scroll = document.getElementById('msa-scroll');
+    const k = Math.floor((scroll.scrollLeft + scroll.clientWidth / 2) / MSA.opts.cw);
+    for (let j = Math.min(k, MSA.cols.length - 1); j >= 0; j--) if (MSA.humanPos[j]) return MSA.humanPos[j];
+    return 0;
+}
+
+function msaScrollToHumanPos(hp) {
+    const k = MSA.humanPos.findIndex(p => p >= hp);
+    if (k < 0) return;
+    const scroll = document.getElementById('msa-scroll');
+    scroll.scrollLeft = Math.max(0, k * MSA.opts.cw - scroll.clientWidth / 2);
+    msaDrawAll();
+}
+
+function msaGoto(val) {
+    if (!MSA) return;
+    const v = String(val).trim();
+    const n = parseInt(v, 10);
+    if (n > 0) return msaScrollToHumanPos(n);
+    const q = v.toLowerCase();
+    const d = (MSA.data.dom || []).find(d => (d.id + ' ' + d.acc + ' ' + d.name).toLowerCase().includes(q));
+    if (d) return msaScrollToHumanPos(d.start);
+    // Species: name prefix first, then substring, then the row's id / taxid
+    const names = MSA.rows.map(r => msaSpeciesName(r.sp).toLowerCase());
+    let r = names.findIndex(n => n.startsWith(q));
+    if (r < 0) r = names.findIndex(n => n.includes(q));
+    if (r < 0) r = MSA.rows.findIndex(row => String(row.sp) === v || String(row.id).toLowerCase().includes(q));
+    if (r < 0) { document.getElementById('msa-status').textContent = `Nothing matches "${v}"`; return; }
+    MSA.hlRow = r;
+    const scroll = document.getElementById('msa-scroll');
+    scroll.scrollTop = Math.max(0, r * msaRowH() - scroll.clientHeight / 2);
+    msaDrawAll();
+}
+
+function msaHover(e) {
+    const tip = document.getElementById('msa-tooltip');
+    if (!MSA || !MSA.cols) { tip.style.display = 'none'; return; }
+    const scroll = document.getElementById('msa-scroll');
+    const rect = scroll.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (x < 0 || y < 0 || x >= scroll.clientWidth || y >= scroll.clientHeight) { tip.style.display = 'none'; return; }
+    const k = Math.floor((x + scroll.scrollLeft) / MSA.opts.cw);
+    const r = Math.floor((y + scroll.scrollTop) / msaRowH());
+    if (k >= MSA.cols.length || r >= MSA.rows.length) { tip.style.display = 'none'; return; }
+    const row = MSA.rows[r], c = MSA.cols[k];
+    const a = row.s[c];
+    let resNo = 0;
+    for (let j = 0; j <= c; j++) if (row.s[j] !== '-') resNo++;
+    const hp = MSA.humanPos[k];
+    const ha = MSA.rows[0].s[c];
+    const d = MSA.colDomain[k];
+    tip.innerHTML = `<strong style="font-style:italic;">${msaSpeciesName(row.sp)}</strong> <span style="opacity:.7;">${row.id}</span><br>` +
+        (a === '-' ? 'gap' : `${a}${resNo}`) +
+        ` · human ${hp ? ha + hp : '(insertion)'} · column ${c + 1}` +
+        (d ? `<br><span style="color:${MSA.domColor.get(d)}; font-weight:600;">${d.id}</span> ${d.name} (${d.start}-${d.end})` : '');
+    tip.style.display = 'block';
+    tip.style.left = Math.min(window.innerWidth - 330, e.clientX + 14) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+}
+
+function setupAlignmentViewer() {
+    const scroll = document.getElementById('msa-scroll');
+    if (!scroll || scroll._wired) return;
+    scroll._wired = true;
+    let raf = 0;
+    scroll.addEventListener('scroll', () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => { raf = 0; msaDrawAll(); });
+    });
+    scroll.addEventListener('mousemove', msaHover);
+    scroll.addEventListener('mouseleave', () => { document.getElementById('msa-tooltip').style.display = 'none'; });
+    window.addEventListener('resize', () => { if (document.getElementById('msa-modal').style.display === 'flex') msaDrawAll(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('msa-modal').style.display === 'flex') closeAlignmentViewer();
+    });
+}
+setupAlignmentViewer();
 
 function setupTreeTooltips() {
     const tooltip = document.getElementById('tree-tooltip');
@@ -6034,11 +6731,8 @@ function switchDataset(value) {
         basePath = basePath.replace('eggnog.html', 'index.html');
     }
     const url = new URL(location.origin + basePath + location.search);
-    if (value === 'orthogroup') {
-        url.searchParams.delete('dataset');
-    } else {
-        url.searchParams.set('dataset', value);
-    }
+    // index.html without ?dataset= redirects to eggnog.html (the default), so name the TCS dataset explicitly
+    url.searchParams.set('dataset', value);
     location.href = url.toString();
 }
 
