@@ -25,7 +25,9 @@ body {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    z-index: 10;
+    /* Above #main (tree panel is z-index 10) so header dropdowns overlay the content */
+    position: relative;
+    z-index: 100;
 }
 #header h1 {
     font-size: 15px;
