@@ -2121,7 +2121,7 @@ function renderTreeCoevolutionCard(isDark) {
             <div style="margin-top:12px; margin-bottom:12px; padding:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.28); border-radius:8px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                     <strong style="color:#7dd3fc; font-size:12px;">Co-Evolution: ${pA} ↔ ${pB}</strong>
-                    <span style="font-size:10px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:8px;">J = ${jVal.toFixed(2)}</span>
+                    <span style="font-size:10px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:8px; white-space:nowrap; flex-shrink:0; margin-left:6px;">loss J ${fmtJ(dInfo.lossJ)} · pres J ${fmtJ(dInfo.presJ)}</span>
                 </div>
                 ${pairSelectorHtml}
                 <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
@@ -2141,7 +2141,7 @@ function renderTreeCoevolutionCard(isDark) {
             <div style="margin-top:12px; margin-bottom:12px; padding:12px; background:${isDark ? 'rgba(30,41,59,0.5)' : '#f8fafc'}; border:1px solid ${isDark ? '#334155' : '#cbd5e1'}; border-radius:8px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                     <strong style="color:${isDark ? '#f8fafc' : '#0f172a'}; font-size:12px;">Evolutionary Co-Loss: ${pA} ↔ ${pB}</strong>
-                    <span style="font-size:10px; font-weight:700; color:#0284c7; background:rgba(2,132,199,0.15); border:1px solid rgba(2,132,199,0.3); padding:1px 6px; border-radius:8px;">J = ${jVal.toFixed(2)}</span>
+                    <span style="font-size:10px; font-weight:700; color:#0284c7; background:rgba(2,132,199,0.15); border:1px solid rgba(2,132,199,0.3); padding:1px 6px; border-radius:8px; white-space:nowrap; flex-shrink:0; margin-left:6px;">loss J ${fmtJ(dInfo.lossJ)} · pres J ${fmtJ(dInfo.presJ)}</span>
                 </div>
                 ${pairSelectorHtml}
                 <div style="font-size:11px; color:#8892b0; line-height:1.4;">
@@ -2184,8 +2184,9 @@ function renderTreeSidebar() {
     const n = TREE_SELECTED_GENES.length;
     const countBadge = `<span style="font-size:11px; color:#38bdf8; font-weight:600; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:10px;">${n} Gene${n === 1 ? '' : 's'} on Tree</span>`;
     
-    const matrixTitle = 'Pairwise Presence Similarity Matrix';
-    const matrixDesc = 'Pairwise presence/absence Jaccard across species for genes loaded on the tree.';
+    const metricInfo = treeMatrixMetricInfo();
+    const matrixTitle = metricInfo.title;
+    const matrixDesc = metricInfo.desc;
 
     geneInfoEl.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -2199,6 +2200,7 @@ function renderTreeSidebar() {
             <button class="btn" style="font-size:11px; padding:3px 8px;" onclick="loadCurrentNetworkGenesInTree()" title="Load selected gene & top partners">+ Top Partners</button>
             <button class="btn" style="font-size:11px; padding:3px 8px;" onclick="resetTreeGenes([])" title="Clear tree genes">Clear All</button>
         </div>
+        ${renderTreeMatrixMetricToggle(isDark)}
     `;
 
     const partnerListEl = document.getElementById('partner-list');
@@ -2322,12 +2324,13 @@ function renderTreeSidebar() {
                     </td>
                 `;
             } else {
-                const jaccard = getPairwiseJaccard(gRow, gCol);
-                const cellVal = jaccard.toFixed(2);
+                const mVal = getTreeMatrixValue(gRow, gCol);
+                const jaccard = mVal === null ? 0 : mVal;
+                const cellVal = fmtJ(mVal);
                 const bg = jaccard <= 0.001 ? (isDark ? '#0c1220' : '#ffffff') : getJaccardColor(jaccard);
                 const textCol = jaccard <= 0.001 ? '#64748b' : '#ffffff';
                 const opacity = jaccard <= 0.001 ? '0.4' : '1';
-                const tipText = `${gRow} ↔ ${gCol}: Jaccard = ${jaccard.toFixed(3)} (Click to view interaction)`;
+                const tipText = `${gRow} ↔ ${gCol}: co-loss J = ${fmtJ(getPairwiseLossJaccard(gRow, gCol), 3)}, co-presence J = ${fmtJ(getPairwisePresenceJaccard(gRow, gCol), 3)}${mVal === null ? ' — ' + treeMatrixMetricInfo().missing : ''} (Click to view interaction)`;
 
                 rowCells += `
                     <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:700; color:${textCol}; background:${bg}; opacity:${opacity}; border:1px solid ${isDark ? '#1e293b' : '#e2e8f0'}; cursor:pointer; transition:transform 0.1s;" 
@@ -2369,7 +2372,7 @@ function renderTreeSidebar() {
         <div style="padding:12px 10px;">
             <div style="margin-bottom:6px;">
                 <div style="font-size:10px; font-weight:700; color:#8892b0; text-transform:uppercase; letter-spacing:0.5px;">
-                    Pairwise Presence Similarity Matrix
+                    ${matrixTitle}
                 </div>
             </div>
             
@@ -2383,7 +2386,7 @@ function renderTreeSidebar() {
             <div style="margin-bottom:14px; padding:6px 10px; background:${isDark ? '#161d31' : '#f1f5f9'}; border-radius:6px; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'};">
                 <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
                     <span>0.20 (Low)</span>
-                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">Presence Similarity (Jaccard)</span>
+                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">${metricInfo.scale}</span>
                     <span>&ge;0.65 (Coupled)</span>
                 </div>
                 <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
@@ -3598,14 +3601,88 @@ let TREE_SHOW_LOSSES = true;
 let TREE_GENE_IDX = {};
 let TREE_SELECTED_GENES = [];
 let TREE_TAX_LEVEL = 'kingdom';
-let TREE_MATRIX_METRIC = 'coloss'; // default: 'coloss' (Jaccard similarity co-loss) or 'distance' (Tree distance)
+let TREE_MATRIX_METRIC = 'presence'; // 'loss' (Jaccard over Dollo loss branches) or 'presence' (Jaccard over species presence)
+
+const LOSS_METRIC_DESC = 'Jaccard over Dollo loss branches: branches where both genes were lost ÷ branches where either was lost (computed exactly from the loss events).';
+
+// Presence Jaccard over species, exact from the background-loaded presence bits.
+function getPairwisePresenceJaccard(gA, gB) {
+    if (!gA || !gB) return null;
+    if (gA === gB) return 1.0;
+    const exact = exactPresenceJaccard(gA, gB);
+    return exact !== null ? exact : getPairwiseJaccard(gA, gB);
+}
+
+// Loss Jaccard over Dollo loss branches, from tree_events_eggnog.bin (loaded with the tree).
+// Matches cache_eggnog_full/jaccard_matrix.npy exactly.
+function getPairwiseLossJaccard(gA, gB) {
+    if (!gA || !gB) return null;
+    if (gA === gB) return 1.0;
+    const iA = TREE_GENE_IDX[gA], iB = TREE_GENE_IDX[gB];
+    if (!TREE_EVENTS || iA === undefined || iB === undefined) return null;
+    const sA = new Set(TREE_EVENTS.losses.subarray(TREE_EVENTS.offsets[iA], TREE_EVENTS.offsets[iA + 1]));
+    const sB = new Set(TREE_EVENTS.losses.subarray(TREE_EVENTS.offsets[iB], TREE_EVENTS.offsets[iB + 1]));
+    let inter = 0;
+    for (const x of sB) if (sA.has(x)) inter++;
+    const uni = sA.size + sB.size - inter;
+    return uni ? inter / uni : 0.0;
+}
+
+function getTreeMatrixValue(gA, gB, metric) {
+    const m = metric || TREE_MATRIX_METRIC;
+    return m === 'presence' ? getPairwisePresenceJaccard(gA, gB) : getPairwiseLossJaccard(gA, gB);
+}
+
+function fmtJ(v, digits) {
+    return (v === null || v === undefined) ? '–' : v.toFixed(digits === undefined ? 2 : digits);
+}
+
+function treeMatrixMetricInfo(metric) {
+    const m = metric || TREE_MATRIX_METRIC;
+    if (m === 'presence') {
+        return {
+            title: 'Pairwise Presence Similarity Matrix',
+            desc: 'Jaccard over species: species where both genes are present ÷ species where either is present.',
+            scale: 'Presence Similarity (Jaccard)',
+            canvasDesc: 'Pairwise presence/absence Jaccard across species',
+            canvasScale: 'PRESENCE SIMILARITY (JACCARD)',
+            missing: 'Presence data loads with the Species Tree view.'
+        };
+    }
+    return {
+        title: 'Pairwise Co-Loss Matrix',
+        desc: LOSS_METRIC_DESC,
+        scale: 'Co-Loss Scale (Jaccard)',
+        canvasDesc: 'Pairwise Jaccard co-loss values across independent Dollo loss events',
+        canvasScale: 'CO-LOSS STRENGTH (JACCARD)',
+        missing: 'Loss events load with the Species Tree view.'
+    };
+}
+
+function renderTreeMatrixMetricToggle(isDark) {
+    const btn = (key, label, tip) => {
+        const on = TREE_MATRIX_METRIC === key;
+        return `<button class="btn" style="padding:3px 10px; font-size:11px; border-radius:4px; ${on ? 'background:#0284c7; color:#fff; font-weight:700;' : 'background:transparent; color:' + (isDark ? '#94a3b8' : '#475569') + ';'}" onclick="setTreeMatrixMetric('${key}')" title="${tip}">${label}</button>`;
+    };
+    return `
+        <div style="display:inline-flex; margin-top:8px; background:${isDark ? '#0b1120' : '#f1f5f9'}; border:1px solid ${isDark ? '#23304d' : '#cbd5e1'}; border-radius:6px; padding:2px; gap:2px;">
+            ${btn('loss', 'Co-loss (Dollo)', 'Jaccard over Dollo loss branches')}
+            ${btn('presence', 'Co-presence', 'Jaccard over species presence/absence')}
+        </div>
+    `;
+}
 
 function getPairwiseTreeDistance(gA, gB) {
     if (!gA || !gB) return { dist: 1.0, hamming: 0, onlyA: 0, onlyB: 0, both: 0 };
     if (gA === gB) return { dist: 0.0, hamming: 0, onlyA: 0, onlyB: 0, both: 0 };
     
-    const jaccard = getPairwiseJaccard(gA, gB);
-    const dist = Number((1.0 - jaccard).toFixed(3));
+    // Both metrics are reported; `dist` follows the metric selected in the matrix toggle.
+    const lossJ = getPairwiseLossJaccard(gA, gB);
+    const presJ = getPairwisePresenceJaccard(gA, gB);
+    const toDist = v => (v === null ? null : Number((1.0 - v).toFixed(3)));
+    const distLoss = toDist(lossJ), distPresence = toDist(presJ);
+    const cur = TREE_MATRIX_METRIC === 'presence' ? distPresence : distLoss;
+    const dist = cur === null ? 1.0 : cur;
     
     let hamming = 0, onlyA = 0, onlyB = 0, both = 0;
     if (typeof getTreeGenePresence === 'function') {
@@ -3619,7 +3696,7 @@ function getPairwiseTreeDistance(gA, gB) {
             }
         }
     }
-    return { dist, hamming, onlyA, onlyB, both };
+    return { dist, distLoss, distPresence, lossJ, presJ, hamming, onlyA, onlyB, both };
 }
 
 function getTreeDistanceColor(dist) {
@@ -3632,6 +3709,7 @@ function getTreeDistanceColor(dist) {
 }
 
 function setTreeMatrixMetric(metric) {
+    TREE_MATRIX_METRIC = (metric === 'presence') ? 'presence' : 'loss';
     if (TREE_LAYOUT) renderCircularTree();
     renderTreeSidebar();
 }
@@ -6613,11 +6691,11 @@ async function generatePresentationSlideCanvas(options = {}) {
         // ---- Species Tree Pairwise Matrix Slide Panel ----
         ctx.font = fs('bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textPrimary;
-        ctx.fillText('Pairwise Presence Similarity Matrix', sx + 35, sy + 44);
+        ctx.fillText(treeMatrixMetricInfo().title, sx + 35, sy + 44);
 
         ctx.font = fs('13.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
         ctx.fillStyle = P.textSecondary;
-        ctx.fillText('Pairwise Jaccard co-loss values across independent Dollo loss events', sx + 35, sy + 70);
+        ctx.fillText(treeMatrixMetricInfo().canvasDesc, sx + 35, sy + 70);
 
         const nGenes = TREE_SELECTED_GENES.length;
         if (nGenes >= 2) {
@@ -6679,8 +6757,9 @@ async function generatePresentationSlideCanvas(options = {}) {
                         ctx.textAlign = 'center';
                         ctx.fillText('1.00', cX + cW / 2, cY + cH / 2 + 5);
                     } else {
-                        const jaccard = getPairwiseJaccard(gRow, gCol);
-                        const cellVal = jaccard.toFixed(2);
+                        const mVal = getTreeMatrixValue(gRow, gCol);
+                        const jaccard = mVal === null ? 0 : mVal;
+                        const cellVal = fmtJ(mVal);
                         const cellColor = jaccard <= 0.001 ? (isDark ? '#0e1626' : '#ffffff') : getJaccardColor(jaccard);
 
                         ctx.fillStyle = cellColor;
@@ -6714,7 +6793,7 @@ async function generatePresentationSlideCanvas(options = {}) {
             ctx.font = fs('bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
             ctx.textAlign = 'center';
-            ctx.fillText('CO-LOSS STRENGTH (JACCARD)', legX + legW / 2, legY + 16);
+            ctx.fillText(treeMatrixMetricInfo().canvasScale, legX + legW / 2, legY + 16);
 
             const barW = legW - 36;
             const barX = legX + 18;
