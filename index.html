@@ -4297,8 +4297,9 @@ function treeRevealFoundLeaf() {}
 
 // ---- Alignment viewer: human-referenced MSA per gene (Jalview-style) ----
 // Files: MSA_BASE_URL + GENE + '.json.gz' = { g, og, ref:{acc,len}, dom:[{acc,id,name,start,end}],
-// rows:[{sp,id,s}] } with the human row first. Built by pipeline/helpers/build_tcs_alignments.py.
-const MSA_BASE_URL = 'alignments/';
+// rows:[{sp,id,s}] } with the human row first. Built by pipeline/helpers/build_tcs_gene_alignments.py;
+// one folder per dataset so the rows match that dataset's presence calls.
+const MSA_BASE_URL = 'alignments_' + DATASET + '/';
 const MSA_CACHE = new Map();
 let MSA = null;   // { data, rows, cols, humanPos, colDomain, opts, ... }
 
