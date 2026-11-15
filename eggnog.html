@@ -2323,7 +2323,7 @@ function renderTreeSidebar() {
 
         TREE_SELECTED_GENES.forEach((gCol, j) => {
             if (i === j) {
-                const diagVal = '1.00';
+                const diagVal = '0.00'; // distance of a gene to itself
                 rowCells += `
                     <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:600; color:#64748b; background:${isDark ? '#161e2e' : '#f1f5f9'}; border:1px solid ${isDark ? '#1e293b' : '#e2e8f0'};">
                         ${diagVal}
@@ -2332,11 +2332,11 @@ function renderTreeSidebar() {
             } else {
                 const mVal = getTreeMatrixValue(gRow, gCol);
                 const jaccard = mVal === null ? 0 : mVal;
-                const cellVal = fmtJ(mVal);
+                const cellVal = fmtJ(mVal === null ? null : 1 - mVal); // distance = 1 − Jaccard
                 const bg = jaccard <= 0.001 ? (isDark ? '#0c1220' : '#ffffff') : getJaccardColor(jaccard);
                 const textCol = jaccard <= 0.001 ? '#64748b' : '#ffffff';
                 const opacity = jaccard <= 0.001 ? '0.4' : '1';
-                const tipText = `${gRow} ↔ ${gCol}: co-loss J = ${fmtJ(getPairwiseLossJaccard(gRow, gCol), 3)}, co-presence J = ${fmtJ(getPairwisePresenceJaccard(gRow, gCol), 3)}${mVal === null ? ' — ' + treeMatrixMetricInfo().missing : ''} (Click to view interaction)`;
+                const tipText = `${gRow} ↔ ${gCol}: distance (1 − J) = ${fmtJ(mVal === null ? null : 1 - mVal, 3)}; co-loss J = ${fmtJ(getPairwiseLossJaccard(gRow, gCol), 3)}, co-presence J = ${fmtJ(getPairwisePresenceJaccard(gRow, gCol), 3)}${mVal === null ? ' — ' + treeMatrixMetricInfo().missing : ''} (Click to view interaction)`;
 
                 rowCells += `
                     <td style="padding:6px 4px; text-align:center; font-family:ui-monospace, monospace; font-size:11.5px; font-weight:700; color:${textCol}; background:${bg}; opacity:${opacity}; border:1px solid ${isDark ? '#1e293b' : '#e2e8f0'}; cursor:pointer; transition:transform 0.1s;" 
@@ -2391,9 +2391,9 @@ function renderTreeSidebar() {
 
             <div style="margin-bottom:14px; padding:6px 10px; background:${isDark ? '#161d31' : '#f1f5f9'}; border-radius:6px; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'};">
                 <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
-                    <span>0.20 (Low)</span>
+                    <span>&ge;0.80 (Distant)</span>
                     <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">${metricInfo.scale}</span>
-                    <span>&ge;0.65 (Coupled)</span>
+                    <span>&le;0.35 (Coupled)</span>
                 </div>
                 <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
             </div>
@@ -3734,20 +3734,20 @@ function treeMatrixMetricInfo(metric) {
     const m = metric || TREE_MATRIX_METRIC;
     if (m === 'presence') {
         return {
-            title: 'Pairwise Presence Similarity Matrix',
-            desc: 'Jaccard over species: species where both genes are present ÷ species where either is present.',
-            scale: 'Presence Similarity (Jaccard)',
-            canvasDesc: 'Pairwise presence/absence Jaccard across species',
-            canvasScale: 'PRESENCE SIMILARITY (JACCARD)',
+            title: 'Pairwise Presence Distance Matrix (1 − Jaccard)',
+            desc: 'Distance = 1 − Jaccard over species (Jaccard = species where both genes are present ÷ species where either is present). 0 = identical presence pattern.',
+            scale: 'Presence Distance (1 − Jaccard)',
+            canvasDesc: 'Pairwise presence/absence distance (1 − Jaccard) across species',
+            canvasScale: 'PRESENCE DISTANCE (1 − JACCARD)',
             missing: 'Presence data loads with the Species Tree view.'
         };
     }
     return {
-        title: 'Pairwise Co-Loss Matrix',
-        desc: LOSS_METRIC_DESC,
-        scale: 'Co-Loss Scale (Jaccard)',
-        canvasDesc: 'Pairwise Jaccard co-loss values across independent Dollo loss events',
-        canvasScale: 'CO-LOSS STRENGTH (JACCARD)',
+        title: 'Pairwise Co-Loss Distance Matrix (1 − Jaccard)',
+        desc: 'Distance = 1 − Jaccard. ' + LOSS_METRIC_DESC,
+        scale: 'Co-Loss Distance (1 − Jaccard)',
+        canvasDesc: 'Pairwise co-loss distance (1 − Jaccard) across independent Dollo loss events',
+        canvasScale: 'CO-LOSS DISTANCE (1 − JACCARD)',
         missing: 'Loss events load with the Species Tree view.'
     };
 }
@@ -6862,11 +6862,11 @@ async function generatePresentationSlideCanvas(options = {}) {
                         ctx.font = fs(`bold ${cellSize < 65 ? 13 : 15}px ui-monospace, monospace`);
                         ctx.fillStyle = P.textMuted;
                         ctx.textAlign = 'center';
-                        ctx.fillText('1.00', cX + cW / 2, cY + cH / 2 + 5);
+                        ctx.fillText('0.00', cX + cW / 2, cY + cH / 2 + 5);
                     } else {
                         const mVal = getTreeMatrixValue(gRow, gCol);
                         const jaccard = mVal === null ? 0 : mVal;
-                        const cellVal = fmtJ(mVal);
+                        const cellVal = fmtJ(mVal === null ? null : 1 - mVal); // distance = 1 − Jaccard
                         const cellColor = jaccard <= 0.001 ? (isDark ? '#0e1626' : '#ffffff') : getJaccardColor(jaccard);
 
                         ctx.fillStyle = cellColor;
@@ -6919,9 +6919,9 @@ async function generatePresentationSlideCanvas(options = {}) {
             ctx.font = fs('600 10.5px ui-monospace, SFMono-Regular, monospace');
             ctx.fillStyle = P.textMuted;
             ctx.textAlign = 'left';
-            ctx.fillText('0.20 (Low)', barX, legY + 42);
+            ctx.fillText('≥0.80 (Distant)', barX, legY + 42);
             ctx.textAlign = 'right';
-            ctx.fillText('≥0.65 (Coupled)', barX + barW, legY + 42);
+            ctx.fillText('≤0.35 (Coupled)', barX + barW, legY + 42);
             ctx.textAlign = 'left';
 
             // 4. Gene Status Summary Table
