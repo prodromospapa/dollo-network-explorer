@@ -64,7 +64,8 @@ def newick_and_count_index(nodes_by_id, root=0):
         nd = nodes_by_id[nid]
         if nd["leaf"]:
             leaf_order.append(nid)
-            return nd["sp"]
+            # quoted: an unquoted underscore is read as a space by Newick parsers (COUNT then matches no leaf)
+            return "'" + nd["sp"] + "'"
         return "(" + ",".join(walk_text(c) for c in nd["c"]) + ")"
 
     text = walk_text(root) + ";"
