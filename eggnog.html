@@ -2333,7 +2333,7 @@ function renderTreeSidebar() {
                 const mVal = getTreeMatrixValue(gRow, gCol);
                 const jaccard = mVal === null ? 0 : mVal;
                 const cellVal = fmtJ(mVal === null ? null : 1 - mVal); // distance = 1 − Jaccard
-                const bg = jaccard <= 0.001 ? (isDark ? '#0c1220' : '#ffffff') : getJaccardColor(jaccard);
+                const bg = jaccard <= 0.001 ? (isDark ? '#0c1220' : '#ffffff') : getDistanceColor(1 - jaccard);
                 const textCol = jaccard <= 0.001 ? '#64748b' : '#ffffff';
                 const opacity = jaccard <= 0.001 ? '0.4' : '1';
                 const tipText = `${gRow} ↔ ${gCol}: distance (1 − J) = ${fmtJ(mVal === null ? null : 1 - mVal, 3)}; co-loss J = ${fmtJ(getPairwiseLossJaccard(gRow, gCol), 3)}, co-presence J = ${fmtJ(getPairwisePresenceJaccard(gRow, gCol), 3)}${mVal === null ? ' — ' + treeMatrixMetricInfo().missing : ''} (Click to view interaction)`;
@@ -2391,9 +2391,9 @@ function renderTreeSidebar() {
 
             <div style="margin-bottom:14px; padding:6px 10px; background:${isDark ? '#161d31' : '#f1f5f9'}; border-radius:6px; border:1px solid ${isDark ? '#23304d' : '#e2e8f0'};">
                 <div style="font-size:9.5px; color:#8892b0; margin-bottom:4px; display:flex; justify-content:space-between;">
-                    <span>&ge;0.80 (Distant)</span>
-                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">${metricInfo.scale}</span>
                     <span>&le;0.35 (Coupled)</span>
+                    <span style="font-weight:600; color:${isDark ? '#cbd5e1' : '#334155'};">${metricInfo.scale}</span>
+                    <span>&ge;0.80 (Distant)</span>
                 </div>
                 <div style="height:6px; border-radius:3px; background:linear-gradient(to right, #38bdf8, #2dd4bf, #34d399, #fbbf24, #f43f5e);"></div>
             </div>
@@ -2410,6 +2410,13 @@ function renderTreeSidebar() {
             ${renderTreeCandidatePartnersHtml(isDark)}
         </div>
     `;
+}
+
+// Colour for a distance d = 1 − J: same palette as getJaccardColor but running the other way,
+// so close pairs (d ≤ 0.35) are cool blue and distant pairs (d ≥ 0.80) are red.
+function getDistanceColor(d) {
+    if (d === undefined || d === null) return '#f43f5e';
+    return getJaccardColor(0.20 + (d - 0.35));
 }
 
 function getJaccardColor(j) {
@@ -2555,7 +2562,7 @@ function renderSidebar(name) {
             <span class="rank">#${rankOf.get(p.n) || idx + 1}</span>
             <span class="pname in-graph">${p.n}</span>
             ${isCil ? getCiliaBadgeHtml(p.n) : ''}
-            <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%; background: ${getJaccardColor(p.j)};"></div></div>
+            <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%; background: ${getDistanceColor(1 - p.j)};"></div></div>
             <span class="pjaccard" title="distance = 1 − J (J = ${p.j.toFixed(3)})">${(1 - p.j).toFixed(2)}</span>
             <span class="ploss">${pLoss}L</span>
             <button class="partner-tree-btn" onclick="event.stopPropagation(); addTreeGene('${p.n}');" title="Add ${p.n} to Species Tree">+</button>
@@ -6867,7 +6874,7 @@ async function generatePresentationSlideCanvas(options = {}) {
                         const mVal = getTreeMatrixValue(gRow, gCol);
                         const jaccard = mVal === null ? 0 : mVal;
                         const cellVal = fmtJ(mVal === null ? null : 1 - mVal); // distance = 1 − Jaccard
-                        const cellColor = jaccard <= 0.001 ? (isDark ? '#0e1626' : '#ffffff') : getJaccardColor(jaccard);
+                        const cellColor = jaccard <= 0.001 ? (isDark ? '#0e1626' : '#ffffff') : getDistanceColor(1 - jaccard);
 
                         ctx.fillStyle = cellColor;
                         ctx.fill();
@@ -6919,9 +6926,9 @@ async function generatePresentationSlideCanvas(options = {}) {
             ctx.font = fs('600 10.5px ui-monospace, SFMono-Regular, monospace');
             ctx.fillStyle = P.textMuted;
             ctx.textAlign = 'left';
-            ctx.fillText('≥0.80 (Distant)', barX, legY + 42);
+            ctx.fillText('≤0.35 (Coupled)', barX, legY + 42);
             ctx.textAlign = 'right';
-            ctx.fillText('≤0.35 (Coupled)', barX + barW, legY + 42);
+            ctx.fillText('≥0.80 (Distant)', barX + barW, legY + 42);
             ctx.textAlign = 'left';
 
             // 4. Gene Status Summary Table
@@ -7202,7 +7209,7 @@ async function generatePresentationSlideCanvas(options = {}) {
 
             const fillW = Math.max(4, Math.min(bW, p.j * bW));
             drawCanvasRoundedRect(ctx, bX, bY, fillW, barH, barH / 2);
-            ctx.fillStyle = getJaccardColor(p.j);
+            ctx.fillStyle = getDistanceColor(1 - p.j);
             ctx.fill();
 
             ctx.font = fs(`bold ${jaccardFontSize} ui-monospace, SFMono-Regular, monospace`);
