@@ -1,0 +1,1973 @@
+{
+ "tax_levels": [
+  "domain",
+  "kingdom",
+  "phylum",
+  "class",
+  "order",
+  "family",
+  "genus"
+ ],
+ "species": {
+  "Ostreococcus_tauri": {
+   "sci_name": "Ostreococcus tauri",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Chlorophyta",
+   "class": "Mamiellophyceae",
+   "order": "Mamiellales",
+   "family": "Bathycoccaceae",
+   "genus": "Ostreococcus"
+  },
+  "Coleochaete_scutata": {
+   "sci_name": "Coleochaete scutata",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Coleochaetophyceae",
+   "order": "Coleochaetales",
+   "family": "Coleochaetaceae",
+   "genus": "Coleochaete"
+  },
+  "Amborella_trichopoda": {
+   "sci_name": "Amborella trichopoda",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Magnoliopsida",
+   "order": "Amborellales",
+   "family": "Amborellaceae",
+   "genus": "Amborella"
+  },
+  "Arabidopsis_thaliana": {
+   "sci_name": "Arabidopsis thaliana",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Magnoliopsida",
+   "order": "Brassicales",
+   "family": "Brassicaceae",
+   "genus": "Arabidopsis"
+  },
+  "Populus_trichocarpa": {
+   "sci_name": "Populus trichocarpa",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Magnoliopsida",
+   "order": "Malpighiales",
+   "family": "Salicaceae",
+   "genus": "Populus"
+  },
+  "Selaginella_moellendorffii": {
+   "sci_name": "Selaginella moellendorffii",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Lycopodiopsida",
+   "order": "Selaginellales",
+   "family": "Selaginellaceae",
+   "genus": "Selaginella"
+  },
+  "Marchantia_polymorpha": {
+   "sci_name": "Marchantia polymorpha",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Marchantiopsida",
+   "order": "Marchantiales",
+   "family": "Marchantiaceae",
+   "genus": "Marchantia"
+  },
+  "Physcomitrium_patens": {
+   "sci_name": "Physcomitrium patens",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Bryopsida",
+   "order": "Funariales",
+   "family": "Funariaceae",
+   "genus": "Physcomitrium"
+  },
+  "Klebsormidium_nitens": {
+   "sci_name": "Klebsormidium nitens",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Streptophyta",
+   "class": "Klebsormidiophyceae",
+   "order": "Klebsormidiales",
+   "family": "Klebsormidiaceae",
+   "genus": "Klebsormidium"
+  },
+  "Plasmopara_halstedii": {
+   "sci_name": "Plasmopara halstedii",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Oomycota",
+   "class": "Peronosporomycetes",
+   "order": "Peronosporales",
+   "family": "Peronosporaceae",
+   "genus": "Plasmopara"
+  },
+  "Phytophthora_infestans": {
+   "sci_name": "Phytophthora infestans",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Oomycota",
+   "class": "Peronosporomycetes",
+   "order": "Peronosporales",
+   "family": "Peronosporaceae",
+   "genus": "Phytophthora"
+  },
+  "Hyaloperonospora_arabidopsidis": {
+   "sci_name": "Hyaloperonospora arabidopsidis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Oomycota",
+   "class": "Peronosporomycetes",
+   "order": "Peronosporales",
+   "family": "Peronosporaceae",
+   "genus": "Hyaloperonospora"
+  },
+  "Phytopythium_vexans": {
+   "sci_name": "Phytopythium vexans",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Oomycota",
+   "class": "Peronosporomycetes",
+   "order": "Pythiales",
+   "family": "Pythiaceae",
+   "genus": "Phytopythium"
+  },
+  "Saprolegnia_diclina": {
+   "sci_name": "Saprolegnia diclina",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Oomycota",
+   "class": "Saprolegniomycetes",
+   "order": "Saprolegniales",
+   "family": "Saprolegniaceae",
+   "genus": "Saprolegnia"
+  },
+  "Ectocarpus_siliculosus": {
+   "sci_name": "Ectocarpus siliculosus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Phaeophyceae",
+   "order": "Ectocarpales",
+   "family": "Ectocarpaceae",
+   "genus": "Ectocarpus"
+  },
+  "Chattonella_subsalsa": {
+   "sci_name": "Chattonella subsalsa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Raphidophyceae",
+   "order": "Chattonellales",
+   "family": "Chattonellaceae",
+   "genus": "Chattonella"
+  },
+  "Aureococcus_anophagefferens": {
+   "sci_name": "Aureococcus anophagefferens",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Pelagophyceae",
+   "order": "Pelagomonadales",
+   "family": "Pelagomonadaceae",
+   "genus": "Aureococcus"
+  },
+  "Phaeodactylum_tricornutum": {
+   "sci_name": "Phaeodactylum tricornutum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Bacillariophyta",
+   "class": "Bacillariophyceae",
+   "order": "Surirellales",
+   "family": "Neidiaceae",
+   "genus": "Phaeodactylum"
+  },
+  "Thalassiosira_pseudonana": {
+   "sci_name": "Thalassiosira pseudonana",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Bacillariophyta",
+   "class": "Thalassiosirophyceae",
+   "order": "Thalassiosirales",
+   "family": "Thalassiosiraceae",
+   "genus": "Thalassiosira"
+  },
+  "Blastocystis_sp_subtype4-isolateWR1": {
+   "sci_name": "Blastocystis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Opalinata",
+   "family": "Blastocystidae",
+   "genus": "Blastocystis"
+  },
+  "Haloplacidia_sp_CaronLabIsolate": {
+   "sci_name": "Haloplacidia",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Placidida",
+   "family": "Placidiaceae",
+   "genus": "Haloplacidia"
+  },
+  "Cafeteria_burkhardae": {
+   "sci_name": "Cafeteria burkhardae",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Bicosoecida",
+   "family": "Cafeteriaceae",
+   "genus": "Cafeteria"
+  },
+  "Halocafeteria_seosinensis": {
+   "sci_name": "Halocafeteria seosinensis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Bicosoecida",
+   "family": "Bicosoecida",
+   "genus": "Halocafeteria"
+  },
+  "Bicosoecida_sp_ms1": {
+   "sci_name": "Bicosoecida",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Bicosoecida",
+   "family": "Bicosoecida",
+   "genus": "Bicosoecida"
+  },
+  "Aplanochytrium_stocchinoi": {
+   "sci_name": "Aplanochytrium stocchinoi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Thraustochytrida",
+   "family": "Thraustochytriidae",
+   "genus": "Aplanochytrium"
+  },
+  "Hondaea_fermentalgiana": {
+   "sci_name": "Hondaea fermentalgiana",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Bigyra",
+   "order": "Thraustochytrida",
+   "family": "Thraustochytriidae",
+   "genus": "Hondaea"
+  },
+  "MAST-04C_sp_MAST-4C-sp1": {
+   "sci_name": "MAST-04C sp MAST-4C-sp1",
+   "domain": "Unclassified",
+   "kingdom": "Unclassified",
+   "phylum": "Unclassified",
+   "class": "Unclassified",
+   "order": "Unclassified",
+   "family": "Unclassified",
+   "genus": "Unclassified"
+  },
+  "MAST-04A_sp_MAST-4A-sp1": {
+   "sci_name": "MAST-04A sp MAST-4A-sp1",
+   "domain": "Unclassified",
+   "kingdom": "Unclassified",
+   "phylum": "Unclassified",
+   "class": "Unclassified",
+   "order": "Unclassified",
+   "family": "Unclassified",
+   "genus": "Unclassified"
+  },
+  "MAST-03A_sp_MAST-3A-sp1": {
+   "sci_name": "MAST-03A sp MAST-3A-sp1",
+   "domain": "Unclassified",
+   "kingdom": "Unclassified",
+   "phylum": "Unclassified",
+   "class": "Unclassified",
+   "order": "Unclassified",
+   "family": "Unclassified",
+   "genus": "Unclassified"
+  },
+  "Mataza_sp_D1": {
+   "sci_name": "Mataza",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Cercozoa",
+   "class": "Thecofilosea",
+   "order": "Thecofilosea",
+   "family": "Thecofilosea",
+   "genus": "Mataza"
+  },
+  "Paulinella_micropora": {
+   "sci_name": "Paulinella micropora",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Cercozoa",
+   "class": "Imbricatea",
+   "order": "Euglyphida",
+   "family": "Paulinellidae",
+   "genus": "Paulinella"
+  },
+  "Paulinella_chromatophora": {
+   "sci_name": "Paulinella chromatophora",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Cercozoa",
+   "class": "Imbricatea",
+   "order": "Euglyphida",
+   "family": "Paulinellidae",
+   "genus": "Paulinella"
+  },
+  "Brevimastigomonas_motovehiculus": {
+   "sci_name": "Brevimastigomonas motovehiculus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Cercozoa",
+   "class": "Cercozoa",
+   "order": "Cercomonadida",
+   "family": "Cercomonadidae",
+   "genus": "Brevimastigomonas"
+  },
+  "Bigelowiella_natans": {
+   "sci_name": "Bigelowiella natans",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Cercozoa",
+   "class": "Chlorarachniophyceae",
+   "order": "Chlorarachniophyceae",
+   "family": "Chlorarachniophyceae",
+   "genus": "Bigelowiella"
+  },
+  "Nonionella_stella": {
+   "sci_name": "Nonionella stella",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Foraminifera",
+   "class": "Foraminifera",
+   "order": "Rotaliida",
+   "family": "Nonionidae",
+   "genus": "Nonionella"
+  },
+  "Lapot_gusevi": {
+   "sci_name": "Lapot gusevi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Aquavolonida",
+   "family": "Aquavolonida",
+   "genus": "Lapot"
+  },
+  "Leptophrys_vorax": {
+   "sci_name": "Leptophrys vorax",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Endomyxa",
+   "class": "Endomyxa",
+   "order": "Vampyrellida",
+   "family": "Leptophryidae",
+   "genus": "Leptophrys"
+  },
+  "Plasmodiophora_brassicae": {
+   "sci_name": "Plasmodiophora brassicae",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Endomyxa",
+   "class": "Phytomyxea",
+   "order": "Plasmodiophorida",
+   "family": "Plasmodiophoridae",
+   "genus": "Plasmodiophora"
+  },
+  "Reticulomyxa_filosa": {
+   "sci_name": "Reticulomyxa filosa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Foraminifera",
+   "class": "Foraminifera",
+   "order": "Foraminifera",
+   "family": "Reticulomyxidae",
+   "genus": "Reticulomyxa"
+  },
+  "Cryptosporidium_parvum": {
+   "sci_name": "Cryptosporidium parvum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Apicomplexa",
+   "class": "Conoidasida",
+   "order": "Eucoccidiorida",
+   "family": "Cryptosporidiidae",
+   "genus": "Cryptosporidium"
+  },
+  "Cryptosporidium_muris": {
+   "sci_name": "Cryptosporidium muris",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Apicomplexa",
+   "class": "Conoidasida",
+   "order": "Eucoccidiorida",
+   "family": "Cryptosporidiidae",
+   "genus": "Cryptosporidium"
+  },
+  "Gregarina_niphandrodes": {
+   "sci_name": "Gregarina niphandrodes",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Apicomplexa",
+   "class": "Conoidasida",
+   "order": "Eugregarinorida",
+   "family": "Gregarinidae",
+   "genus": "Gregarina"
+  },
+  "Theileria_parva": {
+   "sci_name": "Theileria parva",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Apicomplexa",
+   "class": "Aconoidasida",
+   "order": "Piroplasmida",
+   "family": "Theileriidae",
+   "genus": "Theileria"
+  },
+  "Plasmodium_falciparum": {
+   "sci_name": "Plasmodium falciparum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Apicomplexa",
+   "class": "Aconoidasida",
+   "order": "Haemosporida",
+   "family": "Plasmodiidae",
+   "genus": "Plasmodium"
+  },
+  "Toxoplasma_gondii": {
+   "sci_name": "Toxoplasma gondii",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Apicomplexa",
+   "class": "Conoidasida",
+   "order": "Eucoccidiorida",
+   "family": "Sarcocystidae",
+   "genus": "Toxoplasma"
+  },
+  "Vitrella_brassicaformis": {
+   "sci_name": "Vitrella brassicaformis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Vitrellaceae",
+   "genus": "Vitrella"
+  },
+  "Chromera_velia": {
+   "sci_name": "Chromera velia",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Chromeraceae",
+   "genus": "Chromera"
+  },
+  "Symbiodinium_sp_Y106": {
+   "sci_name": "Symbiodinium",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Dinophyceae",
+   "order": "Suessiales",
+   "family": "Symbiodiniaceae",
+   "genus": "Symbiodinium"
+  },
+  "Hematodinium_sp_SG-2012": {
+   "sci_name": "Hematodinium",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Dinophyceae",
+   "order": "Syndiniales",
+   "family": "Syndiniaceae",
+   "genus": "Hematodinium"
+  },
+  "Perkinsus_marinus": {
+   "sci_name": "Perkinsus marinus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Perkinsozoa",
+   "class": "Perkinsozoa",
+   "order": "Perkinsida",
+   "family": "Perkinsidae",
+   "genus": "Perkinsus"
+  },
+  "Oxyrrhis_marina": {
+   "sci_name": "Oxyrrhis marina",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Dinophyceae",
+   "order": "Oxyrrhinales",
+   "family": "Oxyrrhinaceae",
+   "genus": "Oxyrrhis"
+  },
+  "Paramecium_tetraurelia": {
+   "sci_name": "Paramecium tetraurelia",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Ciliophora",
+   "class": "Oligohymenophorea",
+   "order": "Peniculida",
+   "family": "Parameciidae",
+   "genus": "Paramecium"
+  },
+  "Tetrahymena_thermophila": {
+   "sci_name": "Tetrahymena thermophila",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Ciliophora",
+   "class": "Oligohymenophorea",
+   "order": "Hymenostomatida",
+   "family": "Tetrahymenidae",
+   "genus": "Tetrahymena"
+  },
+  "Sterkiella_histriomuscorum": {
+   "sci_name": "Sterkiella histriomuscorum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Ciliophora",
+   "class": "Spirotrichea",
+   "order": "Sporadotrichida",
+   "family": "Oxytrichidae",
+   "genus": "Sterkiella"
+  },
+  "Protocruzia_adherens": {
+   "sci_name": "Protocruzia adhaerens",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Ciliophora",
+   "class": "Spirotrichea",
+   "order": "Spirotrichea",
+   "family": "Spirotrichea",
+   "genus": "Protocruzia"
+  },
+  "Colponemidia_sp_Colp-10": {
+   "sci_name": "Colponemidia",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Colponemida",
+   "family": "Colponemidia",
+   "genus": "Colponemidia"
+  },
+  "Colponemidia_sp_Colp-15": {
+   "sci_name": "Colponemidia",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Colponemida",
+   "family": "Colponemidia",
+   "genus": "Colponemidia"
+  },
+  "Colponema_vietnamica": {
+   "sci_name": "Colponema vietnamica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Colponemida",
+   "family": "Colponemidia",
+   "genus": "Colponema"
+  },
+  "Mnemiopsis_leidyi": {
+   "sci_name": "Mnemiopsis leidyi",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Ctenophora",
+   "class": "Tentaculata",
+   "order": "Lobata",
+   "family": "Bolinopsidae",
+   "genus": "Mnemiopsis"
+  },
+  "Amphimedon_queenslandica": {
+   "sci_name": "Amphimedon queenslandica",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Porifera",
+   "class": "Demospongiae",
+   "order": "Haplosclerida",
+   "family": "Niphatidae",
+   "genus": "Amphimedon"
+  },
+  "Capitella_teleta": {
+   "sci_name": "Capitella teleta",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Annelida",
+   "class": "Polychaeta",
+   "order": "Polychaeta",
+   "family": "Capitellidae",
+   "genus": "Capitella"
+  },
+  "Strongylocentrotus_purpuratus": {
+   "sci_name": "Strongylocentrotus purpuratus",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Echinodermata",
+   "class": "Echinoidea",
+   "order": "Camarodonta",
+   "family": "Strongylocentrotidae",
+   "genus": "Strongylocentrotus"
+  },
+  "Ciona_intestinalis": {
+   "sci_name": "Ciona intestinalis",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Chordata",
+   "class": "Ascidiacea",
+   "order": "Phlebobranchia",
+   "family": "Cionidae",
+   "genus": "Ciona"
+  },
+  "Homo_sapiens": {
+   "sci_name": "Homo sapiens",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Chordata",
+   "class": "Mammalia",
+   "order": "Primates",
+   "family": "Hominidae",
+   "genus": "Homo"
+  },
+  "Gallus_gallus": {
+   "sci_name": "Gallus gallus",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Chordata",
+   "class": "Aves",
+   "order": "Galliformes",
+   "family": "Phasianidae",
+   "genus": "Gallus"
+  },
+  "Danio_rerio": {
+   "sci_name": "Danio rerio",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Chordata",
+   "class": "Actinopteri",
+   "order": "Cypriniformes",
+   "family": "Danionidae",
+   "genus": "Danio"
+  },
+  "Branchiostoma_floridae": {
+   "sci_name": "Branchiostoma floridae",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Chordata",
+   "class": "Leptocardii",
+   "order": "Amphioxiformes",
+   "family": "Branchiostomatidae",
+   "genus": "Branchiostoma"
+  },
+  "Caligus_rogercresseyi": {
+   "sci_name": "Caligus rogercresseyi",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Arthropoda",
+   "class": "Copepoda",
+   "order": "Siphonostomatoida",
+   "family": "Caligidae",
+   "genus": "Caligus"
+  },
+  "Calanus_glacialis": {
+   "sci_name": "Calanus glacialis",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Arthropoda",
+   "class": "Copepoda",
+   "order": "Calanoida",
+   "family": "Calanidae",
+   "genus": "Calanus"
+  },
+  "Drosophila_melanogaster": {
+   "sci_name": "Drosophila melanogaster",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Arthropoda",
+   "class": "Insecta",
+   "order": "Diptera",
+   "family": "Drosophilidae",
+   "genus": "Drosophila"
+  },
+  "Nematostella_vectensis": {
+   "sci_name": "Nematostella vectensis",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Cnidaria",
+   "class": "Anthozoa",
+   "order": "Actiniaria",
+   "family": "Edwardsiidae",
+   "genus": "Nematostella"
+  },
+  "Oscarella_pearsei": {
+   "sci_name": "Oscarella pearsei",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Porifera",
+   "class": "Homoscleromorpha",
+   "order": "Homosclerophorida",
+   "family": "Oscarellidae",
+   "genus": "Oscarella"
+  },
+  "Trichoplax_sp_H2": {
+   "sci_name": "Trichoplax",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Placozoa",
+   "class": "Uniplacotomia",
+   "order": "Trichoplacea",
+   "family": "Trichoplacidae",
+   "genus": "Trichoplax"
+  },
+  "Caenorhabditis_elegans": {
+   "sci_name": "Caenorhabditis elegans",
+   "domain": "Eukaryota",
+   "kingdom": "Metazoa",
+   "phylum": "Nematoda",
+   "class": "Chromadorea",
+   "order": "Rhabditida",
+   "family": "Rhabditidae",
+   "genus": "Caenorhabditis"
+  },
+  "Monosiga_brevicollis": {
+   "sci_name": "Monosiga brevicollis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Choanoflagellata",
+   "order": "Craspedida",
+   "family": "Salpingoecidae",
+   "genus": "Monosiga"
+  },
+  "Salpingoeca_rosetta": {
+   "sci_name": "Salpingoeca rosetta",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Choanoflagellata",
+   "order": "Craspedida",
+   "family": "Salpingoecidae",
+   "genus": "Salpingoeca"
+  },
+  "Salpingoeca_dolichothecata": {
+   "sci_name": "Salpingoeca dolichothecata",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Choanoflagellata",
+   "order": "Craspedida",
+   "family": "Salpingoecidae",
+   "genus": "Salpingoeca"
+  },
+  "Salpingoeca_kvevrii": {
+   "sci_name": "Salpingoeca kvevrii",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Choanoflagellata",
+   "order": "Craspedida",
+   "family": "Salpingoecidae",
+   "genus": "Salpingoeca"
+  },
+  "Diaphanoeca_grandis": {
+   "sci_name": "Diaphanoeca grandis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Choanoflagellata",
+   "order": "Acanthoecida",
+   "family": "Stephanoecidae",
+   "genus": "Diaphanoeca"
+  },
+  "Codosiga_hollandica": {
+   "sci_name": "Codosiga hollandica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Choanoflagellata",
+   "order": "Craspedida",
+   "family": "Salpingoecidae",
+   "genus": "Codosiga"
+  },
+  "Amoebidium_parasiticum": {
+   "sci_name": "Amoebidium parasiticum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Ichthyosporea",
+   "order": "Ichthyophonida",
+   "family": "Amoebidiaceae",
+   "genus": "Amoebidium"
+  },
+  "Ichthyophonus_hoferi": {
+   "sci_name": "Ichthyophonus hoferi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Ichthyosporea",
+   "order": "Ichthyophonida",
+   "family": "Ichthyophonidae",
+   "genus": "Ichthyophonus"
+  },
+  "Sphaeroforma_arctica": {
+   "sci_name": "Sphaeroforma arctica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Ichthyosporea",
+   "order": "Ichthyophonida",
+   "family": "Ichthyophonida",
+   "genus": "Sphaeroforma"
+  },
+  "Creolimax_fragrantissima": {
+   "sci_name": "Creolimax fragrantissima",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Ichthyosporea",
+   "order": "Ichthyophonida",
+   "family": "Ichthyophonida",
+   "genus": "Creolimax"
+  },
+  "Sphaerothecum_destruens": {
+   "sci_name": "Sphaerothecum destruens",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Ichthyosporea",
+   "order": "Dermocystida",
+   "family": "Dermocystida",
+   "genus": "Sphaerothecum"
+  },
+  "Syssomonas_multiformis": {
+   "sci_name": "Syssomonas multiformis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Eukaryota",
+   "genus": "Syssomonas"
+  },
+  "Capsaspora_owczarzaki": {
+   "sci_name": "Capsaspora owczarzaki",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Filasterea",
+   "order": "Filasterea",
+   "family": "Filasterea",
+   "genus": "Capsaspora"
+  },
+  "Corallochytrium_limacisporum": {
+   "sci_name": "Corallochytrium limacisporum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Eukaryota",
+   "genus": "Corallochytrium"
+  },
+  "Rhizopus_delemar": {
+   "sci_name": "Rhizopus delemar",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Mucoromycota",
+   "class": "Mucoromycetes",
+   "order": "Mucorales",
+   "family": "Rhizopodaceae",
+   "genus": "Rhizopus"
+  },
+  "Rhizophagus_irregularis": {
+   "sci_name": "Rhizophagus irregularis",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Glomeromycota",
+   "class": "Glomeromycetes",
+   "order": "Glomerales",
+   "family": "Glomeraceae",
+   "genus": "Rhizophagus"
+  },
+  "Conidiobolus_coronatus": {
+   "sci_name": "Conidiobolus coronatus",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Entomophthoromycota",
+   "class": "Entomophthoromycetes",
+   "order": "Entomophthorales",
+   "family": "Ancylistaceae",
+   "genus": "Conidiobolus"
+  },
+  "Yarrowia_lipolytica": {
+   "sci_name": "Yarrowia lipolytica",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Ascomycota",
+   "class": "Dipodascomycetes",
+   "order": "Dipodascales",
+   "family": "Dipodascales",
+   "genus": "Yarrowia"
+  },
+  "Saccharomyces_cerevisiae": {
+   "sci_name": "Saccharomyces cerevisiae",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Ascomycota",
+   "class": "Saccharomycetes",
+   "order": "Saccharomycetales",
+   "family": "Saccharomycetaceae",
+   "genus": "Saccharomyces"
+  },
+  "Aspergillus_nidulans": {
+   "sci_name": "Aspergillus nidulans",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Ascomycota",
+   "class": "Eurotiomycetes",
+   "order": "Eurotiales",
+   "family": "Aspergillaceae",
+   "genus": "Aspergillus"
+  },
+  "Neurospora_crassa": {
+   "sci_name": "Neurospora crassa",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Ascomycota",
+   "class": "Sordariomycetes",
+   "order": "Sordariales",
+   "family": "Sordariaceae",
+   "genus": "Neurospora"
+  },
+  "Schizosaccharomyces_pombe": {
+   "sci_name": "Schizosaccharomyces pombe",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Ascomycota",
+   "class": "Schizosaccharomycetes",
+   "order": "Schizosaccharomycetales",
+   "family": "Schizosaccharomycetaceae",
+   "genus": "Schizosaccharomyces"
+  },
+  "Cryptococcus_neoformans": {
+   "sci_name": "Cryptococcus neoformans",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Basidiomycota",
+   "class": "Tremellomycetes",
+   "order": "Tremellales",
+   "family": "Cryptococcaceae",
+   "genus": "Cryptococcus"
+  },
+  "Ustilago_maydis": {
+   "sci_name": "Mycosarcoma maydis",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Basidiomycota",
+   "class": "Ustilaginomycetes",
+   "order": "Ustilaginales",
+   "family": "Ustilaginales",
+   "genus": "Mycosarcoma"
+  },
+  "Allomyces_macrogynus": {
+   "sci_name": "Allomyces macrogynus",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Blastocladiomycota",
+   "class": "Blastocladiomycetes",
+   "order": "Blastocladiales",
+   "family": "Blastocladiaceae",
+   "genus": "Allomyces"
+  },
+  "Batrachochytrium_dendrobatidis": {
+   "sci_name": "Batrachochytrium dendrobatidis",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Chytridiomycota",
+   "class": "Chytridiomycetes",
+   "order": "Rhizophydiales",
+   "family": "Rhizophydiales",
+   "genus": "Batrachochytrium"
+  },
+  "Paraphelidium_tribonemae": {
+   "sci_name": "Paraphelidium tribonematis",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Aphelidiomycota",
+   "class": "Aphelidea",
+   "order": "Aphelidea",
+   "family": "Aphelidiaceae",
+   "genus": "Paraphelidium"
+  },
+  "Rozella_allomycis": {
+   "sci_name": "Rozella allomycis",
+   "domain": "Eukaryota",
+   "kingdom": "Fungi",
+   "phylum": "Rozellomycota",
+   "class": "Rozellomycota",
+   "order": "Rozellomycota",
+   "family": "Rozellomycota",
+   "genus": "Rozella"
+  },
+  "Parvularia_atlantis": {
+   "sci_name": "Parvularia atlantis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Rotosphaerida",
+   "family": "Rotosphaerida",
+   "genus": "Parvularia"
+  },
+  "Fonticula_alba": {
+   "sci_name": "Fonticula alba",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Rotosphaerida",
+   "family": "Fonticulaceae",
+   "genus": "Fonticula"
+  },
+  "Vermamoeba_vermiformis": {
+   "sci_name": "Vermamoeba vermiformis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Tubulinea",
+   "class": "Echinamoebida",
+   "order": "Echinamoebida",
+   "family": "Vermamoebidae",
+   "genus": "Vermamoeba"
+  },
+  "Amoeba_proteus": {
+   "sci_name": "Amoeba proteus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Tubulinea",
+   "class": "Elardia",
+   "order": "Euamoebida",
+   "family": "Amoebidae",
+   "genus": "Amoeba"
+  },
+  "Arcella_intermedia": {
+   "sci_name": "Arcella intermedia",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Tubulinea",
+   "class": "Elardia",
+   "order": "Arcellinida",
+   "family": "Arcellidae",
+   "genus": "Arcella"
+  },
+  "Dictyostelium_discoideum": {
+   "sci_name": "Dictyostelium discoideum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Evosea",
+   "class": "Eumycetozoa",
+   "order": "Dictyosteliales",
+   "family": "Dictyosteliaceae",
+   "genus": "Dictyostelium"
+  },
+  "Filamoeba_sp_ATCC50430": {
+   "sci_name": "Filamoeba",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Evosea",
+   "class": "Variosea",
+   "order": "Variosea",
+   "family": "Variosea",
+   "genus": "Filamoeba"
+  },
+  "Dracoamoeba_jomungandri": {
+   "sci_name": "Dracoamoeba jomungandri",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Discosea",
+   "class": "Discosea",
+   "order": "Longamoebia",
+   "family": "Acanthamoebidae",
+   "genus": "Dracoamoeba"
+  },
+  "Acanthamoeba_castellanii": {
+   "sci_name": "Acanthamoeba castellanii",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Discosea",
+   "class": "Discosea",
+   "order": "Longamoebia",
+   "family": "Acanthamoebidae",
+   "genus": "Acanthamoeba"
+  },
+  "Mastigamoeba_balamuthi": {
+   "sci_name": "Mastigamoeba balamuthi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Evosea",
+   "class": "Evosea",
+   "order": "Mastigamoebida",
+   "family": "Mastigamoebidae",
+   "genus": "Mastigamoeba"
+  },
+  "Thecamonas_trahens": {
+   "sci_name": "Thecamonas trahens",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Apusomonadida",
+   "family": "Apusomonadidae",
+   "genus": "Thecamonas"
+  },
+  "Apusomonadida_sp_AF-17": {
+   "sci_name": "Apusomonadida",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Apusomonadida",
+   "family": "Apusomonadida",
+   "genus": "Apusomonadida"
+  },
+  "Raphidiophrys_heterophryoidea": {
+   "sci_name": "Raphidiophrys heterophryoidea",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Centroplasthelida",
+   "order": "Pterocystida",
+   "family": "Raphidiophryidae",
+   "genus": "Raphidiophrys"
+  },
+  "Acanthocystis_sp_HF-20": {
+   "sci_name": "Acanthocystis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Centroplasthelida",
+   "order": "Acanthocystida",
+   "family": "Acanthocystidae",
+   "genus": "Acanthocystis"
+  },
+  "Pterocystis_sp_00344": {
+   "sci_name": "Pterocystis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Centroplasthelida",
+   "order": "Pterocystida",
+   "family": "Pterocystidae",
+   "genus": "Pterocystis"
+  },
+  "Choanocystis_sp_HF-7": {
+   "sci_name": "Choanocystis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Centroplasthelida",
+   "order": "Pterocystida",
+   "family": "Choanocystidae",
+   "genus": "Choanocystis"
+  },
+  "Gefionella_okellyi": {
+   "sci_name": "Gefionella okellyi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Malawimonada",
+   "class": "Malawimonadea",
+   "order": "Malawimonadida",
+   "family": "Malawimonadidae",
+   "genus": "Gefionella"
+  },
+  "Diphylleia_rotans": {
+   "sci_name": "Diphylleia rotans",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Collodictyonidae",
+   "genus": "Diphylleia"
+  },
+  "Rigifila_ramosa": {
+   "sci_name": "Rigifila ramosa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Rigifilida",
+   "family": "Rigifilida",
+   "genus": "Rigifila"
+  },
+  "Mantamonas_plastica": {
+   "sci_name": "Mantamonas plastica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Mantamonadidae",
+   "genus": "Mantamonas"
+  },
+  "Giardia_intestinalis": {
+   "sci_name": "Giardia duodenalis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Fornicata",
+   "class": "Fornicata",
+   "order": "Diplomonadida",
+   "family": "Hexamitidae",
+   "genus": "Giardia"
+  },
+  "Dysnectes_brevis": {
+   "sci_name": "Dysnectes brevis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Fornicata",
+   "class": "Fornicata",
+   "order": "Fornicata",
+   "family": "Fornicata",
+   "genus": "Dysnectes"
+  },
+  "Kipferlia_bialata": {
+   "sci_name": "Kipferlia bialata",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Fornicata",
+   "class": "Fornicata",
+   "order": "Fornicata",
+   "family": "Fornicata",
+   "genus": "Kipferlia"
+  },
+  "Carpediemonas_membranifera": {
+   "sci_name": "Carpediemonas membranifera",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Fornicata",
+   "class": "Fornicata",
+   "order": "Fornicata",
+   "family": "Fornicata",
+   "genus": "Carpediemonas"
+  },
+  "Barthelona_sp_PAP020": {
+   "sci_name": "Barthelona",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Eukaryota",
+   "genus": "Barthelona"
+  },
+  "Tritrichomonas_foetus": {
+   "sci_name": "Tritrichomonas foetus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Parabasalia",
+   "class": "Parabasalia",
+   "order": "Tritrichomonadida",
+   "family": "Tritrichomonadidae",
+   "genus": "Tritrichomonas"
+  },
+  "Trichomonas_vaginalis": {
+   "sci_name": "Trichomonas vaginalis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Parabasalia",
+   "class": "Parabasalia",
+   "order": "Trichomonadida",
+   "family": "Trichomonadidae",
+   "genus": "Trichomonas"
+  },
+  "Entamoeba_histolytica": {
+   "sci_name": "Entamoeba histolytica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Evosea",
+   "class": "Evosea",
+   "order": "Mastigamoebida",
+   "family": "Entamoebidae",
+   "genus": "Entamoeba"
+  },
+  "Anaeramoeba_ignava": {
+   "sci_name": "Anaeramoeba ignava",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Anaeramoebidae",
+   "genus": "Anaeramoeba"
+  },
+  "Anaeramoeba_flamelloides": {
+   "sci_name": "Anaeramoeba flamelloides",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Anaeramoebidae",
+   "genus": "Anaeramoeba"
+  },
+  "Monocercomonoides_exilis": {
+   "sci_name": "Monocercomonoides exilis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Preaxostyla",
+   "class": "Preaxostyla",
+   "order": "Oxymonadida",
+   "family": "Polymastigidae",
+   "genus": "Monocercomonoides"
+  },
+  "Paratrimastix_pyriformis": {
+   "sci_name": "Paratrimastix pyriformis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Preaxostyla",
+   "class": "Preaxostyla",
+   "order": "Preaxostyla",
+   "family": "Paratrimastigidae",
+   "genus": "Paratrimastix"
+  },
+  "Trimastix_marina": {
+   "sci_name": "Trimastix marina",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Preaxostyla",
+   "class": "Preaxostyla",
+   "order": "Preaxostyla",
+   "family": "Trimastigidae",
+   "genus": "Trimastix"
+  },
+  "Pygsuia_biforma": {
+   "sci_name": "Pygsuia biforma",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Breviatea",
+   "order": "Breviatea",
+   "family": "Breviatea",
+   "genus": "Pygsuia"
+  },
+  "Lenisia_limosa": {
+   "sci_name": "Lenisia limosa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Breviatea",
+   "order": "Breviatea",
+   "family": "Breviatea",
+   "genus": "Lenisia"
+  },
+  "Leishmania_major": {
+   "sci_name": "Leishmania major",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Kinetoplastea",
+   "order": "Trypanosomatida",
+   "family": "Trypanosomatidae",
+   "genus": "Leishmania"
+  },
+  "Trypanosoma_brucei": {
+   "sci_name": "Trypanosoma brucei",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Kinetoplastea",
+   "order": "Trypanosomatida",
+   "family": "Trypanosomatidae",
+   "genus": "Trypanosoma"
+  },
+  "Trypanosoma_cruzi": {
+   "sci_name": "Trypanosoma cruzi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Kinetoplastea",
+   "order": "Trypanosomatida",
+   "family": "Trypanosomatidae",
+   "genus": "Trypanosoma"
+  },
+  "Bodo_saltans": {
+   "sci_name": "Bodo saltans",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Kinetoplastea",
+   "order": "Eubodonida",
+   "family": "Bodonidae",
+   "genus": "Bodo"
+  },
+  "Neobodo_designis": {
+   "sci_name": "Neobodo designis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Kinetoplastea",
+   "order": "Neobodonida",
+   "family": "Neobodonidae",
+   "genus": "Neobodo"
+  },
+  "Hemistasia_phaeocysticola": {
+   "sci_name": "Hemistasia phaeocysticola",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Diplonemea",
+   "order": "Diplonemida",
+   "family": "Hemistasiidae",
+   "genus": "Hemistasia"
+  },
+  "Sulcionema_specki": {
+   "sci_name": "Sulcionema specki",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Diplonemea",
+   "order": "Diplonemida",
+   "family": "Diplonemidae",
+   "genus": "Sulcionema"
+  },
+  "Rhynchopus_humris": {
+   "sci_name": "Rhynchopus humris",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Diplonemea",
+   "order": "Diplonemida",
+   "family": "Diplonemidae",
+   "genus": "Rhynchopus"
+  },
+  "Euglena_gracilis": {
+   "sci_name": "Euglena gracilis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Euglenophyceae",
+   "order": "Euglenales",
+   "family": "Euglenaceae",
+   "genus": "Euglena"
+  },
+  "Euglena_longa": {
+   "sci_name": "Euglena longa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Euglenophyceae",
+   "order": "Euglenales",
+   "family": "Euglenaceae",
+   "genus": "Euglena"
+  },
+  "Entosiphon_sulcatum": {
+   "sci_name": "Entosiphon sulcatum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Euglenozoa",
+   "class": "Entosiphonea",
+   "order": "Entosiphonida",
+   "family": "Entosiphonidae",
+   "genus": "Entosiphon"
+  },
+  "Percolomonas_sp_WS": {
+   "sci_name": "Percolomonas",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Heterolobosea",
+   "class": "Eutetramitea",
+   "order": "Percolomonadida",
+   "family": "Percolomonadidae",
+   "genus": "Percolomonas"
+  },
+  "Naegleria_gruberi": {
+   "sci_name": "Naegleria gruberi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Heterolobosea",
+   "class": "Eutetramitea",
+   "order": "Acrasida",
+   "family": "Naegleriidae",
+   "genus": "Naegleria"
+  },
+  "Neovahlkampfia_damariscottae": {
+   "sci_name": "Neovahlkampfia damariscottae",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Heterolobosea",
+   "class": "Selenaionea",
+   "order": "Neovahlkampfiida",
+   "family": "Neovahlkampfiidae",
+   "genus": "Neovahlkampfia"
+  },
+  "Pharyngomonas_kirbyi": {
+   "sci_name": "Pharyngomonas kirbyi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Heterolobosea",
+   "class": "Pharyngomonadea",
+   "order": "Pharyngomonadida",
+   "family": "Pharyngomonadidae",
+   "genus": "Pharyngomonas"
+  },
+  "Stygiella_incarcerata": {
+   "sci_name": "Stygiella incarcerata",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Jakobea",
+   "order": "Jakobida",
+   "family": "Stygiellidae",
+   "genus": "Stygiella"
+  },
+  "Andalucia_godoyi": {
+   "sci_name": "Andalucia godoyi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Jakobea",
+   "order": "Jakobida",
+   "family": "Andaluciidae",
+   "genus": "Andalucia"
+  },
+  "Fabomonas_tropica": {
+   "sci_name": "Fabomonas tropica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Ancyromonadida",
+   "family": "Planomonadidae",
+   "genus": "Fabomonas"
+  },
+  "Nutomonas_longa": {
+   "sci_name": "Striomonas longa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Ancyromonadida",
+   "family": "Ancyromonadidae",
+   "genus": "Striomonas"
+  },
+  "Ancyromonas_sigmoides": {
+   "sci_name": "Ancyromonas sigmoides",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Ancyromonadida",
+   "family": "Ancyromonadidae",
+   "genus": "Ancyromonas"
+  },
+  "Spironema_sp_BW2": {
+   "sci_name": "Spironema",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Hemimastigophora",
+   "class": "Hemimastigophora",
+   "order": "Hemimastigophora",
+   "family": "Spironemidae",
+   "genus": "Spironema"
+  },
+  "Hemimastix_kukwesjijk": {
+   "sci_name": "Hemimastix kukwesjijk",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Hemimastigophora",
+   "class": "Hemimastigophora",
+   "order": "Hemimastigophora",
+   "family": "Spironemidae",
+   "genus": "Hemimastix"
+  },
+  "Ancoracysta_twista": {
+   "sci_name": "Ancoracysta twista",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Nebulidia",
+   "class": "Nebulidea",
+   "order": "Nebulidida",
+   "family": "Nebulidae",
+   "genus": "Ancoracysta"
+  },
+  "Baffinella_frigidus": {
+   "sci_name": "Baffinella frigidus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Cryptophyceae",
+   "order": "Cryptomonadales",
+   "family": "Baffinellaceae",
+   "genus": "Baffinella"
+  },
+  "Guillardia_theta": {
+   "sci_name": "Guillardia theta",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Cryptophyceae",
+   "order": "Pyrenomonadales",
+   "family": "Geminigeraceae",
+   "genus": "Guillardia"
+  },
+  "Geminigera_cryophila": {
+   "sci_name": "Geminigera cryophila",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Cryptophyceae",
+   "order": "Pyrenomonadales",
+   "family": "Geminigeraceae",
+   "genus": "Geminigera"
+  },
+  "Cryptomonas_curvata": {
+   "sci_name": "Cryptomonas curvata",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Cryptophyceae",
+   "order": "Cryptomonadales",
+   "family": "Cryptomonadaceae",
+   "genus": "Cryptomonas"
+  },
+  "Goniomonas_avonlea": {
+   "sci_name": "Goniomonas avonlea",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Cryptophyceae",
+   "order": "Goniomonadida",
+   "family": "Goniomonadaceae",
+   "genus": "Goniomonas"
+  },
+  "Goniomonas_pacifica": {
+   "sci_name": "Goniomonas pacifica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Cryptophyceae",
+   "order": "Goniomonadida",
+   "family": "Goniomonadaceae",
+   "genus": "Goniomonas"
+  },
+  "Phaeocystis_rex": {
+   "sci_name": "Phaeocystis rex",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Haptophyta",
+   "class": "Haptophyta",
+   "order": "Phaeocystales",
+   "family": "Phaeocystaceae",
+   "genus": "Phaeocystis"
+  },
+  "Chrysochromulina_tobinii": {
+   "sci_name": "Chrysochromulina tobinii",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Haptophyta",
+   "class": "Haptophyta",
+   "order": "Prymnesiales",
+   "family": "Chrysochromulinaceae",
+   "genus": "Chrysochromulina"
+  },
+  "Prymnesium_parvum": {
+   "sci_name": "Prymnesium parvum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Haptophyta",
+   "class": "Haptophyta",
+   "order": "Prymnesiales",
+   "family": "Prymnesiaceae",
+   "genus": "Prymnesium"
+  },
+  "Gephyrocapsa_oceanica": {
+   "sci_name": "Gephyrocapsa oceanica",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Haptophyta",
+   "class": "Haptophyta",
+   "order": "Isochrysidales",
+   "family": "Noelaerhabdaceae",
+   "genus": "Gephyrocapsa"
+  },
+  "Emiliania_huxleyi": {
+   "sci_name": "Emiliania huxleyi",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Haptophyta",
+   "class": "Haptophyta",
+   "order": "Isochrysidales",
+   "family": "Noelaerhabdaceae",
+   "genus": "Emiliania"
+  },
+  "Diacronema_sp_CCMP2436": {
+   "sci_name": "Diacronema",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Haptophyta",
+   "class": "Pavlovophyceae",
+   "order": "Pavlovales",
+   "family": "Pavlovaceae",
+   "genus": "Diacronema"
+  },
+  "Telonema_sp_P-2": {
+   "sci_name": "Telonema",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Telonemia",
+   "class": "Telonemia",
+   "order": "Telonemida",
+   "family": "Telonemidae",
+   "genus": "Telonema"
+  },
+  "Telonema_subtile": {
+   "sci_name": "Telonema subtile",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Telonemia",
+   "class": "Telonemia",
+   "order": "Telonemida",
+   "family": "Telonemidae",
+   "genus": "Telonema"
+  },
+  "Galdieria_sulphuraria": {
+   "sci_name": "Galdieria sulphuraria",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Bangiophyceae",
+   "order": "Galdieriales",
+   "family": "Galdieriaceae",
+   "genus": "Galdieria"
+  },
+  "Cyanidioschyzon_merolae": {
+   "sci_name": "Cyanidioschyzon merolae",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Bangiophyceae",
+   "order": "Cyanidiales",
+   "family": "Cyanidiaceae",
+   "genus": "Cyanidioschyzon"
+  },
+  "Eucheuma_denticulatum": {
+   "sci_name": "Eucheuma denticulatum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Florideophyceae",
+   "order": "Gigartinales",
+   "family": "Solieriaceae",
+   "genus": "Eucheuma"
+  },
+  "Chondrus_crispus": {
+   "sci_name": "Chondrus crispus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Florideophyceae",
+   "order": "Gigartinales",
+   "family": "Gigartinaceae",
+   "genus": "Chondrus"
+  },
+  "Gracilariopsis_chorda": {
+   "sci_name": "Gracilariopsis chorda",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Florideophyceae",
+   "order": "Gracilariales",
+   "family": "Gracilariaceae",
+   "genus": "Gracilariopsis"
+  },
+  "Porphyra_purpurea": {
+   "sci_name": "Porphyra purpurea",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Bangiophyceae",
+   "order": "Bangiales",
+   "family": "Bangiaceae",
+   "genus": "Porphyra"
+  },
+  "Porphyridium_aerugineum": {
+   "sci_name": "Porphyridium aerugineum",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Bangiophyceae",
+   "order": "Porphyridiales",
+   "family": "Porphyridiaceae",
+   "genus": "Porphyridium"
+  },
+  "Rhodosorus_marinus": {
+   "sci_name": "Rhodosorus marinus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Stylonematophyceae",
+   "order": "Stylonematales",
+   "family": "Stylonemataceae",
+   "genus": "Rhodosorus"
+  },
+  "Bangiopsis_sp_CCMP1999": {
+   "sci_name": "Bangiopsis",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Stylonematophyceae",
+   "order": "Stylonematales",
+   "family": "Stylonemataceae",
+   "genus": "Bangiopsis"
+  },
+  "Madagascaria_erythrocladioides": {
+   "sci_name": "Madagascaria erythrocladioides",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Rhodophyta",
+   "class": "Compsopogonophyceae",
+   "order": "Erythropeltidales",
+   "family": "Erythrotrichiaceae",
+   "genus": "Madagascaria"
+  },
+  "Rhodelphis_limneticus": {
+   "sci_name": "Rhodelphis limneticus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Rhodelphea",
+   "order": "Rhodelphida",
+   "family": "Rhodelphidae",
+   "genus": "Rhodelphis"
+  },
+  "Rhodelphis_marinus": {
+   "sci_name": "Rhodelphis marinus",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Rhodelphea",
+   "order": "Rhodelphida",
+   "family": "Rhodelphidae",
+   "genus": "Rhodelphis"
+  },
+  "Palpitomonas_bilix": {
+   "sci_name": "Palpitomonas bilix",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Eukaryota",
+   "order": "Eukaryota",
+   "family": "Eukaryota",
+   "genus": "Palpitomonas"
+  },
+  "Gloeochaete_wittrockiana": {
+   "sci_name": "Gloeochaete wittrockiana",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Glaucocystophyceae",
+   "order": "Gloeochaetales",
+   "family": "Gloeochaetaceae",
+   "genus": "Gloeochaete"
+  },
+  "Cyanophora_paradoxa": {
+   "sci_name": "Cyanophora paradoxa",
+   "domain": "Eukaryota",
+   "kingdom": "Eukaryota",
+   "phylum": "Eukaryota",
+   "class": "Glaucocystophyceae",
+   "order": "Cyanophorales",
+   "family": "Cyanophoraceae",
+   "genus": "Cyanophora"
+  },
+  "Prasinococcus_capsulatus": {
+   "sci_name": "Prasinococcus capsulatus",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Prasinodermophyta",
+   "class": "Palmophyllophyceae",
+   "order": "Prasinococcales",
+   "family": "Prasinococcaceae",
+   "genus": "Prasinococcus"
+  },
+  "Prasinoderma_coloniale": {
+   "sci_name": "Prasinoderma coloniale",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Prasinodermophyta",
+   "class": "Prasinodermophyceae",
+   "order": "Prasinodermales",
+   "family": "Prasinodermaceae",
+   "genus": "Prasinoderma"
+  },
+  "Volvox_carteri": {
+   "sci_name": "Volvox carteri",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Chlorophyta",
+   "class": "Chlorophyceae",
+   "order": "Chlamydomonadales",
+   "family": "Volvocaceae",
+   "genus": "Volvox"
+  },
+  "Chlamydomonas_reinhardtii": {
+   "sci_name": "Chlamydomonas reinhardtii",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Chlorophyta",
+   "class": "Chlorophyceae",
+   "order": "Chlamydomonadales",
+   "family": "Chlamydomonadaceae",
+   "genus": "Chlamydomonas"
+  },
+  "Chlorella_variabilis": {
+   "sci_name": "Chlorella variabilis",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Chlorophyta",
+   "class": "Trebouxiophyceae",
+   "order": "Chlorellales",
+   "family": "Chlorellaceae",
+   "genus": "Chlorella"
+  },
+  "Nephroselmis_pyriformis": {
+   "sci_name": "Nephroselmis pyriformis",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Chlorophyta",
+   "class": "Nephroselmidophyceae",
+   "order": "Nephroselmidales",
+   "family": "Nephroselmidaceae",
+   "genus": "Nephroselmis"
+  },
+  "Micromonas_pusilla": {
+   "sci_name": "Micromonas pusilla",
+   "domain": "Eukaryota",
+   "kingdom": "Viridiplantae",
+   "phylum": "Chlorophyta",
+   "class": "Mamiellophyceae",
+   "order": "Mamiellales",
+   "family": "Mamiellaceae",
+   "genus": "Micromonas"
+  }
+ }
+}

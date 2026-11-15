@@ -4527,13 +4527,29 @@ function msaLeafIndex(sp) {
     return i === undefined ? -1 : i;
 }
 
+// NCBI ranks for the TCS species, the same rank names EggNOG uses (tcs_taxonomy_ncbi.json,
+// built by pipeline/helpers/export_tcs_ncbi_taxonomy.py). Loaded once; null if unavailable.
+let MSA_NCBI_TAX = null;
+async function msaLoadNcbiTax() {
+    if (MSA_NCBI_TAX) return MSA_NCBI_TAX;
+    try {
+        const r = await fetch('tcs_taxonomy_ncbi.json');
+        if (r.ok) MSA_NCBI_TAX = await r.json();
+    } catch (e) { console.warn('Alignment viewer: no NCBI taxonomy', e); }
+    return MSA_NCBI_TAX;
+}
+
 function msaTaxon(sp, level) {
+    const n = MSA_NCBI_TAX && MSA_NCBI_TAX.species[String(sp)];
+    if (n && n[level]) return n[level];
     const i = msaLeafIndex(sp);
     const t = i >= 0 && MSA_LAYOUT.leaf_taxonomies ? MSA_LAYOUT.leaf_taxonomies[i] : null;
     return (t && t[level]) || 'Unclassified';
 }
 
 function msaSpeciesName(sp) {
+    const n0 = MSA_NCBI_TAX && MSA_NCBI_TAX.species[String(sp)];
+    if (n0 && n0.sci_name && !n0.sci_name.includes('N/A')) return n0.sci_name;
     const i = msaLeafIndex(sp);
     const n = i >= 0 && MSA_LAYOUT.leaf_taxonomies ? MSA_LAYOUT.leaf_taxonomies[i].sci_name : null;
     if (n && !n.includes('N/A')) return n;
@@ -4550,6 +4566,7 @@ function msaOrderRows(rows) {
 }
 
 function msaTaxLevels() {
+    if (MSA_NCBI_TAX) return MSA_NCBI_TAX.tax_levels;
     if (!MSA_LAYOUT || !MSA_LAYOUT.leaf_taxonomies) return [];
     if (MSA_LAYOUT.tax_levels) return MSA_LAYOUT.tax_levels;
     return Object.keys(MSA_LAYOUT.leaf_taxonomies[0])
@@ -4723,7 +4740,7 @@ async function openAlignmentViewer(gene) {
     MSA = null;
     msaDrawAll();
     try {
-        const [data] = await Promise.all([msaFetch(gene), msaLoadLayout()]);
+        const [data] = await Promise.all([msaFetch(gene), msaLoadLayout(), msaLoadNcbiTax()]);
         const opts = MSA_OPTS_DEFAULT();
         const allRows = msaOrderRows(data.rows.slice());
         MSA = { data, allRows, rows: allRows.slice(), opts, taxValue: '' };
