@@ -1915,7 +1915,7 @@ function renderTreeCandidatePartnersHtml(isDark) {
                         <div style="display:flex; align-items:center; gap:5px; min-width:0;">
                             <strong style="color:${isDark ? '#94a3b8' : '#64748b'}; overflow:hidden; text-overflow:ellipsis;">${p.n}</strong>
                             ${isCil ? '<span style="font-size:9px; background:rgba(56,189,248,0.15); color:#38bdf8; padding:1px 4px; border-radius:3px; font-weight:600;">CILIA</span>' : ''}
-                            <span style="font-size:10.5px; color:#64748b;">J=${p.j.toFixed(2)}</span>
+                            <span style="font-size:10.5px; color:#64748b;">d=${(1 - p.j).toFixed(2)}</span>
                         </div>
                         <span style="font-size:10px; color:#10b981; font-weight:700; white-space:nowrap;">✓ On Tree</span>
                     </div>
@@ -1926,7 +1926,7 @@ function renderTreeCandidatePartnersHtml(isDark) {
                         <div style="display:flex; align-items:center; gap:5px; min-width:0;">
                             <strong style="color:${isDark ? '#f8fafc' : '#0f172a'}; overflow:hidden; text-overflow:ellipsis;">${p.n}</strong>
                             ${isCil ? '<span style="font-size:9px; background:rgba(56,189,248,0.2); color:#38bdf8; padding:1px 4px; border-radius:3px; font-weight:600;">CILIA</span>' : ''}
-                            <span style="font-size:10.5px; color:#8892b0;">J=${p.j.toFixed(2)}</span>
+                            <span style="font-size:10.5px; color:#8892b0;">d=${(1 - p.j).toFixed(2)}</span>
                         </div>
                         <button class="btn" style="padding:2px 7px; font-size:10.5px; font-weight:600; color:#38bdf8; border-color:rgba(56,189,248,0.35); white-space:nowrap;" onclick="addTreeGene('${p.n}')" title="Add ${p.n} to species tree">+ Add</button>
                     </div>
@@ -2190,7 +2190,7 @@ function renderTreeSidebar() {
                         <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:${isDark ? '#161d31' : '#f8fafc'}; border:1px solid ${isDark ? '#2a3558' : '#e2e8f0'}; border-radius:6px; margin-bottom:6px; font-size:12px;">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <strong style="color:${isDark ? '#7eb8ff' : '#0284c7'};">${p.n}</strong>
-                                <span style="font-size:10.5px; color:#8892b0;">J = ${p.j.toFixed(2)}</span>
+                                <span style="font-size:10.5px; color:#8892b0;">d = ${(1 - p.j).toFixed(2)}</span>
                             </div>
                             <button class="btn" style="padding:2px 8px; font-size:10.5px;" onclick="addTreeGene('${p.n}')">+ Add to Tree</button>
                         </div>
@@ -2483,7 +2483,7 @@ function renderSidebar(name) {
             <span class="pname in-graph">${p.n}</span>
             ${isCil ? getCiliaBadgeHtml(p.n) : ''}
             <div class="bar-wrap"><div class="bar" style="width: ${p.j * 100}%; background: ${getJaccardColor(p.j)};"></div></div>
-            <span class="pjaccard">${p.j.toFixed(2)}</span>
+            <span class="pjaccard" title="distance = 1 − J (J = ${p.j.toFixed(3)})">${(1 - p.j).toFixed(2)}</span>
             <span class="ploss">${pLoss}L</span>
             <button class="partner-tree-btn" onclick="event.stopPropagation(); addTreeGene('${p.n}');" title="Add ${p.n} to Species Tree">+</button>
             <a href="${getUniProtUrl(p.n)}" target="_blank" rel="noopener noreferrer" class="partner-ext-link" onclick="event.stopPropagation();" title="UniProt">↗</a>
@@ -7150,7 +7150,7 @@ async function generatePresentationSlideCanvas(options = {}) {
             ctx.font = fs(`bold ${jaccardFontSize} ui-monospace, SFMono-Regular, monospace`);
             ctx.fillStyle = P.textPrimary;
             ctx.textBaseline = 'middle';
-            ctx.fillText(p.j.toFixed(2), bX + bW + 14, midY);
+            ctx.fillText((1 - p.j).toFixed(2), bX + bW + 14, midY); // distance = 1 − J
         } else {
             ctx.font = fs('13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             ctx.fillStyle = P.textSecondary;
