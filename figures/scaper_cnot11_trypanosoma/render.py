@@ -2,12 +2,18 @@ from pymol import cmd
 import numpy as np
 cmd.load('/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/folds/scaper_region_cnot11/fold_scaper_region_cnot11_model_0.cif','hu')
 cmd.load('/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/folds/trypanosoma_region_cnot11/fold_trypanosoma_region_cnot11_model_0.cif','tb')
+cmd.load('/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/folds/euhu/fold_euglena_cnot11_human_model_0.cif','eu')
+cmd.load('/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/folds/cehu/fold_c_elegancs_cnot11_human_model_0.cif','ce')
+cmd.remove('ce and chain B and not resi 318-505')
+cmd.remove('eu and chain B and not resi 318-505')
 for o in ['hu','tb']: cmd.remove(f'{o} and chain B and not resi 318-505')
 cmd.align('tb and chain B','hu and chain B')
+cmd.align('eu and chain B','hu and chain B')
+cmd.align('ce and chain B','hu and chain B')
 cmd.bg_color('white'); cmd.set('ray_opaque_background',1)
 cmd.set('surface_quality',1); cmd.set('ray_shadows',0); cmd.set('ambient',0.5); cmd.set('specular',0.1)
 cmd.set('antialias',2); cmd.set('cartoon_fancy_helices',1); cmd.set('stick_radius',0.3)
-cmd.set_color('cnot',[0.74,0.77,0.93]); cmd.set_color('hum',[0.84,0.22,0.22]); cmd.set_color('tryp',[0.45,0.45,0.50])
+cmd.set_color('cnot',[0.74,0.77,0.93]); cmd.set_color('hum',[0.84,0.22,0.22]); cmd.set_color('eug',[0.11,0.62,0.47]); cmd.set_color('cel',[0.71,0.33,0.04]); cmd.set_color('tryp',[0.45,0.45,0.50])
 # view: CNOT11 centre -> human peptide interface direction points up (+y), helix axis along x
 c=np.array(cmd.get_coords('hu and chain B and name CA')).mean(0)
 p=np.array(cmd.get_coords('hu and chain A and resi 26-48 and name CA'))
@@ -18,7 +24,7 @@ R=np.array([ax,up,z])   # rows = camera axes in model space
 v=list(cmd.get_view())
 v[0:9]=list(R.T.flatten())  # pymol stores column-major rotation
 cmd.set_view(v)
-cmd.zoom('(hu or tb) and (chain B or chain A)', 2, complete=1)
+cmd.zoom('(hu or tb or eu) and (chain B or chain A)', 2, complete=1)
 cmd.clip('slab',400); cmd.clip('near',-60); cmd.set('two_sided_lighting',1)
 view=cmd.get_view()
 def shot(o,col,resis,out):
@@ -29,7 +35,13 @@ def shot(o,col,resis,out):
     cmd.show('sticks',f'{o} and chain A and resi {resis} and not name N+C+O')
     cmd.color(col,f'{o} and chain A and elem C'); cmd.util.cnc(f'{o} and chain A')
     cmd.set_view(view); cmd.ray(2000,1500); cmd.png(out,dpi=300)
-hu_idx='+'.join(str(p-592) for p in [618,625,628,629,632,633,640])
-tb_idx='+'.join(str(p-213) for p in [239,246,249,250,253,254,261])
+hu_idx='+'.join(str(p-592) for p in [618,625,628,629,632,633,636])
+tb_idx='+'.join(str(p-213) for p in [239,246,249,250,253,254,257])
 shot('hu','hum',hu_idx,'/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/fig/human.png')
 shot('tb','tryp',tb_idx,'/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/fig/tbrucei.png')
+
+eu_idx='+'.join(str(p-318) for p in [344,351,354,355,358,359,362])
+shot('eu','eug',eu_idx,'/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/fig/euglena.png')
+
+ce_idx='+'.join(str(p-553) for p in [579,586,589,590,593,594,597])
+shot('ce','cel',ce_idx,'/tmp/claude-10133/-mnt-home2-prodromosp-dollo-network-explorer/d6759e1d-efad-47d1-b429-082ce65afa7d/scratchpad/fig/celegans.png')

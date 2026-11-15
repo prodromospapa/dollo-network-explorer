@@ -1284,6 +1284,7 @@ window.getModalRegionBounds = getModalRegionBounds;
 window.getPairwiseJaccard = getPairwiseJaccard;
 window.getPairwiseTreeDistance = getPairwiseTreeDistance;
 window.getTreeDistanceColor = getTreeDistanceColor;
+window.setSidebarPartnerMetric = setSidebarPartnerMetric;
 window.getTreeGenePresence = getTreeGenePresence;
 window.getUniProtUrl = getUniProtUrl;
 window.handleClusterMemberClick = handleClusterMemberClick;
@@ -1523,6 +1524,11 @@ let GM = {}; // loss counts
 let PARTNER_OFFSETS = null;
 let PARTNER_LOSSES = null;
 let PARTNER_DATA = null;
+// Distances List metric: 'loss' = Dollo co-loss (exact Jaccard over shared loss branches),
+// 'presence' = every gene ranked by species co-presence Jaccard. This page opens on presence.
+let SIDEBAR_PARTNER_METRIC = 'presence';
+let TREE_EVENTS_FAILED = false;
+let TREE_LOAD_FAILED = false;
 const G_CACHE = {};
 let CLUSTER_CENTROIDS = {};
 
@@ -2439,9 +2445,29 @@ function renderSidebar(name) {
     const sbSearchWrap = document.getElementById('sidebar-search-wrap');
     if (sbSearchWrap) sbSearchWrap.style.display = 'block';
 
-    const info = { ...(getGeneData(name) || { l: GM[name] || 0, p: [] }) };
-    const fullPartners = getFullPartners(name);
-    if (fullPartners) info.p = fullPartners;
+    let info = { ...(getGeneData(name) || { l: GM[name] || 0, p: [] }) };
+    let presenceState = 'ok'; // 'ok' | 'loading' | 'failed' | 'missing'
+    const rerenderIfCurrent = () => { if (selectedGene === name) renderSidebar(name); };
+    if (SIDEBAR_PARTNER_METRIC === 'presence') {
+        const fullPartners = getFullPartners(name); // null until the presence matrix has loaded
+        if (fullPartners) info = { l: info.l, p: fullPartners };
+        else presenceState = PRES_BITS ? 'missing' : 'loading'; // loadPresenceBits() re-renders when ready
+    } else {
+        const dolloPartners = getDolloPartners(name);
+        if (dolloPartners) info = { l: info.l, p: dolloPartners };
+        else if (TREE_EVENTS_FAILED || TREE_LOAD_FAILED) presenceState = 'failed';
+        else if (!TREE_EVENTS) {
+            presenceState = 'loading';
+            loadTreeAssets()
+                .then(() => { if (SIDEBAR_PARTNER_METRIC === 'loss') rerenderIfCurrent(); })
+                .catch(err => {
+                    TREE_LOAD_FAILED = true;
+                    console.error('Loss data failed to load:', err);
+                    if (SIDEBAR_PARTNER_METRIC === 'loss') rerenderIfCurrent();
+                });
+        } else presenceState = 'missing';
+    }
+    if (presenceState !== 'ok') info = { l: info.l, p: [] };
     const cid = GENE_CL[name];
     const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${cid}`) : null;
     const color = getClusterColor(cid);
@@ -2517,6 +2543,7 @@ function renderSidebar(name) {
         ${clusterBadge}
         ${ciliaryHtml}
         ${partnerCountMeta}
+        ${renderSidebarMetricToggle()}
     `;
 
     let html = '';
@@ -2536,7 +2563,13 @@ function renderSidebar(name) {
         </div>`;
     });
 
-    if (qualifying.length === 0) {
+    if (presenceState === 'loading') {
+        html = `<div style="padding:16px; color:#8892b0; text-align:center;">Loading ${SIDEBAR_PARTNER_METRIC === 'loss' ? 'Dollo loss' : 'species presence'} data…</div>`;
+    } else if (presenceState === 'failed') {
+        html = `<div style="padding:16px; color:#f87171; text-align:center;">Could not load the ${SIDEBAR_PARTNER_METRIC === 'loss' ? 'loss-event' : 'species presence'} data for this view.</div>`;
+    } else if (presenceState === 'missing') {
+        html = `<div style="padding:16px; color:#8892b0; text-align:center;">${name} is not in the species data for this view, so partners cannot be computed.</div>`;
+    } else if (qualifying.length === 0) {
         const fName = (geneFilterMode !== 'all') ? ` under ${geneFilterMode.replace(/_/g, ' ')} filter` : '';
         html = `<div style="padding:16px; color:#8892b0; text-align:center;">No partners meeting current criteria${fName}. Try lowering the Jaccard threshold or changing the filter.</div>`;
     }
@@ -3628,6 +3661,66 @@ function getPairwiseLossJaccard(gA, gB) {
     return uni ? inter / uni : 0.0;
 }
 
+// ---- Distances List: Dollo co-loss vs co-presence ----
+// Exact Dollo co-loss Jaccard: branches where both genes were lost / branches where either was lost.
+// Computed from tree_events_eggnog.bin for every gene that shares a loss branch with `gene`.
+const DOLLO_PARTNER_CACHE = new Map();
+let DOLLO_LOSS_INDEX = null; // loss node id -> gene indices lost on that branch
+
+function getDolloPartners(gene) {
+    if (!gene || !TREE_EVENTS || !TREE_LAYOUT) return null;
+    const gi = TREE_GENE_IDX[gene];
+    if (gi === undefined) return null;
+    if (DOLLO_PARTNER_CACHE.has(gene)) return DOLLO_PARTNER_CACHE.get(gene);
+    const { offsets, losses } = TREE_EVENTS;
+    if (!DOLLO_LOSS_INDEX) {
+        DOLLO_LOSS_INDEX = new Map();
+        for (let g = 0; g + 1 < offsets.length; g++) {
+            for (let k = offsets[g]; k < offsets[g + 1]; k++) {
+                const node = losses[k];
+                let list = DOLLO_LOSS_INDEX.get(node);
+                if (!list) DOLLO_LOSS_INDEX.set(node, list = []);
+                list.push(g);
+            }
+        }
+    }
+    const own = new Set(losses.subarray(offsets[gi], offsets[gi + 1]));
+    const shared = new Map(); // gene index -> number of loss branches shared with `gene`
+    own.forEach(node => {
+        for (const g of (DOLLO_LOSS_INDEX.get(node) || [])) {
+            if (g !== gi) shared.set(g, (shared.get(g) || 0) + 1);
+        }
+    });
+    const names = TREE_LAYOUT.gene_names;
+    const out = [];
+    shared.forEach((inter, g) => {
+        const uni = own.size + (offsets[g + 1] - offsets[g]) - inter;
+        if (inter > 0 && uni > 0) out.push({ n: names[g], j: inter / uni, l: GM[names[g]] || 0 });
+    });
+    out.sort((x, y) => (y.j - x.j) || x.n.localeCompare(y.n));
+    DOLLO_PARTNER_CACHE.set(gene, out);
+    return out;
+}
+
+function renderSidebarMetricToggle() {
+    const isDark = (SITE_THEME !== 'light');
+    const btn = (key, label, tip) => {
+        const on = SIDEBAR_PARTNER_METRIC === key;
+        return `<button class="btn" style="padding:3px 10px; font-size:11px; border-radius:4px; ${on ? 'background:#0284c7; color:#fff; font-weight:700;' : 'background:transparent; color:' + (isDark ? '#94a3b8' : '#475569') + ';'}" onclick="setSidebarPartnerMetric('${key}')" title="${tip}">${label}</button>`;
+    };
+    return `
+        <div style="display:inline-flex; margin-top:8px; background:${isDark ? '#0b1120' : '#f1f5f9'}; border:1px solid ${isDark ? '#23304d' : '#cbd5e1'}; border-radius:6px; padding:2px; gap:2px;">
+            ${btn('loss', 'Co-loss (Dollo)', 'Rank genes by Jaccard over Dollo loss branches')}
+            ${btn('presence', 'Co-presence', 'Rank all genes by Jaccard over species presence/absence')}
+        </div>
+    `;
+}
+
+function setSidebarPartnerMetric(metric) {
+    SIDEBAR_PARTNER_METRIC = metric === 'presence' ? 'presence' : 'loss';
+    if (selectedGene) renderSidebar(selectedGene);
+}
+
 function getTreeMatrixValue(gA, gB, metric) {
     const m = metric || TREE_MATRIX_METRIC;
     return m === 'presence' ? getPairwisePresenceJaccard(gA, gB) : getPairwiseLossJaccard(gA, gB);
@@ -3750,37 +3843,51 @@ function setTreeBranchLength(mode) {
     renderCircularTree();
 }
 
-async function initTreeView() {
-    if (!TREE_LAYOUT) {
-        document.getElementById('tree-loading').style.display = 'flex';
-        try {
+// Loads the species layout, presence matrix and loss events once. Shared by the tree
+// view and the Distances List (Dollo mode), which can need it before the tree view is opened.
+let TREE_ASSETS_PROMISE = null;
+function loadTreeAssets() {
+    if (TREE_LAYOUT && TREE_PRESENCE_BUFFER) return Promise.resolve();
+    if (!TREE_ASSETS_PROMISE) {
+        TREE_ASSETS_PROMISE = (async () => {
             const [layoutResp, presenceResp] = await Promise.all([
                 fetch('tree_layout_eggnog.json?v=' + DATA_VERSION),
                 fetch('tree_presence_eggnog.bin?v=' + DATA_VERSION)
             ]);
             if (!layoutResp.ok || !presenceResp.ok) throw new Error('Failed to load tree assets');
-            TREE_LAYOUT = await layoutResp.json();
+            const layout = await layoutResp.json();
             const pBuf = await presenceResp.arrayBuffer();
             // Header: "DLTP", uint32 n_genes, uint16 n_leaves (10 bytes)
             TREE_PRESENCE_BUFFER = new Uint8Array(pBuf, 10);
             try {
                 const eResp = await fetch('tree_events_eggnog.bin?v=' + DATA_VERSION);
-                if (eResp.ok) {
-                    const eBuf = await eResp.arrayBuffer();
-                    const nG = new DataView(eBuf).getUint32(4, true);
-                    const offsets = new Uint32Array(eBuf, 8, nG + 1);
-                    const gainStart = 8 + (nG + 1) * 4;
-                    TREE_EVENTS = {
-                        offsets,
-                        gains: new Uint16Array(eBuf, gainStart, nG),
-                        losses: new Uint16Array(eBuf, gainStart + nG * 2, offsets[nG]),
-                    };
-                }
+                if (!eResp.ok) throw new Error('HTTP ' + eResp.status);
+                const eBuf = await eResp.arrayBuffer();
+                const nG = new DataView(eBuf).getUint32(4, true);
+                const offsets = new Uint32Array(eBuf, 8, nG + 1);
+                const gainStart = 8 + (nG + 1) * 4;
+                TREE_EVENTS = {
+                    offsets,
+                    gains: new Uint16Array(eBuf, gainStart, nG),
+                    losses: new Uint16Array(eBuf, gainStart + nG * 2, offsets[nG]),
+                };
             } catch (e) {
+                TREE_EVENTS_FAILED = true;
                 console.warn('Loss events unavailable:', e);
             }
-            TREE_LAYOUT.gene_names.forEach((name, i) => { TREE_GENE_IDX[name] = i; });
+            layout.gene_names.forEach((name, i) => { TREE_GENE_IDX[name] = i; });
+            TREE_LAYOUT = layout;
             buildTreeIndex();
+        })().catch(err => { TREE_ASSETS_PROMISE = null; throw err; });
+    }
+    return TREE_ASSETS_PROMISE;
+}
+
+async function initTreeView() {
+    if (!TREE_LAYOUT) {
+        document.getElementById('tree-loading').style.display = 'flex';
+        try {
+            await loadTreeAssets();
 
             setupTreePanZoom();
             setupTreeCladeInteractions();

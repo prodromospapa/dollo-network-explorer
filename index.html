@@ -1264,6 +1264,7 @@ window.getModalRegionBounds = getModalRegionBounds;
 window.getPairwiseJaccard = getPairwiseJaccard;
 window.getPairwiseTreeDistance = getPairwiseTreeDistance;
 window.getTreeDistanceColor = getTreeDistanceColor;
+window.setSidebarPartnerMetric = setSidebarPartnerMetric;
 window.getTreeGenePresence = getTreeGenePresence;
 window.getUniProtUrl = getUniProtUrl;
 window.handleClusterMemberClick = handleClusterMemberClick;
@@ -1501,6 +1502,10 @@ let GM = {}; // loss counts
 let PARTNER_OFFSETS = null;
 let PARTNER_LOSSES = null;
 let PARTNER_DATA = null;
+// Distances List metric: 'loss' = network partners ranked by Dollo co-loss Jaccard,
+// 'presence' = every tree gene ranked by species co-presence Jaccard. Separate from
+// TREE_MATRIX_METRIC so the matrix tab keeps its own choice.
+let SIDEBAR_PARTNER_METRIC = 'loss';
 const G_CACHE = {};
 let CLUSTER_CENTROIDS = {};
 
@@ -2354,7 +2359,29 @@ function renderSidebar(name) {
     const sbSearchWrap = document.getElementById('sidebar-search-wrap');
     if (sbSearchWrap) sbSearchWrap.style.display = 'block';
 
-    const info = getGeneData(name) || { l: GM[name] || 0, p: [] };
+    let info = getGeneData(name) || { l: GM[name] || 0, p: [] };
+    let presenceState = 'ok'; // co-presence mode only: 'ok' | 'loading' | 'failed' | 'missing'
+    if (SIDEBAR_PARTNER_METRIC === 'presence') {
+        if (!(TREE_LAYOUT && TREE_PRESENCE_BUFFER)) {
+            if (PRESENCE_LOAD_FAILED) {
+                presenceState = 'failed';
+            } else {
+                presenceState = 'loading';
+                loadTreeAssets()
+                    .then(() => { if (SIDEBAR_PARTNER_METRIC === 'presence' && selectedGene === name) renderSidebar(name); })
+                    .catch(err => {
+                        PRESENCE_LOAD_FAILED = true;
+                        console.error('Co-presence data failed to load:', err);
+                        if (SIDEBAR_PARTNER_METRIC === 'presence' && selectedGene === name) renderSidebar(name);
+                    });
+            }
+        } else {
+            const pp = getPresencePartners(name);
+            if (pp) info = { l: info.l, p: pp };
+            else presenceState = 'missing';
+        }
+        if (presenceState !== 'ok') info = { l: info.l, p: [] };
+    }
     const cid = GENE_CL[name];
     const cname = cid !== undefined ? (CLUSTER_NAMES[cid] || `Cluster ${cid}`) : null;
     const color = getClusterColor(cid);
@@ -2423,6 +2450,7 @@ function renderSidebar(name) {
         ${clusterBadge}
         ${ciliaryHtml}
         ${partnerCountMeta}
+        ${renderSidebarMetricToggle()}
     `;
 
     let html = '';
@@ -2442,7 +2470,13 @@ function renderSidebar(name) {
         </div>`;
     });
 
-    if (qualifying.length === 0) {
+    if (presenceState === 'loading') {
+        html = `<div style="padding:16px; color:#8892b0; text-align:center;">Loading species presence data…</div>`;
+    } else if (presenceState === 'failed') {
+        html = `<div style="padding:16px; color:#f87171; text-align:center;">Could not load the species presence matrix, so co-presence cannot be shown.</div>`;
+    } else if (presenceState === 'missing') {
+        html = `<div style="padding:16px; color:#8892b0; text-align:center;">${name} is not in the species presence matrix, so co-presence cannot be computed.</div>`;
+    } else if (qualifying.length === 0) {
         const fName = (geneFilterMode !== 'all') ? ` under ${geneFilterMode.replace(/_/g, ' ')} filter` : '';
         html = `<div style="padding:16px; color:#8892b0; text-align:center;">No partners meeting current criteria${fName}. Try lowering the Jaccard threshold or changing the filter.</div>`;
     }
@@ -3528,6 +3562,58 @@ function getPairwisePresenceJaccard(gA, gB) {
     return uni ? inter / uni : 0.0;
 }
 
+// ---- Distances List: Dollo co-loss vs co-presence ----
+const PRESENCE_PARTNER_CACHE = new Map();
+let PRESENCE_LOAD_FAILED = false;
+
+// Every tree gene ranked by species co-presence Jaccard with `gene` (sorted high to low).
+// Null when the presence matrix is not loaded or the gene is not in it.
+function getPresencePartners(gene) {
+    if (!gene || !TREE_LAYOUT || !TREE_PRESENCE_BUFFER) return null;
+    const iA = TREE_GENE_IDX[gene];
+    if (iA === undefined) return null;
+    if (PRESENCE_PARTNER_CACHE.has(gene)) return PRESENCE_PARTNER_CACHE.get(gene);
+    const names = TREE_LAYOUT.gene_names;
+    const bpg = Math.ceil((TREE_LAYOUT.n_leaves || 0) / 8);
+    const oA = iA * bpg;
+    const out = [];
+    for (let g = 0; g < names.length; g++) {
+        if (g === iA) continue;
+        const oB = g * bpg;
+        let inter = 0, uni = 0;
+        for (let k = 0; k < bpg; k++) {
+            const a = TREE_PRESENCE_BUFFER[oA + k], b = TREE_PRESENCE_BUFFER[oB + k];
+            inter += POPCOUNT8[a & b];
+            uni += POPCOUNT8[a | b];
+        }
+        if (!uni) continue;
+        const j = inter / uni;
+        if (j > 0) out.push({ n: names[g], j, l: GM[names[g]] || 0 });
+    }
+    out.sort((x, y) => (y.j - x.j) || x.n.localeCompare(y.n));
+    PRESENCE_PARTNER_CACHE.set(gene, out);
+    return out;
+}
+
+function renderSidebarMetricToggle() {
+    const isDark = (SITE_THEME !== 'light');
+    const btn = (key, label, tip) => {
+        const on = SIDEBAR_PARTNER_METRIC === key;
+        return `<button class="btn" style="padding:3px 10px; font-size:11px; border-radius:4px; ${on ? 'background:#0284c7; color:#fff; font-weight:700;' : 'background:transparent; color:' + (isDark ? '#94a3b8' : '#475569') + ';'}" onclick="setSidebarPartnerMetric('${key}')" title="${tip}">${label}</button>`;
+    };
+    return `
+        <div style="display:inline-flex; margin-top:8px; background:${isDark ? '#0b1120' : '#f1f5f9'}; border:1px solid ${isDark ? '#23304d' : '#cbd5e1'}; border-radius:6px; padding:2px; gap:2px;">
+            ${btn('loss', 'Co-loss (Dollo)', 'Rank network partners by Jaccard over Dollo loss branches')}
+            ${btn('presence', 'Co-presence', 'Rank all tree genes by Jaccard over species presence/absence')}
+        </div>
+    `;
+}
+
+function setSidebarPartnerMetric(metric) {
+    SIDEBAR_PARTNER_METRIC = metric === 'presence' ? 'presence' : 'loss';
+    if (selectedGene) renderSidebar(selectedGene);
+}
+
 function getTreeMatrixValue(gA, gB, metric) {
     const m = metric || TREE_MATRIX_METRIC;
     return m === 'presence' ? getPairwisePresenceJaccard(gA, gB) : getPairwiseLossJaccard(gA, gB);
@@ -3650,24 +3736,40 @@ function setTreeBranchLength(mode) {
     renderCircularTree();
 }
 
-async function initTreeView() {
-    if (!TREE_LAYOUT) {
-        document.getElementById('tree-loading').style.display = 'flex';
-        try {
+// Loads the species layout + presence matrix once. Shared by the tree view and the
+// Distances List (co-presence mode), which can need it before the tree view is opened.
+let TREE_ASSETS_PROMISE = null;
+let TREE_UI_READY = false;
+function loadTreeAssets() {
+    if (TREE_LAYOUT && TREE_PRESENCE_BUFFER) return Promise.resolve();
+    if (!TREE_ASSETS_PROMISE) {
+        TREE_ASSETS_PROMISE = (async () => {
             const [layoutResp, presenceResp] = await Promise.all([
                 fetch('tree_layout.json'),
                 fetch('tree_presence' + DATASET_SUFFIX + '.bin')
             ]);
             if (!layoutResp.ok || !presenceResp.ok) throw new Error('Failed to load tree assets');
-            TREE_LAYOUT = await layoutResp.json();
+            const layout = await layoutResp.json();
             const pBuf = await presenceResp.arrayBuffer();
             // Header: "DLTP", uint32 n_genes, uint16 n_leaves (10 bytes)
             TREE_PRESENCE_BUFFER = new Uint8Array(pBuf, 10);
-            TREE_LAYOUT.gene_names.forEach((name, i) => { TREE_GENE_IDX[name] = i; });
+            layout.gene_names.forEach((name, i) => { TREE_GENE_IDX[name] = i; });
+            TREE_LAYOUT = layout;
+        })().catch(err => { TREE_ASSETS_PROMISE = null; throw err; });
+    }
+    return TREE_ASSETS_PROMISE;
+}
+
+async function initTreeView() {
+    if (!TREE_UI_READY) {
+        document.getElementById('tree-loading').style.display = 'flex';
+        try {
+            await loadTreeAssets();
             
             setupTreePanZoom();
             setupTreeSearch();
             setupTreeSpeciesSearch();
+            TREE_UI_READY = true;
         } catch (err) {
             console.error('Error loading tree:', err);
             document.getElementById('tree-loading').innerHTML = '<span style="color:#f87171;">Error loading tree data: ' + err.message + '</span>';

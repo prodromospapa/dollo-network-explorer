@@ -18,12 +18,13 @@ for i, ch in enumerate(hum):
 rows = {r['sp']: ''.join(r['s'][i] for i, _ in cols) for r in a['rows']}
 present = [('Homo_sapiens', 'Homo sapiens'), ('Danio_rerio', 'Danio rerio'), ('Drosophila_melanogaster', 'Drosophila melanogaster'),
            ('Naegleria_gruberi', 'Naegleria gruberi'), ('Euglena_gracilis', 'Euglena gracilis')]
-absent = [('Caenorhabditis_elegans', 'Caenorhabditis elegans'), ('Leishmania_major', 'Leishmania major'),
+absent = [('Leishmania_major', 'Leishmania major'),
           ('Trypanosoma_brucei', 'Trypanosoma brucei'), ('Trypanosoma_cruzi', 'Trypanosoma cruzi')]
 contacts = {622, 624, 625, 628, 629, 632, 633, 636, 639, 640}   # <4 Å to CNOT11 in 5/5 human AF3 models
 # Interface residues mutated in Hopfler et al. 2023 (Mol Cell, doi:10.1016/j.molcel.2023.05.020); every mutant abolished autoregulation
 MUT = {618: 'K', 625: 'K', 628: 'S', 629: 'K', 632: 'S', 633: 'K', 640: 'K'}
 hot = set(MUT)
+FOLDX = {636}   # not mutated in the paper, but FoldX ddG_bind ~1.6 kcal/mol to CNOT11
 def clustal(c):
     if c in 'AILMFWVC': return '#80a0f0' if c != 'C' else '#f08080'
     if c in 'KR': return '#f01505'
@@ -53,17 +54,15 @@ for item in order:
     ylab.append((-y - 0.5, lab, sp)); y += 1
 for x, (_, h) in enumerate(cols):
     if h in hot:
-        axA.add_patch(Rectangle((x, -y), 1, y, fill=False, ec='#e0a800', lw=2.2, zorder=5))
-    if h == 620:
-        axA.text(x + 0.5, 0.45, '†', ha='center', va='center', fontsize=13, color=INK, fontweight='bold')
-    if h in contacts:
-        axA.plot(x + 0.5, 0.45, 'o', ms=6, color=HUM, clip_on=False)
-    if h % 5 == 0 or h in hot:
-        axA.text(x + 0.5, 1.05, str(h), ha='center', va='bottom', fontsize=9, color=INK2 if h not in hot else INK,
-                 fontweight='bold' if h in hot else 'normal')
+        axA.add_patch(Rectangle((x, -y), 1, y, fill=False, ec='#000000', lw=3.6, zorder=5))
+    if h in FOLDX:
+        axA.add_patch(Rectangle((x, -y), 1, y, fill=False, ec='#000000', lw=3.0, ls=(0, (2.5, 1.5)), zorder=5))
+    if h % 5 == 0 or h in hot | FOLDX:
+        axA.text(x + 0.5, 1.05, str(h), ha='center', va='bottom', fontsize=9, color=INK2 if h not in hot | FOLDX else INK,
+                 fontweight='bold' if h in hot | FOLDX else 'normal')
 for yy, lab, sp in ylab:
     axA.text(-0.4, yy, lab, ha='right', va='center', fontsize=11, style='normal' if sp == 'MUT' else 'italic',
-             color=INK, fontweight='bold' if sp in ('Homo_sapiens', 'Trypanosoma_brucei') else 'normal')
+             color=INK, fontweight='bold' if sp in ('Homo_sapiens', 'Euglena_gracilis', 'Trypanosoma_brucei') else 'normal')
 # group brackets
 def bracket(y0, y1, txt, col):
     xb = n + 0.5
@@ -71,54 +70,96 @@ def bracket(y0, y1, txt, col):
     axA.text(xb + 0.5, (y0 + y1) / 2, txt, ha='left', va='center', fontsize=11, color=col, fontweight='bold')
 bracket(-0.1, -len(present) + 0.1, 'CNOT11\npresent', '#2563eb')
 bracket(-len(present) - 0.7, -len(present) - len(absent) - 0.5, 'CNOT11\nabsent', '#9a3412')
-axA.set_xlim(0, n); axA.set_ylim(-y - 0.1, 1.9); axA.axis('off')
+# mutant combinations tested in Hopfler et al. 2023: one bracket per mutant, ticks at each mutated residue
+xi = {h: x for x, (_, h) in enumerate(cols)}
+COMBOS = [((618, 625), 0), ((628, 632), 0), ((633, 640), 0), ((628, 629, 632), 1)]
+for res, lev in COMBOS:
+    xs_ = [xi[h] + 0.5 for h in res]; yb = -y - 0.3 - 1.05 * lev
+    ytop = -y - 0.05 if lev == 0 else yb + 0.22   # lower-level brackets get short ticks so they don't cross labels
+    axA.plot([xs_[0], xs_[-1]], [yb, yb], color='#000', lw=2.0, solid_capstyle='butt', zorder=6)
+    for xx in xs_:
+        axA.plot([xx, xx], [ytop, yb], color='#000', lw=2.0, solid_capstyle='butt', zorder=6)
+    axA.text((xs_[0] + xs_[-1]) / 2, yb - 0.1, ' + '.join(f'{rows["Homo_sapiens"][xi[h]]}{h}{MUT[h]}' for h in res),
+             ha='center', va='top', fontsize=9.5, color=INK, fontweight='bold')
+axA.set_xlim(0, n); axA.set_ylim(-y - 2.0, 1.9); axA.axis('off')
 fig.text(0.015, 0.955, 'A', fontsize=20, fontweight='bold', color=INK)
 fig.text(0.04, 0.955, 'SCAPER helix that contacts CNOT11 (human 612–643), TCS orthogroup alignment',
          fontsize=14, color=INK, va='baseline')
 
 
 from matplotlib.patches import Rectangle as R2
-fig.patches.append(R2((0.045, 0.902), 0.011, 0.02, transform=fig.transFigure, fill=False, ec='#e0a800', lw=2.2))
-fig.text(0.06, 0.912, 'CNOT11-interface residues validated by mutagenesis (Höpfler et al., 2023)', fontsize=10.5, color=INK2, va='center')
-fig.lines.append(matplotlib.lines.Line2D([0.43], [0.912], marker='o', ms=7, color=HUM, transform=fig.transFigure))
-fig.text(0.438, 0.912, 'CNOT11 contact in 5/5 human AF3 models', fontsize=10.5, color=INK2, va='center')
-fig.text(0.64, 0.912, '†', fontsize=13, color=INK, va='center', fontweight='bold')
-fig.text(0.65, 0.912, 'ΔE620 patient mutation', fontsize=10.5, color=INK2, va='center')
-# ---- structures (crop both renders to the same box so the scale matches)
-ims = [Image.open(f'{S}/fig/{f}.png').convert('RGB') for f in ('human', 'tbrucei')]
+fig.patches.append(R2((0.045, 0.902), 0.011, 0.02, transform=fig.transFigure, fill=False, ec='#000000', lw=3.6))
+fig.text(0.06, 0.912, 'SCAPER residues mutated at the CNOT11 interface (Höpfler et al., 2023)', fontsize=10.5, color=INK2, va='center')
+fig.patches.append(R2((0.42, 0.902), 0.011, 0.02, transform=fig.transFigure, fill=False, ec='#000000', lw=3.0, ls=(0, (2.5, 1.5))))
+fig.text(0.435, 0.912, 'FoldX hotspot, not tested experimentally (ΔΔG_bind ≈ 1.6 kcal/mol)', fontsize=10.5, color=INK2, va='center')
+# ---- structures (crop all renders to the same box so the scale matches)
+EUG = '#1b9e77'
+ims = [Image.open(f'{S}/fig/{f}.png').convert('RGB') for f in ('human', 'euglena', 'tbrucei')]
 bbs = [ImageChops.difference(im, Image.new('RGB', im.size, (255, 255, 255))).getbbox() for im in ims]
 box = (min(b[0] for b in bbs) - 20, min(b[1] for b in bbs) - 20, max(b[2] for b in bbs) + 20, max(b[3] for b in bbs) + 20)
 ims = [im.crop(box) for im in ims]
-iptm = {}
-for job in ('scaper', 'trypanosoma'):
-    iptm[job] = [json.load(open(f'{FO}/{job}_region_cnot11/fold_{job}_region_cnot11_summary_confidences_{i}.json'))['iptm'] for i in range(5)]
-    iptm[job + '_pae'] = [json.load(open(f'{FO}/{job}_region_cnot11/fold_{job}_region_cnot11_summary_confidences_{i}.json'))['chain_pair_pae_min'][0][1] for i in range(5)]
-panels = [('B', ims[0], 'Human SCAPER 593–672', HUM, iptm['scaper'], iptm['scaper_pae'], 0.03),
-          ('C', ims[1], 'T. brucei SCAPER 214–293', TRY, iptm['trypanosoma'], iptm['trypanosoma_pae'], 0.355)]
-for letter, im, title, col, ip, pae, x0 in panels:
-    ax = fig.add_axes([x0, 0.01, 0.31, 0.385]); ax.imshow(im); ax.axis('off')
+def conf(path):
+    cs = [json.load(open(path.format(i))) for i in range(5)]
+    return [c['iptm'] for c in cs], [c['chain_pair_pae_min'][0][1] for c in cs]
+hu_ip, hu_pae = conf(f'{FO}/scaper_region_cnot11/fold_scaper_region_cnot11_summary_confidences_{{}}.json')
+eu_ip, eu_pae = conf(f'{FO}/euhu/fold_euglena_cnot11_human_summary_confidences_{{}}.json')
+ce_ip, ce_pae = conf(f'{FO}/cehu/fold_c_elegancs_cnot11_human_summary_confidences_{{}}.json')
+CEL = '#b5540a'
+tb_ip, tb_pae = conf(f'{FO}/trypanosoma_region_cnot11/fold_trypanosoma_region_cnot11_summary_confidences_{{}}.json')
+panels = [('B', ims[0], 'Human', 'SCAPER 593–672', '+ human CNOT11', HUM, hu_ip, hu_pae, 0.03),
+          ('C', ims[1], 'E. gracilis', 'SCAPER 319–398', '+ human CNOT11', EUG, eu_ip, eu_pae, 0.225),
+          ('D', ims[2], 'T. brucei', 'SCAPER 214–293', '+ human CNOT11', TRY, tb_ip, tb_pae, 0.42)]
+for letter, im, sp, title, sub, col, ip, pae, x0 in panels:
+    ax = fig.add_axes([x0, 0.04, 0.18, 0.35]); ax.imshow(im); ax.axis('off')
     fig.text(x0 - 0.015, 0.475, letter, fontsize=20, fontweight='bold', color=INK)
-    fig.text(x0 + 0.01, 0.475, title, fontsize=13, color=col, fontweight='bold',
-             style='italic' if 'brucei' in title else 'normal')
-    fig.text(x0 + 0.01, 0.448, f'+ human CNOT11 (C-terminal domain shown)', fontsize=10, color=INK2)
-    fig.text(x0 + 0.01, 0.41, f'ipTM {np.mean(ip):.2f}   ·   min. interchain PAE {np.mean(pae):.1f} Å',
-             fontsize=12, color=INK, fontweight='bold')
+    fig.text(x0 + 0.01, 0.475, sp, fontsize=14, color=col, fontweight='bold', style='normal' if sp == 'Human' else 'italic')
+    fig.text(x0 + 0.01, 0.448, title, fontsize=9.5, color=INK2)
+    fig.text(x0 + 0.01, 0.428, sub, fontsize=9.5, color=INK2)
+    fig.text(x0 + 0.01, 0.395, f'ipTM {np.mean(ip):.2f} · PAE {np.mean(pae):.1f} Å', fontsize=11, color=INK, fontweight='bold')
+fig.text(0.03, 0.015, 'All SCAPER fragments folded with the same human CNOT11 (C-terminal domain shown). CNOT11 presence/absence from the TCS orthogroups. E. gracilis SCAPER with its own CNOT11: ipTM 0.75.', fontsize=9.5, color=INK2)
 
 # ---- ipTM per model
-axD = fig.add_axes([0.73, 0.12, 0.24, 0.31])
-for k, (job, lab, col) in enumerate([('scaper', 'Human', HUM), ('trypanosoma', 'T. brucei', TRY)]):
-    v = iptm[job]; xs = k + np.linspace(-0.12, 0.12, len(v))
-    axD.scatter(xs, v, s=70, color=col, edgecolor='white', linewidth=2, zorder=3)
-    axD.text(k, max(v) + 0.07, f'{np.mean(v):.2f}', ha='center', fontsize=12, color=INK, fontweight='bold')
-axD.axhline(0.6, color=MUTED, lw=1, ls='--'); axD.text(1.45, 0.61, 'ipTM > 0.6\nlikely interface', fontsize=8.5, color=INK2, va='bottom', ha='right')
-axD.set_xticks([0, 1]); axD.set_xticklabels(['Human', 'T. brucei'], fontsize=11)
-axD.get_xticklabels()[1].set_style('italic')
-axD.set_xlim(-0.5, 1.5); axD.set_ylim(0, 1); axD.set_ylabel('ipTM (5 AF3 models)', color=INK2)
+# FoldX (foldx_scaper/results/region615_640): Ala scan of SCAPER 615-640 vs CNOT11 and beta-tubulin, plus the
+# Hopfler E633K/D640K double mutant (results/variants/{cnot11,tubulin}/variants_raw.tsv, chain B partner)
+import csv
+FXD = '/mnt/home2/prodromosp/foldx_scaper/results'
+scan = list(csv.DictReader(open(f'{FXD}/region615_640/region_compare.tsv'), delimiter='\t'))
+def variant(part, name):
+    r = next(r for r in csv.DictReader(open(f'{FXD}/variants/{part}/variants_raw.tsv'), delimiter='\t') if r['name'] == name)
+    return float(r['ddG_B']), float(r['sd_B'])
+HOP = [('EE-KK (Hopfler)', 'E618K/E625K'), ('FL-SS (Hopfler)', 'F628S/L632S'),
+       ('FIL-SKS (Hopfler)', 'F628S/I629K/L632S'), ('ED-KK (Hopfler)', 'E633K/D640K')]
+hop = [(*variant('cnot11', k), *variant('tubulin', k)) for k, _ in HOP]
+CN, TU = '#2a78b5', '#c4572a'
+axD = fig.add_axes([0.655, 0.165, 0.32, 0.24])
+labs = [r['mutation'][:-1] for r in scan]
+groups = [(float(r['ddG_CNOT11']), float(r['ddG_CNOT11_sd']), float(r['ddG_tub_b2']), float(r['ddG_tub_b2_sd'])) for r in scan]
+xs = list(range(len(scan))); xh = [len(scan) + 0.9 + 1.0 * i for i in range(len(HOP))]
+for x, (c, cs, tu, ts) in zip(xs + xh, groups + hop):
+    for dx, y, sd, col in ((-0.2, c, cs, CN), (0.2, tu, ts, TU)):
+        al = 1 if y >= 1 else 0.3
+        axD.bar(x + dx, y, 0.4, color=matplotlib.colors.to_rgba(col, al), lw=0)
+        axD.errorbar(x + dx, y, sd, fmt='none', ecolor=(0, 0, 0, al), capsize=1.5, lw=0.8)
+axD.axvline(len(scan) + 0.1, color=MUTED, lw=0.8, ls=':')
+axD.axhline(1, ls='--', lw=0.8, color='grey'); axD.axhline(0, color='k', lw=0.8)
+axD.set_xticks(xs + xh, labs + [l for _, l in HOP])
+for i, tl in enumerate(axD.get_xticklabels()):
+    if i < len(labs):
+        bold = int(labs[i][1:]) in hot | FOLDX
+        tl.set_fontweight('bold' if bold else 'normal'); tl.set_color(INK if bold else INK2)
+        tl.set_rotation(90); tl.set_fontsize(7.4)
+    else:
+        tl.set_fontweight('bold'); tl.set_color(INK); tl.set_fontsize(7.4); tl.set_rotation(90)
+axD.set_xlim(-0.7, xh[-1] + 0.7); axD.set_ylim(-1, 5.6); axD.set_yticks([-1, 0, 1, 2, 3, 4, 5])
+axD.tick_params(axis='y', labelsize=8.5); axD.tick_params(axis='x', length=2, pad=2)
+axD.set_ylabel('ΔΔG_bind (kcal/mol)', fontsize=9.5)
 for s in ('top', 'right'): axD.spines[s].set_visible(False)
-for s in ('left', 'bottom'): axD.spines[s].set_color(MUTED)
-axD.tick_params(colors=INK2); axD.grid(axis='y', color='#e2e8f0', lw=0.8); axD.set_axisbelow(True)
-fig.text(0.70, 0.475, 'D', fontsize=20, fontweight='bold', color=INK)
-fig.text(0.725, 0.475, 'Interface confidence', fontsize=13, color=INK)
-fig.text(0.725, 0.448, 'both fragments folded with human CNOT11', fontsize=10, color=INK2)
+axD.text(len(scan) / 2 - 0.5, 5.55, 'alanine scan (per residue)', ha='center', va='bottom', fontsize=8.5, color=INK2)
+axD.text((xh[0] + xh[-1]) / 2, 5.55, 'Höpfler et al.\nmutants', linespacing=0.95, ha='center', va='bottom', fontsize=8.5, color=INK2)
+axD.legend(handles=[Rectangle((0, 0), 1, 1, fc=CN), Rectangle((0, 0), 1, 1, fc=TU)], labels=['CNOT11', 'β-tubulin'],
+           fontsize=8.5, frameon=False, loc='upper left', bbox_to_anchor=(0.0, 1.0), handlelength=1.2)
+fig.text(0.61, 0.475, 'E', fontsize=20, fontweight='bold', color=INK)
+fig.text(0.635, 0.475, 'Per-residue ΔΔG_bind of human SCAPER', fontsize=13, color=INK)
+fig.text(0.635, 0.448, 'CNOT11 vs β-tubulin interfaces', fontsize=10, color=INK2)
 for ext in ('png', 'svg', 'pdf'):
     fig.savefig(f'{S}/fig/SCAPER_CNOT11_trypanosoma.{ext}', facecolor='white')

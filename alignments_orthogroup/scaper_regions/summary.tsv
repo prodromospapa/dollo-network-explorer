@@ -1,0 +1,5 @@
+region	pfam	rows	columns	human_span	species_without_region
+N_domain_PF16501	PF16501	48	98	human 89-186	64
+ZnF_PF12874	PF12874	17	25	human 792-816	95
+helical_413-769	-	101	1797	human 413-769	12
+alpha_solenoid_CTD_857-1395	-	109	3229	human 857-1395	4
