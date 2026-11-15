@@ -980,13 +980,11 @@ body.light-theme #msa-tools label select { background:#f8fafc; border-color:#cbd
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500;">
                 Taxonomy:
                 <select id="tree-tax-select" style="background:#0d1220; border:1px solid #3a4570; color:#e0e6f0; border-radius:4px; padding:3px 6px; font-size:11px; outline:none; cursor:pointer;" onchange="setTreeTaxLevel(this.value)">
-                    <option value="domain">Domain</option>
-                    <option value="kingdom" selected>Kingdom</option>
-                    <option value="phylum">Phylum</option>
-                    <option value="class">Class</option>
-                    <option value="order">Order</option>
-                    <option value="family">Family</option>
-                    <option value="genus">Genus</option>
+                    <option value="kingdom" selected>Kingdom (UniProt)</option>
+                    <option value="phylum">Phylum (UniProt)</option>
+                    <option value="supergroup">Supergroup</option>
+                    <option value="tcs">TCS Major Clades (31)</option>
+                    <option value="detailed">Detailed (Phylum)</option>
                 </select>
             </label>
             <label style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px; font-weight:500; cursor:pointer;" title="Draw each clade where the selected genes are present in all or none of its species as a single wedge">
@@ -1370,7 +1368,7 @@ const DATASET = (new URLSearchParams(location.search).get('dataset') === 'orthol
 window.CURRENT_DATASET = DATASET;
 const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
 // Bumped when the data files change, so browsers do not reuse stale copies
-const DATA_VERSION = '20261115-tcs-dollo';
+const DATA_VERSION = '20261115-tcs-curated';
 
 const DATA = await (await fetch('data' + DATASET_SUFFIX + '.json')).json();
 
@@ -3994,7 +3992,15 @@ let TREE_VIEW = null;               // last computed view, used by hover/click h
 function buildTreeIndex() {
     const nodes = TREE_LAYOUT.nodes;
     const byId = new Array(nodes.length);
-    nodes.forEach(n => { byId[n.id] = n; });
+    nodes.forEach(n => {
+        byId[n.id] = n;
+        // Leaf range of each clade. Older layout files carry only the 'leaves' list.
+        if (n.l0 === undefined || n.l1 === undefined) {
+            let lo = Infinity, hi = -Infinity;
+            for (const i of n.leaves) { if (i < lo) lo = i; if (i > hi) hi = i; }
+            n.l0 = lo; n.l1 = hi;
+        }
+    });
     const leafNode = new Int32Array(TREE_LAYOUT.n_leaves);
     const depth = new Int32Array(nodes.length);
     let rootId = 0;
