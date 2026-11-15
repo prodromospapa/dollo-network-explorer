@@ -1369,6 +1369,8 @@ window.zoomTree = zoomTree;
 const DATASET = (new URLSearchParams(location.search).get('dataset') === 'ortholog') ? 'ortholog' : 'orthogroup';
 window.CURRENT_DATASET = DATASET;
 const DATASET_SUFFIX = DATASET === 'orthogroup' ? '' : ('.' + DATASET);
+// Bumped when the data files change, so browsers do not reuse stale copies
+const DATA_VERSION = '20261115-tcs-dollo';
 
 const DATA = await (await fetch('data' + DATASET_SUFFIX + '.json')).json();
 
@@ -3768,8 +3770,8 @@ function loadTreeAssets() {
     if (!TREE_ASSETS_PROMISE) {
         TREE_ASSETS_PROMISE = (async () => {
             const [layoutResp, presenceResp] = await Promise.all([
-                fetch('tree_layout.json'),
-                fetch('tree_presence' + DATASET_SUFFIX + '.bin')
+                fetch('tree_layout.json?v=' + DATA_VERSION),
+                fetch('tree_presence' + DATASET_SUFFIX + '.bin?v=' + DATA_VERSION)
             ]);
             if (!layoutResp.ok || !presenceResp.ok) throw new Error('Failed to load tree assets');
             const layout = await layoutResp.json();
@@ -3777,7 +3779,7 @@ function loadTreeAssets() {
             // Header: "DLTP", uint32 n_genes, uint16 n_leaves (10 bytes)
             TREE_PRESENCE_BUFFER = new Uint8Array(pBuf, 10);
             try {
-                const eResp = await fetch('tree_events' + DATASET_SUFFIX + '.bin');
+                const eResp = await fetch('tree_events' + DATASET_SUFFIX + '.bin?v=' + DATA_VERSION);
                 if (!eResp.ok) throw new Error('HTTP ' + eResp.status);
                 const eBuf = await eResp.arrayBuffer();
                 const nG = new DataView(eBuf).getUint32(4, true);
@@ -4998,7 +5000,7 @@ async function msaLoadLayout() {
     if (typeof TREE_LAYOUT !== 'undefined' && TREE_LAYOUT) return (MSA_LAYOUT = TREE_LAYOUT);
     if (MSA_LAYOUT) return MSA_LAYOUT;
     try {
-        const r = await fetch('tree_layout.json');
+        const r = await fetch('tree_layout.json?v=' + DATA_VERSION);
         if (r.ok) MSA_LAYOUT = await r.json();
     } catch (e) { console.warn('Alignment viewer: no tree layout', e); }
     if (MSA_LAYOUT) MSA_LAYOUT._idx = new Map(MSA_LAYOUT.leaf_species.map((sp, i) => [String(sp), i]));
@@ -5019,7 +5021,7 @@ let MSA_NCBI_TAX = null;
 async function msaLoadNcbiTax() {
     if (MSA_NCBI_TAX) return MSA_NCBI_TAX;
     try {
-        const r = await fetch('tcs_taxonomy_ncbi.json');
+        const r = await fetch('tcs_taxonomy_ncbi.json?v=' + DATA_VERSION);
         if (r.ok) MSA_NCBI_TAX = await r.json();
     } catch (e) { console.warn('Alignment viewer: no NCBI taxonomy', e); }
     return MSA_NCBI_TAX;
